@@ -186,7 +186,7 @@ def build(meta: dict, handle: str = "@animelorehq") -> dict:
         title = f"{base} All Transformations 😳 Every Form"[:70]
         hook = f"{base}: all {len(tiers)} forms merging, from {tiers[0] if tiers else 'base'} to " \
                f"{tiers[-1] if tiers else 'final form'}. Wait for the final form."
-        ask = "Which form is the strongest? Comment 👇"
+        ask = "Which form is your favorite? Comment 👇"
         core = ["animetransformation", "satisfying"]
         kw = [f"{base} all forms", f"{base} transformations", "anime transformation", "merge game", "suika"]
     else:                                                     # Battle « Which anime character wins? »
