@@ -94,13 +94,16 @@ class Puppet:
         return Image.fromarray(fr.clip(0, 255).astype(np.uint8)).convert("RGBA")
 
 
-STYLE_ORBS = {"purple": [((60, 130, 255), -1), ((255, 50, 60), 1)]}       # Hollow Purple : Bleu + Rouge
+STYLE_ORBS = {"purple": [((60, 130, 255), -1), ((255, 50, 60), 1)],      # Hollow Purple : Bleu + Rouge
+              "final": [((255, 215, 60), -1), ((60, 170, 255), 1)],       # Final Kamehameha : Final Flash + Kamehameha
+              "rainbow": [((255, 90, 120), -1), ((90, 200, 255), 1), ((255, 235, 110), 0)]}   # Stardust Breaker
 
 
 def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70, 255), style: str | None = None,
              subtitle: str = "SECRET TECHNIQUE", W: int = 1080, H: int = 1920, fps: int = 30, seconds: float = 4.2,
              seed: int = 7, clip: str | Path | None = None, clip_crop=None, clip_reverse: bool = False,
-             clip_fit: str = "fill", energy=None) -> Path:
+             clip_fit: str = "fill", energy=None, sounds: str = "anime", franchise: str | None = None,
+             voice: str | Path | None = None) -> Path:
     """Vidéo de l'ulti seul (pour juger le rendu sans lancer de combat). Renvoie le .mp4.
     `clip` = vidéo du perso animé par une IA (image vers vidéo) : remplace l'animation par déformation, tout le
     reste (bandes, panneau, textes, énergie, impact frames, flashs) ne change pas."""
@@ -271,4 +274,41 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
     finally:
         if proc.poll() is None:
             proc.kill()
+    _soundtrack(out, seconds, t_orb, t_hit, t_out, move, sounds, franchise, voice, seed)
     return out
+
+
+def _soundtrack(out: Path, seconds, t_orb, t_hit, t_out, move, sounds, franchise, voice, seed) -> None:
+    """Son de l'ulti : flash d'entrée, montée d'énergie, charge à la main, choc, explosion finale (+ réplique)."""
+    import numpy as np
+    from . import domain, fusion
+    R = fusion.RATE
+    audio = np.zeros(int((seconds + 0.5) * R), dtype=np.float32)
+
+    def put(t, snd, vol=1.0):
+        if snd is None or len(snd) == 0:
+            return
+        i = int(t * R)
+        n = min(len(snd), len(audio) - i)
+        if n > 0:
+            audio[i:i + n] += np.asarray(snd[:n], dtype=np.float32) * vol
+
+    S = lambda fam, mv=None: domain.sfx(fam, move=mv, mode=sounds, seed=seed, franchise=franchise)
+    put(0.0, S("vanish"), 0.8)                                   # flash + bandes noires
+    put(0.30, S("transform"), 0.9)                               # le perso arrive, l'énergie monte
+    put(t_orb, S("beam", move), 0.9)                             # l'attaque se charge à la main
+    put(t_hit - 0.05, S("clash"), 0.8)                           # impact frames
+    put(t_out, S("ko"), 1.0)                                     # l'attaque avale l'écran
+    if voice:
+        v = domain.voice_file(str(voice)) if not Path(str(voice)).is_file() else Path(str(voice))
+        if v is not None:
+            put(0.45, fusion.load_sound(v), 1.0)
+    peak = float(np.percentile(np.abs(audio), 99.7)) or 1.0
+    audio = np.tanh(audio * (0.75 / peak) * 1.2)
+    wav = out.with_suffix(".wav")
+    fusion.write_wav(wav, audio)
+    tmp = out.with_suffix(".tmp.mp4")
+    subprocess.run([require_bin("ffmpeg"), "-y", "-loglevel", "error", "-i", str(out), "-i", str(wav), "-c:v", "copy",
+                    "-c:a", "aac", "-b:a", "160k", "-shortest", str(tmp)], check=True)
+    tmp.replace(out)
+    wav.unlink(missing_ok=True)
