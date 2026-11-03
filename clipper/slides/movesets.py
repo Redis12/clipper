@@ -103,6 +103,26 @@ secret: Ultra Instinct | teleport
 passive: Saiyan Power | speed
 form: _fusion/Goku
 aura: #dbe7ff""",
+"Gogeta": """match: gogeta
+color: #f97316
+about: Fusion Goku + Vegeta par la danse Metamoru (30 min). Big Bang Kamehameha, Ki Blast Volley, Instant Transmission. Ultime : Stardust Breaker, la sphère arc-en-ciel qui a désintégré Janemba. Gogeta Blue (Broly), SSJ4 (GT).
+zone: Ultimate Impact | bomb
+front: Big Bang Kamehameha
+shots: Ki Blast Volley
+secret: Stardust Breaker | meteor
+passive: Saiyan Power | speed
+form: _fusion/Gogeta
+aura: #38bdf8""",
+"Vegito": """match: vegito, vegetto, vegeto
+color: #0ea5e9
+about: Fusion Goku + Vegeta par les Potaras. Final Kamehameha, Spirit Sword (épée d'énergie), Big Bang Attack. Vegito Blue contre Zamasu : Final Kamehameha. Aussi arrogant que puissant.
+zone: Big Bang Attack | bomb
+front: Spirit Sword
+shots: Ki Blasts
+secret: Final Kamehameha | mega_beam
+passive: Saiyan Power | speed
+form: _fusion/Vegito
+aura: #60a5fa""",
 "Vegeta": """match: vegeta
 color: #2563eb
 about: Prince des Saiyans. Final Flash, Big Bang Attack, Galick Gun. Ultra Ego : plus il prend de coups, plus il devient fort.
