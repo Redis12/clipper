@@ -228,6 +228,7 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
   Naruto vs Sasuke (Domain War, DRAW, 22h).
 - Rappels programmés : demander les stats mardi 14h et mercredi 14h (vues vs swipes, rétention, % regardé, commentaires).
 - But : garder les 2-3 formats qui marchent le mieux et en faire des séries.
+- **Résultat (03/11, dit par l'utilisateur)** : les 3 vidéos « Transformations » (Fusion Battle) sont celles qui ont le mieux marché sur YouTube → en faire une série prioritaire (Fusion Battle + Fusion Race).
 
 ## Monétisation YouTube — leçon de la chaîne AMV (02/11)
 - La chaîne AMV de l'utilisateur (Luffy vs Katakuri ~2 M vues) a été REFUSÉE au Programme Partenaire pour « réutilisation de
