@@ -288,7 +288,8 @@ class TexFX:
                 im = im.rotate(int(p["rot"]) // 10 * 10, expand=True, resample=Image.BILINEAR)
                 if len(self._cache) > 6000:
                     self._cache.clear()
-                self._cache[key] = im
+                if im.width * im.height <= 700 * 700:             # les très grandes ne sont pas gardées (mémoire)
+                    self._cache[key] = im
             layer.alpha_composite(im, (int(p["x"] - im.width / 2), int(p["y"] - im.height / 2)))
 
 

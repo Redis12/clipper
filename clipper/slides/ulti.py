@@ -99,21 +99,44 @@ STYLE_ORBS = {"purple": [((60, 130, 255), -1), ((255, 50, 60), 1)]}       # Holl
 
 def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70, 255), style: str | None = None,
              subtitle: str = "SECRET TECHNIQUE", W: int = 1080, H: int = 1920, fps: int = 30, seconds: float = 4.2,
-             seed: int = 7, clip: str | Path | None = None) -> Path:
+             seed: int = 7, clip: str | Path | None = None, clip_crop=None, clip_reverse: bool = False,
+             clip_fit: str = "fill", energy=None) -> Path:
     """Vidéo de l'ulti seul (pour juger le rendu sans lancer de combat). Renvoie le .mp4.
     `clip` = vidéo du perso animé par une IA (image vers vidéo) : remplace l'animation par déformation, tout le
     reste (bandes, panneau, textes, énergie, impact frames, flashs) ne change pas."""
     image = Path(image)
     rig = load_rig(image)
     pup = Puppet(image, W, H, rig)
+    if energy:                                                   # point où se forme l'énergie (fractions du cadre)
+        rig = dict(rig, energy=list(energy))
     clip_frames = []
     if clip:
+        # clip_crop (fractions x0, y0, x1, y1) retire un filigrane ; clip_reverse : lu à l'envers (l'IA fait
+        # souvent le geste « à rebours ») ; clip_fit « width » : clip paysage gardé en entier, en bande au milieu
         for fr in fxengine.flipbook(Path(clip), max_frames=200):
-            if fr.width / fr.height > W / H:                    # recadré en 9:16 comme l'image
-                cw = int(fr.height * W / H)
-                x0 = int(min(max(0, rig["crop_cx"] * fr.width - cw / 2), fr.width - cw))
-                fr = fr.crop((x0, 0, x0 + cw, fr.height))
-            clip_frames.append(fr.convert("RGBA").resize((W, H), Image.LANCZOS))
+            if clip_crop:
+                x0, y0, x1, y1 = clip_crop
+                fr = fr.crop((int(x0 * fr.width), int(y0 * fr.height), int(x1 * fr.width), int(y1 * fr.height)))
+            if clip_fit == "width":
+                h = int(fr.height * W / fr.width)
+                band = fr.convert("RGBA").resize((W, h), Image.LANCZOS)
+                m = Image.new("L", (W, h), 255)                  # bords haut/bas fondus dans le panneau
+                md = ImageDraw.Draw(m)
+                fade = max(1, h // 8)
+                for i in range(fade):
+                    md.line((0, i, W, i), fill=int(255 * i / fade))
+                    md.line((0, h - 1 - i, W, h - 1 - i), fill=int(255 * i / fade))
+                band.putalpha(m)
+                fr = (band, int(H * 0.40 - h / 2))               # collé à la volée (mémoire)
+            else:
+                if fr.width / fr.height > W / H:                # recadré en 9:16 comme l'image
+                    cw = int(fr.height * W / H)
+                    x0 = int(min(max(0, rig["crop_cx"] * fr.width - cw / 2), fr.width - cw))
+                    fr = fr.crop((x0, 0, x0 + cw, fr.height))
+                fr = fr.convert("RGBA").resize((W, H), Image.LANCZOS)
+            clip_frames.append(fr)
+        if clip_reverse:
+            clip_frames.reverse()
     k = W / 1080
     col = tuple(int(c) for c in color[:3])
     light = tuple(min(255, int(c * 0.5 + 128)) for c in col)
@@ -158,6 +181,10 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
                 s = _back_out((t - 0.05) / 0.35)                 # le perso arrive de la droite (gacha)
                 if clip_frames:                                  # clip IA : 24 i/s, on garde la dernière image
                     ch = clip_frames[min(len(clip_frames) - 1, int(t * 24))]
+                    if isinstance(ch, tuple):
+                        band, by = ch
+                        ch = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+                        ch.alpha_composite(band, (0, by))
                 else:
                     ch = pup.frame(t, wind=1.0 + (1.5 if t > t_orb + 0.4 else 0))
                 z = 1.0 + 0.05 * t + (0.12 * ((t - t_orb - .4) / 1.0) ** 2 if t > t_orb + .4 else 0)
