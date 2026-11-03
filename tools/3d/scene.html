@@ -1,0 +1,71 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#000;overflow:hidden}
+#c{position:absolute;left:0;top:0;width:1080px;height:1920px;image-rendering:pixelated}
+#lab{position:absolute;top:250px;width:1080px;text-align:center;font:900 64px Arial;color:#fff;
+ text-shadow:0 0 6px #000,0 0 12px #000}</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body><canvas id="c"></canvas><div id="lab">PS2</div>
+<script type="module">
+import * as THREE from 'three';
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:false,preserveDrawingBuffer:true});
+renderer.setPixelRatio(1);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x8fc6ff);
+scene.fog=new THREE.Fog(0x9fd0ff,30,90);
+const cam=new THREE.PerspectiveCamera(38,1080/1920,0.1,200);
+cam.position.set(0,2.0,8.5);cam.lookAt(0,1.6,0);
+scene.add(new THREE.HemisphereLight(0xdff1ff,0x3c6b2a,1.2));
+const sun=new THREE.DirectionalLight(0xffffff,1.6);sun.position.set(4,8,5);scene.add(sun);
+// sol, rochers, arbres
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshLambertMaterial({color:0x3f8f3a}));
+ground.rotation.x=-Math.PI/2;scene.add(ground);
+const rockM=new THREE.MeshLambertMaterial({color:0xc29a6a});
+for(const [x,z,s] of [[-5,-34,3.0],[-1.5,-36,3.8],[3.5,-33,2.6]]){const r=new THREE.Mesh(new THREE.DodecahedronGeometry(s,0),rockM);r.position.set(x,s*0.7,z);scene.add(r);}
+const treeM=new THREE.MeshLambertMaterial({color:0x1f4d2c});
+for(let i=0;i<40;i++){const t=new THREE.Mesh(new THREE.ConeGeometry(1.4,6,6),treeM);t.position.set(-30+i*1.6,3,-44-(i%3)*2);scene.add(t);}
+// combattant original (pas un perso existant) : tenue rouge, ceinture noire, cheveux blancs
+const fighter=new THREE.Group();scene.add(fighter);
+const toon=(c)=>new THREE.MeshToonMaterial({color:c});
+const add=(g,m,x,y,z,sx=1,sy=1,sz=1)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);fighter.add(o);return o;};
+const skin=toon(0xf2c29b),gi=toon(0xd8342c),belt=toon(0x111111),hair=toon(0xf2f2f2),boot=toon(0x2b2b2b);
+add(new THREE.CylinderGeometry(0.5,0.42,1.0,10),gi,0,1.55,0);          // torse
+add(new THREE.CylinderGeometry(0.44,0.44,0.14,10),belt,0,1.05,0);     // ceinture
+const legL=add(new THREE.CylinderGeometry(0.2,0.16,0.95,8),gi,-0.22,0.52,0);
+const legR=add(new THREE.CylinderGeometry(0.2,0.16,0.95,8),gi,0.22,0.52,0);
+add(new THREE.BoxGeometry(0.26,0.18,0.42),boot,-0.24,0.06,0.06);add(new THREE.BoxGeometry(0.26,0.18,0.42),boot,0.24,0.06,0.06);
+const armL=add(new THREE.CylinderGeometry(0.13,0.11,0.85,8),skin,-0.66,1.6,0);armL.rotation.z=-0.6;
+const armR=add(new THREE.CylinderGeometry(0.13,0.11,0.85,8),skin,0.66,1.6,0);armR.rotation.z=0.6;
+add(new THREE.SphereGeometry(0.36,14,12),skin,0,2.32,0.02);           // tête
+for(let i=0;i<7;i++){const s=add(new THREE.ConeGeometry(0.14,0.6,6),hair,(i-3)*0.11,2.66,-0.05);s.rotation.z=(i-3)*0.28;s.rotation.x=-0.3;}
+// aura (particules additives), poussière, cailloux
+const auraTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+ const r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.4,'rgba(255,230,90,.8)');r.addColorStop(1,'rgba(255,200,0,0)');g.fillStyle=r;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);})();
+const dustTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+ const r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(220,210,190,.9)');r.addColorStop(1,'rgba(220,210,190,0)');g.fillStyle=r;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);})();
+const N=260,aura=[];const am=new THREE.SpriteMaterial({map:auraTex,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true});
+for(let i=0;i<N;i++){const s=new THREE.Sprite(am.clone());s.userData={ph:Math.random(),a:Math.random()*6.28,r:0.3+Math.random()*0.7};scene.add(s);aura.push(s);}
+const dust=[];for(let i=0;i<70;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dustTex,transparent:true,depthWrite:false}));s.userData={a:Math.random()*6.28,ph:Math.random()};scene.add(s);dust.push(s);}
+const rocks=[];for(let i=0;i<14;i++){const r=new THREE.Mesh(new THREE.DodecahedronGeometry(0.08+Math.random()*0.1,0),rockM);r.userData={a:Math.random()*6.28,d:1+Math.random()*1.5,ph:Math.random()};scene.add(r);rocks.push(r);}
+// rendu : t = temps dans le palier (s), res = hauteur interne, boost = shaders
+window.renderFrame=(t,res,label,boost)=>{
+  document.getElementById('lab').textContent=label;
+  const h=res,w=Math.round(res*1080/1920);
+  renderer.setSize(w,h,false);canvas.style.width='1080px';canvas.style.height='1920px';
+  canvas.style.imageRendering=res<700?'pixelated':'auto';
+  const cyc=t%6.5,on=cyc>1.0&&cyc<5.3,pow=on?Math.min(1,(cyc-1)/0.4)*Math.min(1,(5.3-cyc)/0.4):0;
+  const crouch=on?0.12:0;fighter.position.y=-crouch;armL.rotation.z=-0.6-(on?0.5:0);armR.rotation.z=0.6+(on?0.5:0);
+  fighter.position.x=on?Math.sin(t*60)*0.015:0;
+  aura.forEach((s,i)=>{const u=s.userData;const k=(u.ph+t*1.4)%1;const y=0.2+k*3.4;const rr=u.r*(1.25-k*0.6)*(1+0.3*boost);
+    s.position.set(Math.cos(u.a+t*2)*rr,y,Math.sin(u.a+t*2)*rr*0.5+0.3);s.scale.setScalar((0.42+0.25*boost)*(1-k*0.5));
+    s.material.opacity=pow*(0.22+0.12*boost)*(1-k);});
+  dust.forEach(s=>{const u=s.userData;const k=(u.ph+t*0.5)%1;const d=0.8+k*4;s.position.set(Math.cos(u.a)*d,0.25+k*0.3,Math.sin(u.a)*d*0.6);
+    s.scale.setScalar(0.5+k*1.4);s.material.opacity=pow*0.45*(1-k);});
+  rocks.forEach(r=>{const u=r.userData;const k=(u.ph+t*0.7)%1;r.position.set(Math.cos(u.a)*u.d,k*4,Math.sin(u.a)*u.d*0.6);r.rotation.set(t*3,t*2,0);r.visible=pow>0.2;});
+  renderer.toneMappingExposure=1;
+  renderer.render(scene,cam);
+  return true;
+};
+window.ready=true;
+</script></body></html>

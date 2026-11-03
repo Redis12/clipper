@@ -12,3 +12,4 @@ __pycache__/
 library/_videos pretes/
 library/_originals/
 *.lock
+node_modules/
