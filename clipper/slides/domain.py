@@ -953,6 +953,16 @@ def clip_for(name: str) -> Path | None:
     return None
 
 
+def ulti_for(name: str, move: str | None) -> Path | None:
+    """Cinématique d'ulti déjà rendue (ulti.py, ex. GIF de l'attaque calé) : library/_domain/ulti/
+    « <Perso> <Attaque>.mp4 » sinon « <Perso>.mp4 ». Jouée plein écran, combat en pause, sans son."""
+    d = library.root() / "_domain" / "ulti"
+    for st in (f"{name} {move}" if move else None, name):
+        if st and (d / f"{st}.mp4").is_file():
+            return d / f"{st}.mp4"
+    return None
+
+
 def eye_band(name: str, image_path: str | None, W: int) -> Image.Image | None:
     """Bandeau des yeux pour le cut-in d'une attaque (fiche « eyes: Amaterasu ») : image « Eyes » de
     library/_domain/cine/<Perso>/ si elle existe, sinon découpé dans le visage du perso (bande des yeux)."""
@@ -1486,6 +1496,7 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
     finish_at = []                                               # (temps simu, durée) du FINISH
     intro_hit = []                                               # instant du choc de l'accroche (vidéo)
     cine_done = [False, False]
+    ulti_done = [False, False]
     eyes_at = []                                                 # instants des cut-in des yeux (Amaterasu…)
     eyes_count: dict = {}
     eye_moves = [{m.strip().lower() for m in (sheets[i].get("eyes") or "").split(",") if m.strip()} for i in (0, 1)]
@@ -1748,6 +1759,17 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
         pauses.append((war.t, out / fps))
         cine_at.append((war.t, out / fps))
         return out
+
+    def play_ulti(path: Path) -> int:
+        """Insère la vidéo d'ulti image par image (mise à W×H, même cadence), combat figé (pauses → l'audio suit)."""
+        r = subprocess.run([require_bin("ffmpeg"), "-loglevel", "error", "-i", str(path), "-vf",
+                            f"fps={fps},scale={W}:{H}:force_original_aspect_ratio=decrease,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2",
+                            "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True, timeout=300)
+        n = len(r.stdout) // (W * H * 3)
+        if n:
+            proc.stdin.write(r.stdout[:n * W * H * 3])
+            pauses.append((war.t, n / fps))
+        return n
 
     def eye_cut(team: int, base: Image.Image, move: str) -> int:
         """Cut-in des yeux façon Naruto Storm (avant Amaterasu, Tsukuyomi…) : le combat se fige, le bandeau des
@@ -2706,6 +2728,13 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                             leapers.append((t0 + 0.05 + (j * 4 + q) * 0.07, team, ox + b["x"], oy + b["y"],
                                             ox + (gx_ + 0.5) * cell, oy + (gy_ + 0.5) * cell, b["r"]))
                     cam.punch(war.t, W / 2, oy + gh / 2, 0.04, 0.4)
+                if slot == "secret" and not ulti_done[team]:     # ulti (GIF calé) : 1er secret, ou le coup de grâce
+                    when = str(sheets[team].get("ulti_at") or "first").strip().lower()
+                    up = ulti_for(names[team], fx.get("name"))
+                    if up is not None and (when != "finish" or war.final):
+                        ulti_done[team] = True
+                        frames += play_ulti(up)
+                        post_fx[0] = war.t
                 mvl = (fx.get("name") or "").lower()
                 if mvl in eye_moves[team] and eyes_count.get((team, mvl), 0) < 2 and not war.final:
                     eyes_count[(team, mvl)] = eyes_count.get((team, mvl), 0) + 1

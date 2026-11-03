@@ -65,6 +65,10 @@ def vision_box(path: Path) -> tuple[float, float, float, float] | None:
     if key in cache:
         v = cache[key]
         return tuple(v) if v else None
+    tail = "tail:" + "/".join(path.parts[-2:])               # calé à la main, valable sur tout PC / conteneur
+    if tail in cache:
+        v = cache[tail]
+        return tuple(v) if v else None
     try:
         from .. import llm
         from .library import cfg as lcfg

@@ -112,7 +112,8 @@ shots: Ki Blast Volley
 secret: Stardust Breaker | meteor
 passive: Saiyan Power | speed
 form: _fusion/Gogeta
-aura: #38bdf8""",
+aura: #fb923c
+ulti_at: finish""",
 "Vegito": """match: vegito, vegetto, vegeto
 color: #0ea5e9
 about: Fusion Goku + Vegeta par les Potaras. Final Kamehameha, Spirit Sword (épée d'énergie), Big Bang Attack, Scatter Finger Beam, Afterimage Strike. Vegito Blue contre Zamasu. Aussi arrogant que puissant.
