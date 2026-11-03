@@ -233,6 +233,7 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
 - **Planning décidé (03/11)** : jeudi 05/11 = Domain War Luffy vs Kaido + Sasuke Transformations ; vendredi 06/11 = Ichigo Transformations. Images à fournir : Kaido (formes), Sasuke (2–4 formes de plus), Ichigo (formes).
 - **Mis à jour (03/11, 23h53)** : jeudi 05/11 = 1:00 PM Domain War Luffy vs Kaido, 6:00 PM Power Up « Can Kid Sasuke beat Madara? » (chaîne `_fusion/Sasuke`, boss Madara), 10:00 PM Sasuke Transformations (programmé). On prépare mercredi.
 - **Easter egg Luffy vs Kaido (idée de l'utilisateur, 03/11)** : Zoro arrive perdu (comme le gag « Where am I? 🗺️ » de la Fusion, image `_fusion/Luffy/7 Zoro.jpeg`), mais il finit par venir aider Luffy : UNE attaque de Zoro (ex. Asura / King of Hell Three Sword Style) sur Kaido. Et 2 ultis dans le combat (Luffy Gear 5 + Kaido) — à confirmer.
+  Scénario précisé : Luffy « meurt » (son icône tombe, grise, le terrain passe à Kaido), silence… puis les **tambours de la libération** (Drums of Liberation, son du Gear 5) → il ressuscite en Gear 5 (cinématique) et renverse le combat. Zoro perdu vient placer une attaque. Son des tambours : fourni par l'utilisateur (`library/_sounds/domain/Gear 5.mp3` ou `_sfx/One Piece SFX/`), sinon tambours taiko synthétisés.
 
 ## Monétisation YouTube — leçon de la chaîne AMV (02/11)
 - La chaîne AMV de l'utilisateur (Luffy vs Katakuri ~2 M vues) a été REFUSÉE au Programme Partenaire pour « réutilisation de
