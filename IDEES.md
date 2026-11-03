@@ -240,3 +240,7 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
   - éviter l'air « produit à la chaîne » (politique « contenu inauthentique / répétitif ») : plusieurs formats, scénario propre
     à chaque combat, identité forte (logo, intro VS, Like & Follow, DOMAIN WAR #N) ;
   - avant la demande : checklist (vidéos à risque, descriptions, sons officiels → Content ID).
+
+
+## Moteur 3D (03/11) — mis de côté
+- Idée « PS2 → 4K + shader boost » (short BT3 qui perce, charge de ki à chaque palier de résolution). Prototype three.js + Chromium dans `tools/3d/` (modèle GLB Goku fourni par l'utilisateur, poses par os). Rendu jugé « pas ouf » par l'utilisateur → abandonné pour l'instant. Alternative : qu'il enregistre lui-même BT3 dans un émulateur aux 6 résolutions, Claude fait le montage.

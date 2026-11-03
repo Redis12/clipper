@@ -1,0 +1,77 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#000;overflow:hidden}
+#c{position:absolute;left:0;top:0;width:1080px;height:1920px;image-rendering:pixelated}
+#lab{position:absolute;top:250px;width:1080px;text-align:center;font:900 64px Arial;color:#fff;
+ text-shadow:0 0 6px #000,0 0 12px #000}</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body><canvas id="c"></canvas><div id="lab">PS2</div>
+<script type="module">
+import * as THREE from 'three';
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:false,preserveDrawingBuffer:true});
+renderer.setPixelRatio(1);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x8fc6ff);
+scene.fog=new THREE.Fog(0x9fd0ff,30,90);
+const cam=new THREE.PerspectiveCamera(38,1080/1920,0.1,200);
+cam.position.set(0,2.0,8.5);cam.lookAt(0,1.6,0);
+scene.add(new THREE.HemisphereLight(0xdff1ff,0x3c6b2a,1.2));
+const sun=new THREE.DirectionalLight(0xffffff,1.6);sun.position.set(4,8,5);scene.add(sun);
+// sol, rochers, arbres
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshLambertMaterial({color:0x3f8f3a}));
+ground.rotation.x=-Math.PI/2;scene.add(ground);
+const rockM=new THREE.MeshLambertMaterial({color:0xc29a6a});
+for(const [x,z,s] of [[-5,-34,3.0],[-1.5,-36,3.8],[3.5,-33,2.6]]){const r=new THREE.Mesh(new THREE.DodecahedronGeometry(s,0),rockM);r.position.set(x,s*0.7,z);scene.add(r);}
+const treeM=new THREE.MeshLambertMaterial({color:0x1f4d2c});
+for(let i=0;i<40;i++){const t=new THREE.Mesh(new THREE.ConeGeometry(1.4,6,6),treeM);t.position.set(-30+i*1.6,3,-44-(i%3)*2);scene.add(t);}
+// perso 3D (GLB fourni par l'utilisateur) : chargé puis posé os par os
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const fighter=new THREE.Group();scene.add(fighter);
+const B={};let rest={};
+const gltf=await new GLTFLoader().loadAsync(new URLSearchParams(location.search).get('model')||'models/goku.glb');
+const model=gltf.scene;fighter.add(model);
+model.traverse(o=>{if(o.isBone){const k=o.name.replace(/_\d+$/,'');B[k]=o;rest[k]=o.quaternion.clone();}
+  if(o.isMesh){o.frustumCulled=false;const m=o.material;if(m&&m.map){o.material=new THREE.MeshLambertMaterial({map:m.map,transparent:m.transparent,alphaTest:m.alphaTest||0.0,side:m.side,emissive:0xffffff,emissiveMap:m.map,emissiveIntensity:0.6});}}});
+const box=new THREE.Box3().setFromObject(model);const hgt=box.max.y-box.min.y;
+const sc=2.6/hgt;model.scale.setScalar(sc);model.position.y=-box.min.y*sc;
+window.info={height:hgt,min:box.min.toArray(),max:box.max.toArray(),bones:Object.keys(B)};
+const armL=null,armR=null;
+const q=(k,e)=>rest[k].clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(...e)));
+window.pose=(pa,pb,w,shake)=>{for(const k in rest)B[k].quaternion.copy(rest[k]);
+  const keys=new Set([...Object.keys(pa),...Object.keys(pb)]);
+  for(const k of keys){if(!B[k])continue;const ea=pa[k]||[0,0,0],eb=pb[k]||[0,0,0];
+    const e=[0,1,2].map(i=>ea[i]+(eb[i]-ea[i])*w+(shake?(Math.random()-0.5)*shake:0));B[k].quaternion.copy(q(k,e));}};
+window.POSE={
+ idle:{"SHOULDER_L":[0,1.15,0],"SHOULDER_R":[0,-1.15,0],"ELBOW_L":[0.3,0,0],"ELBOW_R":[0.3,0,0],"THIGH_L":[0.2,0,0],"THIGH_R":[0.2,0,0],"CLANK_L":[-0.35,0,0],"CLANK_R":[-0.35,0,0],"F_FORE1_L":[0,0,0.6],"F_FORE1_R":[0,0,0.6],"F_FORE2_L":[0,0,0.6],"F_FORE2_R":[0,0,0.6],"F_FORE3_L":[0,0,0.6],"F_FORE3_R":[0,0,0.6],"F_MIDDLE1_L":[0,0,0.6],"F_MIDDLE1_R":[0,0,0.6],"F_MIDDLE2_L":[0,0,0.6],"F_MIDDLE2_R":[0,0,0.6],"F_MIDDLE3_L":[0,0,0.6],"F_MIDDLE3_R":[0,0,0.6],"F_MEDICINAL1_L":[0,0,0.6],"F_MEDICINAL1_R":[0,0,0.6],"F_MEDICINAL2_L":[0,0,0.6],"F_MEDICINAL2_R":[0,0,0.6],"F_MEDICINAL3_L":[0,0,0.6],"F_MEDICINAL3_R":[0,0,0.6],"F_LITTLE1_L":[0,0,0.6],"F_LITTLE1_R":[0,0,0.6],"F_LITTLE2_L":[0,0,0.6],"F_LITTLE2_R":[0,0,0.6],"F_LITTLE3_L":[0,0,0.6],"F_LITTLE3_R":[0,0,0.6]},
+ charge:{"SHOULDER_L":[0,0.95,0],"SHOULDER_R":[0,-0.95,0],"ELBOW_L":[0.6,0,0],"ELBOW_R":[0.6,0,0],"THIGH_L":[0.5,0,0],"THIGH_R":[0.5,0,0],"CLANK_L":[-0.9,0,0],"CLANK_R":[-0.9,0,0],"SPINE1":[0.2,0,0],"NECK":[0.15,0,0],"F_FORE1_L":[0,0,1.3],"F_FORE1_R":[0,0,1.3],"F_FORE2_L":[0,0,1.3],"F_FORE2_R":[0,0,1.3],"F_FORE3_L":[0,0,1.3],"F_FORE3_R":[0,0,1.3],"F_MIDDLE1_L":[0,0,1.3],"F_MIDDLE1_R":[0,0,1.3],"F_MIDDLE2_L":[0,0,1.3],"F_MIDDLE2_R":[0,0,1.3],"F_MIDDLE3_L":[0,0,1.3],"F_MIDDLE3_R":[0,0,1.3],"F_MEDICINAL1_L":[0,0,1.3],"F_MEDICINAL1_R":[0,0,1.3],"F_MEDICINAL2_L":[0,0,1.3],"F_MEDICINAL2_R":[0,0,1.3],"F_MEDICINAL3_L":[0,0,1.3],"F_MEDICINAL3_R":[0,0,1.3],"F_LITTLE1_L":[0,0,1.3],"F_LITTLE1_R":[0,0,1.3],"F_LITTLE2_L":[0,0,1.3],"F_LITTLE2_R":[0,0,1.3],"F_LITTLE3_L":[0,0,1.3],"F_LITTLE3_R":[0,0,1.3]}};
+// aura (particules additives), poussière, cailloux
+const auraTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+ const r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.4,'rgba(255,230,90,.8)');r.addColorStop(1,'rgba(255,200,0,0)');g.fillStyle=r;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);})();
+const dustTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+ const r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(220,210,190,.9)');r.addColorStop(1,'rgba(220,210,190,0)');g.fillStyle=r;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);})();
+const N=260,aura=[];const am=new THREE.SpriteMaterial({map:auraTex,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true});
+for(let i=0;i<N;i++){const s=new THREE.Sprite(am.clone());s.userData={ph:Math.random(),a:Math.random()*6.28,r:0.3+Math.random()*0.7};scene.add(s);aura.push(s);}
+const dust=[];for(let i=0;i<70;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dustTex,transparent:true,depthWrite:false}));s.userData={a:Math.random()*6.28,ph:Math.random()};scene.add(s);dust.push(s);}
+const rocks=[];for(let i=0;i<14;i++){const r=new THREE.Mesh(new THREE.DodecahedronGeometry(0.08+Math.random()*0.1,0),rockM);r.userData={a:Math.random()*6.28,d:1+Math.random()*1.5,ph:Math.random()};scene.add(r);rocks.push(r);}
+// rendu : t = temps dans le palier (s), res = hauteur interne, boost = shaders
+window.renderFrame=(t,res,label,boost)=>{
+  document.getElementById('lab').textContent=label;
+  const h=res,w=Math.round(res*1080/1920);
+  renderer.setSize(w,h,false);canvas.style.width='1080px';canvas.style.height='1920px';
+  canvas.style.imageRendering=res<700?'pixelated':'auto';
+  const cyc=t%6.5,on=cyc>1.0&&cyc<5.3,pow=on?Math.min(1,(cyc-1)/0.4)*Math.min(1,(5.3-cyc)/0.4):0;
+  fighter.position.y=-0.12*pow;window.pose(window.POSE.idle,window.POSE.charge,pow,pow>0.5?0.03:0);
+  fighter.position.x=on?Math.sin(t*60)*0.015:0;
+  aura.forEach((s,i)=>{const u=s.userData;const k=(u.ph+t*1.4)%1;const y=0.2+k*3.4;const rr=u.r*(1.25-k*0.6)*(1+0.3*boost);
+    s.position.set(Math.cos(u.a+t*2)*rr,y,Math.sin(u.a+t*2)*rr*0.5+0.3);{const z=(0.42+0.25*boost)*(1-k*0.5);s.scale.set(z*0.7,z*1.6,1);}
+    s.material.opacity=pow*(0.22+0.12*boost)*(1-k);});
+  dust.forEach(s=>{const u=s.userData;const k=(u.ph+t*0.5)%1;const d=0.8+k*4;s.position.set(Math.cos(u.a)*d,0.25+k*0.3,Math.sin(u.a)*d*0.6);
+    s.scale.setScalar(0.5+k*1.4);s.material.opacity=pow*0.45*(1-k);});
+  rocks.forEach(r=>{const u=r.userData;const k=(u.ph+t*0.7)%1;r.position.set(Math.cos(u.a)*u.d,k*4,Math.sin(u.a)*u.d*0.6);r.rotation.set(t*3,t*2,0);r.visible=pow>0.2;});
+  renderer.toneMappingExposure=1;
+  renderer.render(scene,cam);
+  return true;
+};
+window.ready=true;
+</script></body></html>
