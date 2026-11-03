@@ -1,0 +1,9 @@
+name: Monkey D. Luffy
+match: luffy
+color: #ef4444
+about: Corps en caoutchouc, Gear 2/3/4, Haki des rois. Gear 5 : Nika, le corps devient un dessin animé géant.
+zone: Bajrang Gun | bomb
+front: Red Hawk
+shots: Gatling
+secret: Gear 5 | giant
+passive: Rubber Body | speed

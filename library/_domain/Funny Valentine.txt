@@ -1,0 +1,9 @@
+name: Funny Valentine
+match: valentine
+color: #60a5fa
+about: Président. Stand D4C : voyage entre les mondes parallèles. Love Train : le malheur est renvoyé ailleurs, rien ne peut le toucher.
+zone: Dirty Deeds Done Dirt Cheap | bomb
+front: Revolver
+shots: Flag Pole
+secret: D4C: Parallel Worlds | clones
+passive: Love Train | infinity

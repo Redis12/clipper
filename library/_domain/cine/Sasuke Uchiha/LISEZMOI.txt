@@ -1,0 +1,10 @@
+CINEMATIQUE POP-UP DE SASUKE
+Déposer ici (le nom doit CONTENIR le mot) :
+  Eyes.png      -> GROS PLAN DES YEUX (Mangekyo Sharingan / Rinnegan), bandeau horizontal
+                   = le pop-up qui s'affiche avant AMATERASU (fiche : eyes: Amaterasu)
+                   Sans cette image, Clipper découpe les yeux dans ses images à lui (moins beau).
+  Cutin.png     -> bandeau des yeux pour la transformation (Susanoo)
+  Chara 1.png   -> Sasuke en pied (fond transparent)
+  Chara 2.png   -> Susanoo Parfait (fond transparent)
+  Aura.png      -> flammes violettes, fond transparent
+  BG.png        -> fond (optionnel)

@@ -1,0 +1,9 @@
+name: Sosuke Aizen
+match: aizen
+color: #8b5cf6
+about: Kyoka Suigetsu (hypnose totale), Kido sans incantation (Hado 90 : Kurohitsugi), Hogyoku (régénération).
+zone: Kurohitsugi (Black Coffin) | bomb
+front: Hado 63: Raikoho
+shots: Hado 31
+secret: Kyoka Suigetsu | teleport
+passive: Hogyoku | regen

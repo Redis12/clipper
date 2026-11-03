@@ -1,0 +1,9 @@
+name: David Martinez
+match: david
+color: #facc15
+about: Edgerunner bourré d'implants. Sandevistan : ralentit le temps autour de lui. Finit dans un cyber-squelette militaire.
+zone: Cyberskeleton Slam | bomb
+front: Gorilla Arms
+shots: Smart Pistol
+secret: Sandevistan | timestop
+passive: Chrome | speed

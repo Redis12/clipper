@@ -1,0 +1,9 @@
+name: Uraume
+match: uraume
+color: #93c5fd
+about: Serviteur de Sukuna. Technique de glace : Frost Calm gèle tout, Ice Fall écrase.
+zone: Ice Fall | bomb
+front: Icicle Spear
+shots: Icicles
+secret: Frost Calm | timestop
+passive: Ice Body | none

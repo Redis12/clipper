@@ -1,0 +1,9 @@
+name: Yuta Okkotsu
+match: yuta, okkotsu
+color: #e879f9
+about: Énergie occulte immense, copie les techniques, Rika. Domain : Authentic Mutual Love.
+zone: Authentic Mutual Love | domain
+front: Pure Love Cannon
+shots: Cursed Speech
+secret: Full Manifestation: Rika | summon
+passive: Reverse Cursed Technique | regen

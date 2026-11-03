@@ -1,0 +1,9 @@
+name: Maki Zenin
+match: maki
+color: #15803d
+about: Restriction céleste totale : zéro énergie occulte, force et vitesse surhumaines. Massacre du clan Zenin avec le Split Soul Katana.
+zone: Zenin Clan Massacre | bomb
+front: Split Soul Katana
+shots: Cursed Tools
+secret: Full Heavenly Restriction | teleport
+passive: Heavenly Restriction | speed

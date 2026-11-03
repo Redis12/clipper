@@ -1,0 +1,9 @@
+name: Light Yagami
+match: light, yagami, kira
+color: #b91c1c
+about: Kira. Le Death Note tue toute personne dont il écrit le nom. Tout se passe comme prévu.
+zone: Kira's Judgment | bomb
+front: Death Note
+shots: Ryuk's Apples
+secret: Just As Planned | timestop
+passive: Genius Plan | none

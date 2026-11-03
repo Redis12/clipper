@@ -1,0 +1,9 @@
+name: Toji Fushiguro
+match: toji
+color: #64748b
+about: Restriction céleste : zéro énergie occulte, corps et vitesse surhumains. Sa Lance Céleste Inversée annule les techniques (il a percé l'Infini de Gojo).
+zone: Playful Cloud | bomb
+front: Split Soul Katana
+shots: Chain of a Thousand Miles
+secret: Inverted Spear of Heaven | teleport | breaks: Infinity
+passive: Heavenly Restriction | speed

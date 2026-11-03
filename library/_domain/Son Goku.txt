@@ -1,0 +1,11 @@
+name: Son Goku
+match: goku, kakarot
+color: #f59e0b
+about: Saiyan, Kamehameha, Genkidama (Spirit Bomb), Instant Transmission. Ultra Instinct : le corps esquive et frappe tout seul.
+zone: Spirit Bomb | bomb
+front: Kamehameha
+shots: Ki Blasts
+secret: Ultra Instinct | teleport
+passive: Saiyan Power | speed
+form: _fusion/Goku
+aura: #dbe7ff

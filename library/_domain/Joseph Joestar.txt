@@ -1,0 +1,9 @@
+name: Joseph Joestar
+match: joseph
+color: #059669
+about: Hamon, clackers, Hermit Purple. « Your next line is… ! » : il prévoit tout ce que fait l'adversaire.
+zone: Clacker Volley | bomb
+front: Hamon Overdrive
+shots: Hermit Purple
+secret: Your Next Line Is…! | teleport
+passive: Hamon Breathing | regen

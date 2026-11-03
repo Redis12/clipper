@@ -1,0 +1,9 @@
+name: Pain
+match: pain, nagato
+color: #f97316
+about: Rinnegan, six chemins de Pain. Shinra Tensei repousse tout, Chibaku Tensei crée une sphère géante qui aspire tout.
+zone: Shinra Tensei | bomb
+front: Bansho Ten'in
+shots: Chakra Rods
+secret: Chibaku Tensei | meteor
+passive: Six Paths | none

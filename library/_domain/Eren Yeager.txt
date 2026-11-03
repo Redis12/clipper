@@ -1,0 +1,9 @@
+name: Eren Yeager
+match: eren
+color: #a16207
+about: Titan Assaillant, durcissement, Titan Originel : le Grand Terrassement (Rumbling).
+zone: The Rumbling | bomb
+front: Attack Titan Punch
+shots: Hardening Spikes
+secret: Founding Titan | giant
+passive: Titan Regeneration | regen

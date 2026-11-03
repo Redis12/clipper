@@ -1,0 +1,9 @@
+name: Itachi Uchiha
+match: itachi
+color: #dc2626
+about: Mangekyô Sharingan : Tsukuyomi (illusion où le temps s'arrête), Amaterasu, Susanoo.
+zone: Susanoo | bomb
+front: Amaterasu
+shots: Fireball Jutsu
+secret: Tsukuyomi | timestop
+passive: Sharingan | speed

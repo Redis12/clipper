@@ -1,0 +1,9 @@
+name: Saitama
+match: saitama
+color: #facc15
+about: Bat tout le monde d'un coup de poing. Série sérieuse : Serious Punch, Serious Sideways Jumps (crée des images rémanentes).
+zone: Consecutive Normal Punches | bomb
+front: Normal Punch
+shots: Serious Sneeze
+secret: Serious Punch | mega_beam
+passive: Limiter Removed | regen

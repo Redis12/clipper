@@ -1,0 +1,9 @@
+name: Mahito
+match: mahito
+color: #94a3b8
+about: Fléau qui remodèle les âmes (Idle Transfiguration). Domain : Self-Embodiment of Perfection. Forme ultime : Instant Spirit Body of Distorted Killing.
+zone: Self-Embodiment of Perfection | domain
+front: Idle Transfiguration
+shots: Polymorphic Soul Isomer
+secret: Instant Spirit Body of Distorted Killing | giant
+passive: Soul Reshaping | regen

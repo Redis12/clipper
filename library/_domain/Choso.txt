@@ -1,0 +1,9 @@
+name: Choso
+match: choso
+color: #be123c
+about: Manipulation du sang : Piercing Blood (rayon de sang ultra rapide), Supernova (explosion de sang), Flowing Red Scale (boost).
+zone: Supernova | bomb
+front: Piercing Blood
+shots: Slicing Exorcism
+secret: Flowing Red Scale | giant
+passive: Cursed Womb Body | regen

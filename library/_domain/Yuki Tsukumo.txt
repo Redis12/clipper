@@ -1,0 +1,9 @@
+name: Yuki Tsukumo
+match: yuki, tsukumo
+color: #facc15
+about: Star Rage : donne une masse virtuelle à elle et à son shikigami Garuda. Peut créer un trou noir.
+zone: Star Rage: Garuda | bomb
+front: Bom Ba Ye
+shots: Garuda
+secret: Black Hole | meteor
+passive: Virtual Mass | none

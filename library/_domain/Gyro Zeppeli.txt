@@ -1,0 +1,9 @@
+name: Gyro Zeppeli
+match: gyro
+color: #84cc16
+about: Technique de la rotation (Spin) avec ses Steel Balls. Ball Breaker : la rotation parfaite du cheval.
+zone: Steel Ball Barrage | bomb
+front: Golden Spin
+shots: Steel Balls
+secret: Ball Breaker | mega_beam
+passive: Spin | speed

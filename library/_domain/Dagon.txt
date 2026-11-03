@@ -1,0 +1,9 @@
+name: Dagon
+match: dagon
+color: #0ea5e9
+about: Fléau de l'eau. Domain : Horizon of the Captivating Skandha, des bancs infinis de poissons-shikigamis (Death Swarm).
+zone: Horizon of the Captivating Skandha | domain
+front: Water Torrent
+shots: Shikigami Fish
+secret: Death Swarm | clones
+passive: Cursed Water | none

@@ -1,0 +1,9 @@
+name: Jotaro Kujo
+match: jotaro
+color: #4f46e5
+about: Stand Star Platinum : force et précision énormes, ORA ORA ORA, Star Finger. Star Platinum: The World arrête le temps.
+zone: ORA ORA ORA | bomb
+front: Star Finger
+shots: Ball Bearings
+secret: Star Platinum: The World | timestop
+passive: Star Platinum | none

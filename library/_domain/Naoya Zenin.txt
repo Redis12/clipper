@@ -1,0 +1,9 @@
+name: Naoya Zenin
+match: naoya
+color: #a3a3a3
+about: Projection Sorcery : découpe ses mouvements en 24 images par seconde ; celui qui ne suit pas la règle est figé dans une image.
+zone: Time Cell Moon Palace | domain
+front: Projection Strike
+shots: Supersonic Jabs
+secret: Projection Sorcery | timestop
+passive: 24 FPS | speed

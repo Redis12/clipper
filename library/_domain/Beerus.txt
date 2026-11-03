@@ -1,0 +1,9 @@
+name: Beerus
+match: beerus
+color: #a855f7
+about: Dieu de la destruction. Hakai efface ce qu'il touche, Sphere of Destruction.
+zone: Sphere of Destruction | bomb
+front: Destruction Beam
+shots: Ki Blasts
+secret: Hakai | teleport
+passive: God of Destruction | speed

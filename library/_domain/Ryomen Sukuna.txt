@@ -1,0 +1,9 @@
+name: Ryomen Sukuna
+match: sukuna
+color: #e11d48
+about: Roi des fléaux. Shrine : Dismantle (entailles à distance) et Cleave (coupe adaptée à la cible), Fuga / Divine Flame (« Open »). Domain sans barrière : Malevolent Shrine, qui tranche tout dans un immense rayon. Utilise les Dix Ombres de Megumi : invoque Mahoraga, qui s'adapte à l'Infini de Gojo ; en tire le World Cutting Slash qui coupe l'espace. Reverse Cursed Technique (se soigne).
+zone: Malevolent Shrine | shrine
+front: Fuga (Divine Flame)
+shots: Dismantle
+secret: Summon Mahoraga | summon | breaks: Infinity
+passive: Reverse Cursed Technique | regen

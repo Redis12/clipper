@@ -1,0 +1,9 @@
+name: Levi Ackerman
+match: levi
+color: #475569
+about: Le soldat le plus fort de l'humanité, équipement tridimensionnel, lances foudroyantes, réveil Ackerman.
+zone: Spinning Slash | bomb
+front: ODM Dash
+shots: Thunder Spears
+secret: Ackerman Awakening | teleport
+passive: Ackerman | speed

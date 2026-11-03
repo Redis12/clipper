@@ -1,0 +1,9 @@
+name: Madara Uchiha
+match: madara
+color: #b91c1c
+about: Rinnegan, Susanoo parfait, Tengai Shinsei (fait tomber des météores), Tsukuyomi infini.
+zone: Tengai Shinsei | bomb
+front: Susanoo Slash
+shots: Great Fire Annihilation
+secret: Infinite Tsukuyomi | timestop
+passive: Rinnegan | regen

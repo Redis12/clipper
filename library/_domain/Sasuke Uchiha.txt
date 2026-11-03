@@ -1,0 +1,9 @@
+name: Sasuke Uchiha
+match: sasuke
+color: #7c3aed
+about: Sharingan / Rinnegan, Chidori, Kirin, Amaterasu, Susanoo.
+zone: Kirin | bomb
+front: Chidori
+shots: Amaterasu
+secret: Perfect Susanoo | giant
+passive: Sharingan | speed

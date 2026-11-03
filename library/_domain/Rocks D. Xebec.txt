@@ -1,0 +1,9 @@
+name: Rocks D. Xebec
+match: xebec, rocks
+color: #374151
+about: Capitaine des Rocks Pirates, le pirate le plus craint avant Roger. Haki des rois.
+zone: Rocks Pirates Raid | bomb
+front: Haki Strike
+shots: Cannon Fire
+secret: Conqueror's Haki | timestop
+passive: Captain of the Rocks | none

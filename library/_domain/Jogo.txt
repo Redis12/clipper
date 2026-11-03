@@ -1,0 +1,9 @@
+name: Jogo
+match: jogo
+color: #ea580c
+about: Fléau du volcan. Domain : Coffin of the Iron Mountain. Technique ultime : Maximum: Meteor.
+zone: Coffin of the Iron Mountain | domain
+front: Flame Burst
+shots: Ember Insects
+secret: Maximum: Meteor | meteor
+passive: Volcano Body | none

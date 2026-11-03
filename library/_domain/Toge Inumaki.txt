@@ -1,0 +1,9 @@
+name: Toge Inumaki
+match: inumaki, toge
+color: #e5e7eb
+about: Parole maudite : ce qu'il dit arrive. « Don't move » fige l'ennemi, « Blast away » le projette.
+zone: Blast Away | bomb
+front: Get Crushed
+shots: Twist
+secret: Don't Move | timestop
+passive: Cursed Speech | none

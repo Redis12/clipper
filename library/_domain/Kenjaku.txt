@@ -1,0 +1,9 @@
+name: Kenjaku
+match: kenjaku
+color: #78716c
+about: Change de corps depuis 1000 ans. Manipulation des fléaux de Geto (Maximum: Uzumaki), antigravité. Domain : Womb Profusion.
+zone: Womb Profusion | domain
+front: Maximum: Uzumaki
+shots: Anti-Gravity System
+secret: Summon Cursed Spirits | clones
+passive: Body Swap | regen

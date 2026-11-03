@@ -1,0 +1,9 @@
+name: Kyojuro Rengoku
+match: rengoku
+color: #f97316
+about: Pilier de la flamme, Souffle de la flamme, Neuvième forme : Rengoku.
+zone: Ninth Form: Rengoku | bomb
+front: Flame Tiger
+shots: Rising Scorching Sun
+secret: Set Your Heart Ablaze | giant
+passive: Flame Breathing | none

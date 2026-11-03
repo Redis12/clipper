@@ -1,0 +1,9 @@
+name: Ichigo Kurosaki
+match: ichigo
+color: #f97316
+about: Shinigami, Bankai Tensa Zangetsu, Getsuga Tensho, masque de Hollow. Mugetsu : la technique finale.
+zone: Getsuga Jujisho | bomb
+front: Getsuga Tensho
+shots: Cero
+secret: Mugetsu | mega_beam
+passive: Bankai Speed | speed

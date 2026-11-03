@@ -1,0 +1,9 @@
+name: Stain
+match: stain
+color: #991b1b
+about: Le tueur de héros. Bloodcurdle : en léchant le sang de sa cible, il la paralyse.
+zone: Hero Killer | bomb
+front: Blade Rush
+shots: Throwing Knives
+secret: Bloodcurdle | timestop
+passive: Hero Killer's Will | none

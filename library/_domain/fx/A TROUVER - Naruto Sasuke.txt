@@ -1,0 +1,16 @@
+IMAGES D'ATTAQUES A DEPOSER ICI (library\_domain\fx\)
+Nom EXACT du fichier = nom de l'attaque. PNG fond transparent idéal (fond blanc OK, Clipper le détoure).
+Où chercher : Naruto Ultimate Ninja Blazing / Naruto Storm (effets, icônes de jutsu), comme pour DB Legends.
+
+NARUTO
+  Rasengan.png        -> boule bleue tourbillonnante (vue de face)
+  Rasenshuriken.png   -> Rasengan avec les 4 lames blanches
+  Kunai.png           -> un kunai (projectile, pointe vers la DROITE)
+
+SASUKE
+  Chidori.png         -> éclair bleu/blanc dans la main (rayon, tête vers la DROITE)
+  Kirin.png           -> dragon de foudre (bombe, vu de face)
+  Amaterasu.png       -> flammes noires
+
+Bonus : une animation au lieu d'une image fixe marche aussi :
+  Rasengan.gif  ou dossier Rasengan_frames\ (images numérotées)

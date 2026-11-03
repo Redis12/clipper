@@ -1,0 +1,9 @@
+name: Megumi Fushiguro
+match: megumi, fushiguro
+color: #6366f1
+about: Technique des Dix Ombres : chiens divins, Nue, Max Elephant… et Mahoraga, le shikigami le plus fort. Domain : Chimera Shadow Garden.
+zone: Chimera Shadow Garden | domain
+front: Divine Dogs
+shots: Nue
+secret: Summon Mahoraga | summon
+passive: Ten Shadows | none

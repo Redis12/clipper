@@ -1,0 +1,9 @@
+name: L Lawliet
+match: lawliet
+color: #e5e7eb
+about: Le plus grand détective du monde. Déductions, équipe d'enquête, beaucoup de sucre.
+zone: Investigation Team | bomb
+front: Deduction
+shots: Sugar Cubes
+secret: I'm L | teleport
+passive: Genius Detective | speed

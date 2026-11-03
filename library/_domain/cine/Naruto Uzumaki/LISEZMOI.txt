@@ -1,0 +1,8 @@
+CINEMATIQUE POP-UP DE NARUTO (quand il sort son secret / se transforme)
+Déposer ici (le nom doit CONTENIR le mot) :
+  Cutin.png     -> bandeau horizontal avec les yeux de Naruto (mode Kurama de préférence)
+  Chara 1.png   -> Naruto en pied, forme de base (fond transparent)
+  Chara 2.png   -> Naruto en pied, forme finale (Six Paths / Kurama) -> morph Chara 1 -> Chara 2
+  Aura.png      -> flammes orange (aura de Kurama), fond transparent
+  BG.png        -> fond (optionnel)
+Rien ici = cinématique avec les icônes (comme maintenant).

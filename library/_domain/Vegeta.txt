@@ -1,0 +1,11 @@
+name: Vegeta
+match: vegeta
+color: #2563eb
+about: Prince des Saiyans. Final Flash, Big Bang Attack, Galick Gun. Ultra Ego : plus il prend de coups, plus il devient fort.
+zone: Big Bang Attack | bomb
+front: Final Flash
+shots: Ki Barrage
+secret: Ultra Ego | giant
+passive: Saiyan Pride | regen
+form: _fusion/Vegeta
+aura: #a855f7

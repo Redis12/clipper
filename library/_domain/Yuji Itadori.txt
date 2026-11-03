@@ -1,0 +1,9 @@
+name: Yuji Itadori
+match: yuji, itadori
+color: #f97316
+about: Corps surhumain, Divergent Fist, enchaîne les Black Flash. Finit par maîtriser Shrine (Dismantle) et sa propre Domain Expansion.
+zone: Black Flash | bomb
+front: Divergent Fist
+shots: Dismantle
+secret: Domain Expansion | domain
+passive: Superhuman Body | speed

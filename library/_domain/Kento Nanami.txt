@@ -1,0 +1,9 @@
+name: Kento Nanami
+match: nanami
+color: #ca8a04
+about: Ratio 7:3 : coupe le point faible de n'importe quoi. Collapse détruit tout autour. Overtime : plus fort après ses heures de travail.
+zone: Collapse | bomb
+front: Ratio Technique 7:3
+shots: Blunt Sword Strikes
+secret: Overtime | giant
+passive: Ratio Technique | none

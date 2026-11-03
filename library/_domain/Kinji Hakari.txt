@@ -1,0 +1,9 @@
+name: Kinji Hakari
+match: hakari
+color: #16a34a
+about: Domain : Idle Death Gamble, une machine à sous. Au JACKPOT : énergie infinie, il devient quasi immortel 4 min 11 s.
+zone: Idle Death Gamble | domain
+front: Rough Energy
+shots: Shutter Doors
+secret: JACKPOT | giant
+passive: Rough Energy | regen

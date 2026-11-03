@@ -1,0 +1,9 @@
+name: Tanjiro Kamado
+match: tanjiro
+color: #14b8a6
+about: Souffle de l'eau, Hinokami Kagura (Danse du Dieu du Feu), Marque du pourfendeur.
+zone: Hinokami Kagura: Sun Halo Dragon | bomb
+front: Water Wheel
+shots: Water Surface Slash
+secret: Demon Slayer Mark | teleport
+passive: Total Concentration | speed

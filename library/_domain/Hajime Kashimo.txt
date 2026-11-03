@@ -1,0 +1,9 @@
+name: Hajime Kashimo
+match: kashimo
+color: #22d3ee
+about: Énergie occulte électrique. Technique ultime à usage unique : Mythical Beast Amber, son corps devient éclair.
+zone: Electric Discharge | bomb
+front: Lightning Strike
+shots: Bo Staff Sparks
+secret: Mythical Beast Amber | giant
+passive: Electric Charge | speed

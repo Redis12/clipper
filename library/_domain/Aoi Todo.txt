@@ -1,0 +1,9 @@
+name: Aoi Todo
+match: todo
+color: #a16207
+about: Boogie Woogie : un clap et il échange sa place avec quelqu'un. Corps de brute, enchaîne les Black Flash. « Brother ! »
+zone: Black Flash | bomb
+front: Brotherly Punch
+shots: Boogie Woogie Claps
+secret: Boogie Woogie | teleport
+passive: Best Friend Power | speed

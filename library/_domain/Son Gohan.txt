@@ -1,0 +1,9 @@
+name: Son Gohan
+match: gohan
+color: #a855f7
+about: Masenko, Special Beam Cannon, potentiel caché. Forme Beast.
+zone: Masenko | bomb
+front: Special Beam Cannon
+shots: Ki Blasts
+secret: Gohan Beast | giant
+passive: Hidden Potential | speed

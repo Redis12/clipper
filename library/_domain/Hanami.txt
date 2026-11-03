@@ -1,0 +1,9 @@
+name: Hanami
+match: hanami
+color: #65a30d
+about: Fléau de la nature. Graines maudites, racines, Ceremonial Sea of Light. Flower Field apaise ses ennemis et les empêche de bouger.
+zone: Cursed Buds | bomb
+front: Ceremonial Sea of Light
+shots: Wooden Balls
+secret: Flower Field | timestop
+passive: Plant Body | regen

@@ -1,0 +1,9 @@
+name: Dio Brando
+match: dio
+color: #eab308
+about: Vampire, Stand The World : ZA WARUDO arrête le temps, couteaux, ROAD ROLLER DA !
+zone: Road Roller Da! | bomb
+front: MUDA MUDA MUDA
+shots: Knives
+secret: ZA WARUDO | timestop
+passive: Vampire | regen

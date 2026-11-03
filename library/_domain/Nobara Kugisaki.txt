@@ -1,0 +1,9 @@
+name: Nobara Kugisaki
+match: nobara
+color: #f43f5e
+about: Technique de la poupée de paille : marteau, clous, Hairpin (les clous explosent), Resonance (frappe l'âme à distance).
+zone: Hairpin | bomb
+front: Nail Barrage
+shots: Nails
+secret: Resonance | teleport
+passive: Straw Doll | none

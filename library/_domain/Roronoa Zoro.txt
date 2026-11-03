@@ -1,0 +1,9 @@
+name: Roronoa Zoro
+match: zoro
+color: #22c55e
+about: Style à trois sabres, Shishi Sonson, Haki des rois. Asura : apparaît avec neuf sabres.
+zone: King of Hell: Three Sword Style | bomb
+front: Shishi Sonson
+shots: 36 Pound Cannon
+secret: Asura | clones
+passive: Haki | none

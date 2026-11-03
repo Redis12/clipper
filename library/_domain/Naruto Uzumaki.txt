@@ -1,0 +1,9 @@
+name: Naruto Uzumaki
+match: naruto
+color: #fb923c
+about: Rasengan, Rasenshuriken, multiclonage, chakra de Kurama, mode Ermite des Six Chemins.
+zone: Rasenshuriken | bomb
+front: Rasengan
+shots: Kunai
+secret: Multi Shadow Clone Jutsu | clones
+passive: Kurama Chakra | regen

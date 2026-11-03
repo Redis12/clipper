@@ -1,0 +1,9 @@
+name: Suguru Geto
+match: geto
+color: #4b5563
+about: Manipulation des fléaux : absorbe et invoque des milliers de fléaux. Maximum: Uzumaki les concentre en une seule attaque.
+zone: Maximum: Uzumaki | bomb
+front: Rainbow Dragon
+shots: Cursed Spirits
+secret: Summon Cursed Spirits | clones
+passive: Cursed Spirit Shield | none
