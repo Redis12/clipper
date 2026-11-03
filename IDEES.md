@@ -231,6 +231,7 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
 - **Résultat (03/11, dit par l'utilisateur)** : les 3 vidéos « Transformations » (Fusion Battle) sont celles qui ont le mieux marché sur YouTube → en faire une série prioritaire (Fusion Battle + Fusion Race).
 - **Tendances (03/11, dit par l'utilisateur)** : Dragon Ball (remake) et One Piece (collab Fortnite) sont en tendance → priorité à ces deux franchises.
 - **Planning décidé (03/11)** : jeudi 05/11 = Domain War Luffy vs Kaido + Sasuke Transformations ; vendredi 06/11 = Ichigo Transformations. Images à fournir : Kaido (formes), Sasuke (2–4 formes de plus), Ichigo (formes).
+- **Mis à jour (03/11, 23h53)** : jeudi 05/11 = 1:00 PM Domain War Luffy vs Kaido, 6:00 PM Power Up « Can Kid Sasuke beat Madara? » (chaîne `_fusion/Sasuke`, boss Madara), 10:00 PM Sasuke Transformations (programmé). On prépare mercredi.
 
 ## Monétisation YouTube — leçon de la chaîne AMV (02/11)
 - La chaîne AMV de l'utilisateur (Luffy vs Katakuri ~2 M vues) a été REFUSÉE au Programme Partenaire pour « réutilisation de
