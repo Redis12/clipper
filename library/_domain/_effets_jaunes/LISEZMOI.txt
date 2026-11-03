@@ -1,0 +1,3 @@
+Effets jaunes fournis par l'utilisateur (03/11).
+slash_*.png = traînée de la Spirit Sword (Vegito), burst_*.png = éclats au bout de la lame.
+comet.png, embers.png, arc_faint.png, aura_ssj.png = gardés pour plus tard.

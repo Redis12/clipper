@@ -266,6 +266,11 @@ class War:
         elif fam == "beam":
             ang = (0 if team == 0 else math.pi) + self.rnd.uniform(-0.5, 0.5)
             fx.update(ang=ang, length=math.hypot(self.Wd, self.Hd), half=1)
+        elif fam == "sword":                                    # Spirit Sword : la lame balaie de haut en bas
+            base = 0 if team == 0 else math.pi
+            sg = 1 if team == 0 else -1
+            fx.update(a0=base - sg * 1.35, a1=base + sg * 1.35, ang=base - sg * 1.35, length=c * 13 * pw, half=1,
+                      dur=0.65)
         elif fam == "mega_beam":
             fx.update(ang=0 if team == 0 else math.pi, x=0 if team == 0 else self.Wd, length=self.Wd, half=4,
                       dur=0.7)
@@ -324,6 +329,14 @@ class War:
                 for e in self.balls:
                     if e["team"] != team and (e["x"] - b["x"]) ** 2 + (e["y"] - b["y"]) ** 2 < R * R:
                         e["frozen_until"] = max(e["frozen_until"], self.t + 2.0)
+        elif fam == "sword":
+            b = fx["ball"]
+            e = a * a * (3 - 2 * a)                             # le geste accélère puis freine
+            fx["ang"] = fx["a0"] + (fx["a1"] - fx["a0"]) * e
+            fx["x"], fx["y"] = b["x"], b["y"]
+            L = fx["length"] * min(1.0, age / 0.18)
+            if age <= fx["dur"] + 0.05:
+                got = self.paint_band(team, b["x"], b["y"], fx["ang"], L, fx["half"])
         elif fam in ("beam", "mega_beam"):
             L = fx["length"] * a
             got = self.paint_band(team, fx["x"], fx["y"], fx["ang"], L, fx["half"])
@@ -588,7 +601,7 @@ class Director:
                 war.start_beam_clash(w)
                 for team in (0, 1):
                     fx = {"slot": "front", "fam": "beam_clash", "team": team, "t0": t, "dur": 3.6,
-                          "name": (war.sheets[team].get("front") or {}).get("name", "Beam"), "x": 0, "y": 0}
+                          "name": clash_move(war.sheets[team]), "x": 0, "y": 0}
                     self.events.append((t, team, "clash", fx))
             self.done.add("clash")
             self.next_t = self.final_from
@@ -614,7 +627,18 @@ class Director:
             war.passive_off[lose] = t + 99
             alive = war.mains(lose)
             loser_share = 1 - s if lead == 0 else s
-            if alive and (t >= self.next_ko or loser_share < (0.1, 0.22, 0.35)[len(alive) - 1]):
+            fin = getattr(self, "finisher", None)
+            if (len(alive) == 1 and fin is None and not self.draw
+                    and (war.sheets[lead].get("secret") or {}).get("fam") in ("meteor", "mega_beam")):
+                fx_ = self._fire(lead, "secret")                  # coup de grâce = l'ultime du gagnant
+                if fx_.get("fam") == "bomb":                      # (Stardust Breaker) droit sur le dernier perso
+                    fx_["tx"], fx_["ty"] = alive[0]["x"], alive[0]["y"]
+                self.finisher = fin = t + fx_.get("delay", 0) + 0.35
+                self.next_ko = fin
+                self.next_t = fin + 0.6
+            if fin is not None and t < fin and len(alive) == 1:
+                pass                                              # on attend que l'ultime touche
+            elif alive and (t >= self.next_ko or loser_share < (0.1, 0.22, 0.35)[len(alive) - 1]):
                 b = alive.pop(0)
                 b["dies"] = t
                 self.kos.append((t, lose, b["x"], b["y"]))
@@ -1061,10 +1085,43 @@ STYLES = [   # mot dans le nom de l'attaque → style d'effets (particules textu
     (r"rasengan|rasenshuriken|spiral|vortex|tornado", "spiral"),
     (r"amaterasu|black flame|blackflame|enton", "blackfire"),
     (r"fire|katon|flame|blaze|inferno|hinokami", "fire"),
+    (r"stardust breaker", "rainbow"),                          # Gogeta : sphère arc-en-ciel
+    (r"spirit sword|ki blade|energy sword", "sword"),          # Vegito : lame d'énergie jaune
+    (r"kamehameha|big bang", "kame"),                          # rayons bleus (Big Bang Attack de Vegeta : bleu-blanc)
+    (r"ki blast|scatter finger|finger beam|volley", "ki"),     # tirs de ki jaunes
 ]
 
 
-STYLE_COL = {"purple": (175, 70, 255), "red": (255, 45, 60), "blue": (45, 125, 255)}   # couleur imposée
+_YELLOW: dict = {}
+
+
+def yellow_fx(kind: str) -> list:
+    """Images d'effets jaunes de l'utilisateur (library/_domain/_effets_jaunes/<kind>_N.png), recadrées."""
+    if kind not in _YELLOW:
+        from . import library as _lib
+        d = _lib.root() / "_domain" / "_effets_jaunes"
+        out = []
+        for f in sorted(d.glob(f"{kind}_*.png")) if d.is_dir() else []:
+            try:
+                im = Image.open(f).convert("RGBA")
+                bb = im.getchannel("A").point(lambda v: 255 if v > 20 else 0).getbbox()
+                out.append(im.crop(bb) if bb else im)
+            except Exception:
+                pass
+        _YELLOW[kind] = out
+    return _YELLOW[kind]
+
+
+def clash_move(sheet: dict) -> str:
+    """Attaque utilisée dans le Beam Clash : le rayon de face, sinon (épée…) le méga-rayon secret."""
+    fr = sheet.get("front") or {}
+    if fr.get("fam") not in (None, "beam", "mega_beam") and (sheet.get("secret") or {}).get("fam") == "mega_beam":
+        return sheet["secret"]["name"]
+    return fr.get("name", "Beam")
+
+
+STYLE_COL = {"purple": (175, 70, 255), "red": (255, 45, 60), "blue": (45, 125, 255), "kame": (70, 170, 255),
+             "ki": (255, 210, 70), "sword": (255, 215, 70), "rainbow": (255, 150, 230)}   # couleur imposée
 
 
 def style_of(name: str | None) -> str | None:
@@ -1933,9 +1990,70 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                       alpha=0.95, vx=math.cos(an) * 60 * k, vy=math.sin(an) * 60 * k, spin=R_.uniform(-60, 60))
         tex.spawn("star_06", x, y, r * 1.5, 0.2, (255, 255, 255), size1=r * 3, hot=1.0)
 
+    def draw_sword(fx, age, fd, sprites):
+        """Spirit Sword : lame jaune qui sort de la main, s'élargit et balaie de haut en bas ; traînée = images
+        d'entailles jaunes de l'utilisateur (library/_domain/_effets_jaunes/), éclats au bout de la lame."""
+        dur = fx["dur"]
+        if age > dur + 0.35:
+            return
+        fade = max(0.0, 1 - max(0.0, age - dur) / 0.35)
+        x1, y1 = ox + fx["x"], oy + fx["y"]
+        L = fx["length"] * min(1.0, age / 0.18)
+        ang = fx["ang"]
+        gold, core = (255, 205, 50), (255, 250, 215)
+        # traînée : éventail derrière la lame (de l'angle de départ à l'angle actuel)
+        a0 = fx["a0"]
+        n = 14
+        for i in range(n):
+            q0, q1 = i / n, (i + 1) / n
+            t0_, t1_ = a0 + (ang - a0) * q0, a0 + (ang - a0) * q1
+            al = int(150 * fade * q1 ** 2)
+            fd.polygon([(x1, y1), (x1 + math.cos(t0_) * L, y1 + math.sin(t0_) * L),
+                        (x1 + math.cos(t1_) * L, y1 + math.sin(t1_) * L)], fill=gold + (al,))
+        # entailles jaunes le long de l'arc (vraies images)
+        sl = yellow_fx("slash")
+        if sl:
+            swept = ang - a0
+            for j, k_ in enumerate((0.6, 1.0)):
+                if abs(swept) < 0.2:
+                    break
+                spr_ = sl[(int(fx["t0"] * 7) + j) % len(sl)]
+                mid = a0 + swept * k_ * 0.85
+                r_ = L * (0.55 + 0.3 * j)
+                px_, py_ = x1 + math.cos(mid) * r_, y1 + math.sin(mid) * r_
+                sprites.append(("c", spr_, px_, py_, L * (0.75 + 0.15 * j), 0.95 * fade, mid + math.pi / 2))
+        # la lame : fine au départ, s'élargit, pointe au bout
+        w = cell * (0.5 + 2.1 * min(1.0, age / 0.3)) * (1 + 0.08 * math.sin(age * 50))
+        ca, sa = math.cos(ang), math.sin(ang)
+        nx_, ny_ = -sa, ca
+        tip = (x1 + ca * L, y1 + sa * L)
+        for ww, colr, al in ((w * 1.9, gold, 120), (w, gold, 235), (w * 0.42, core, 255)):
+            fd.polygon([(x1 + nx_ * ww / 2, y1 + ny_ * ww / 2), (x1 + ca * L * 0.86 + nx_ * ww / 2, y1 + sa * L * 0.86 + ny_ * ww / 2),
+                        tip, (x1 + ca * L * 0.86 - nx_ * ww / 2, y1 + sa * L * 0.86 - ny_ * ww / 2),
+                        (x1 - nx_ * ww / 2, y1 - ny_ * ww / 2)], fill=colr + (int(al * fade),))
+        bu = yellow_fx("burst")
+        if bu and age < dur:
+            sprites.append(("c", bu[int(age * 20) % len(bu)], tip[0], tip[1], cell * 4.5, 0.9 * fade, R_.uniform(0, 6.28)))
+        if age < dur:
+            tex.spawn("spark_03", tip[0], tip[1], cell * 2.2, 0.12, gold, rot=R_.uniform(0, 360), hot=1.0)
+            emit(fxengine.SPARK, tip[0], tip[1], 3, (255, 230, 140), speed=(300, 800), life=(0.1, 0.25))
+
     def vfx_style(fx, st, age, c):
         """Effets propres au style de l'attaque (Chidori = éclairs, Rasengan = spirale, Amaterasu = flammes noires…)."""
         fam = fx["fam"]
+        if st == "rainbow" and fam == "bomb":                        # Stardust Breaker : sphère arc-en-ciel
+            import colorsys
+            a_ = age - fx.get("delay", 0)
+            tx_, ty_ = ox + fx["tx"], oy + fx["ty"]
+            R0 = fx["radius"] * (0.35 + 0.65 * min(1.0, max(0.0, a_ + 0.6) / 0.9))
+            if a_ < fx["dur"] + 0.2:
+                for j in range(3):
+                    h_ = (age * 0.9 + j / 3) % 1
+                    rc = tuple(int(v * 255) for v in colorsys.hsv_to_rgb(h_, 0.55, 1.0))
+                    tex.spawn("light_03", tx_ + math.cos(age * 6 + j * 2.1) * R0 * 0.25,
+                              ty_ + math.sin(age * 6 + j * 2.1) * R0 * 0.25, R0 * 1.6, 0.07, rc, hot=0.7)
+                tex.spawn("twirl_02", tx_, ty_, R0 * 1.4, 0.07, (255, 235, 250), rot=(age * 400) % 360, hot=0.5)
+            return
         if fam in ("beam", "mega_beam") and age < 1.0:
             L = fx["length"] * min(1, age / fx["dur"])
             ca, sa = math.cos(fx["ang"]), math.sin(fx["ang"])
@@ -2573,7 +2691,7 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                     continue
                 if slot == "clash":                              # Beam Clash : une seule bannière, en haut
                     if team == 0:
-                        n1 = (sheets[1].get("front") or {}).get("name", "Beam")
+                        n1 = clash_move(sheets[1])
                         banners = [b for b in banners if b["t0"] < t0 - 0.01]
                         banners.append({"t0": t0, "team": -1, "who": "BEAM CLASH!", "move": f"{fx['name']} vs {n1}",
                                         "big": True, "cy": 0.16, "dur": 3.4})
@@ -2731,6 +2849,8 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                         continue
                     fd.line((x1, y1, x2, y2), fill=c + (int(220 * al),), width=int(w))
                     fd.line((x1, y1, x2, y2), fill=(255, 255, 255, int(255 * al)), width=int(w * 0.4))
+                elif fam == "sword":
+                    draw_sword(fx, age, fd, sprites)
                 elif fam == "shots":
                     b = fx["ball"]
                     for i, (tx, ty) in enumerate(fx["shots"]):
@@ -2784,9 +2904,9 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                 grow = min(1.0, age / 0.35)
                 xl, xr = ox + (xm - ox) * grow, ox + gw - (ox + gw - xm) * grow
                 for x1, x2, tm in ((ox, xl, 0), (xr, ox + gw, 1)):
-                    spr = atk_at((sheets[tm].get("front") or {}).get("name"), tm, "front", age)
+                    spr = atk_at(clash_move(sheets[tm]), tm, "front", age)
                     if spr is None:
-                        spr = pack_beam(tm, abs(x2 - x1), th * 3.2, age, (sheets[tm].get("front") or {}).get("name"))
+                        spr = pack_beam(tm, abs(x2 - x1), th * 3.2, age, clash_move(sheets[tm]))
                         if spr is not None:
                             pts_ = (x1, y, x2, y) if tm == 0 else (x2, y, x1, y)
                             sprites.append(("b", spr, *pts_, th * 3.2, 0.6))
