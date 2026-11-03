@@ -7,3 +7,9 @@ front: Rasengan
 shots: Kunai
 secret: Multi Shadow Clone Jutsu | clones
 passive: Kurama Chakra | regen
+form: _fusion/Naruto
+aura: #ffb02e
+voice: kage bunshin
+intro: yoooo
+gauge: chakra
+substitute: 2

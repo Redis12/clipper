@@ -7,3 +7,4 @@ front: Amaterasu
 shots: Fireball Jutsu
 secret: Tsukuyomi | timestop
 passive: Sharingan | speed
+eyes: Amaterasu, Tsukuyomi

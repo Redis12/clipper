@@ -1,0 +1,11 @@
+name: Gogeta
+match: gogeta
+color: #f97316
+about: Fusion Goku + Vegeta par la danse Metamoru (30 min). Big Bang Kamehameha, Ki Blast Volley, Instant Transmission. Ultime : Stardust Breaker, la sphère arc-en-ciel qui a désintégré Janemba. Gogeta Blue (Broly), SSJ4 (GT).
+zone: Ultimate Impact | bomb
+front: Big Bang Kamehameha
+shots: Ki Blast Volley
+secret: Stardust Breaker | meteor
+passive: Saiyan Power | speed
+form: _fusion/Gogeta
+aura: #38bdf8

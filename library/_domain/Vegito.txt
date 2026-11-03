@@ -1,0 +1,11 @@
+name: Vegito
+match: vegito, vegetto, vegeto
+color: #0ea5e9
+about: Fusion Goku + Vegeta par les Potaras. Final Kamehameha, Spirit Sword (épée d'énergie), Big Bang Attack, Scatter Finger Beam, Afterimage Strike. Vegito Blue contre Zamasu. Aussi arrogant que puissant.
+zone: Big Bang Attack | bomb
+front: Spirit Sword | sword
+shots: Scatter Finger Beam
+secret: Final Kamehameha | mega_beam
+passive: Afterimage Strike | speed
+form: _fusion/Vegeto
+aura: #60a5fa

@@ -7,3 +7,11 @@ front: Chidori
 shots: Amaterasu
 secret: Perfect Susanoo | giant
 passive: Sharingan | speed
+form: _fusion/Sasuke
+aura: #a78bfa
+voice: Narutooooo
+intro: yoooo
+gauge: chakra
+substitute: 2
+eyes: Amaterasu
+combo: zone

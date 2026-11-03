@@ -3,7 +3,8 @@ match: gojo, satoru
 color: #38bdf8
 about: Le plus fort des exorcistes. Limitless (Bleu = attraction, Rouge = répulsion, Violet = les deux combinés), Six Eyes, Infini qui arrête tout ce qui l'approche. Domain : Unlimited Void (submerge l'adversaire d'informations, il ne peut plus bouger).
 zone: Unlimited Void | domain
-front: Hollow Purple
+front: Lapse: Blue
 shots: Reversal: Red
 secret: 200% Hollow Purple | mega_beam
 passive: Infinity | infinity
+eyes: 200% Hollow Purple
