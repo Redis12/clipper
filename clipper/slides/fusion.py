@@ -143,7 +143,8 @@ def mix_events(events: list[tuple[float, int]], duration: float, tiers: int, sou
             continue
         seg = s[: n - i]
         audio[i:i + len(seg)] += seg
-    return np.tanh(audio * 1.1) / math.tanh(1.1)               # limiteur doux (plusieurs fusions en même temps)
+    out = np.tanh(audio * 1.1) / math.tanh(1.1)                # limiteur doux (plusieurs fusions en même temps)
+    return out * float(fcfg().get("volume", 0.13))             # niveau général (03/11 : « le son est bcp trop fort »)
 
 
 def preview(sound: str | None, tiers: int = 7, step: float | None = None, fat: float = 1.0) -> Path:
