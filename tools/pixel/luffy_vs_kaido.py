@@ -83,6 +83,14 @@ def load_sprites():
     S = {}
     S["l_idle"] = [scale(B[str(k)], 4) for k in (0, 1, 2, 3)]
     S["l_punch"], S["l_gat"], S["l_charge"], S["l_dead"] = (scale(B[str(k)], 4) for k in (79, 89, 94, 30))
+    S["l_run"] = [scale(B[str(k)], 4) for k in (4, 5, 6, 7, 8, 9, 10, 11)]
+    S["l_jump"] = [scale(B[str(k)], 4) for k in (17, 18, 19, 20)]
+    S["l_hurt"] = [scale(B[str(k)], 4) for k in (25, 26, 27)]
+    S["l_fly"] = [scale(B[str(k)], 4) for k in (28, 29)]
+    S["g_walk"] = [scale(G[f"w{k}"], 2.4) for k in range(10, 18)]
+    S["g_jump"] = [scale(G[f"j{k}"], 2.4) for k in range(20, 26)]
+    S["g_run"] = [scale(G[f"r{k}"], 2.4) for k in (26, 27, 28, 29)]
+    S["g_hurt"] = [scale(G[f"h{k}"], 2.4) for k in (228, 229, 231)]
     S["g_idle"] = [scale(G[k], 2.4) for k in ("idle1", "idle2", "idle3", "idle4", "idle5", "idle6")]
     S["g_punch"] = [scale(G[k], 2.4) for k in ("p79", "p80", "p87")]
     S["g_giant"] = scale(G["g157"], 2.4)
@@ -293,7 +301,61 @@ def build(F: Fight):
     return 49.0
 
 
+
+# ------------------------------------------------------------------ mouvements et coups encaissés
+
+def lerp(a, b, q):
+    return a + (b - a) * q
+
+
+def smooth(q):
+    q = max(0.0, min(1.0, q))
+    return q * q * (3 - 2 * q)
+
+
+# Luffy : (t0, t1, x0, x1, mode) — mode = run / jump / back / still
+L_MOVES = [(1.6, 1.9, 300, 370, "run"), (2.4, 2.7, 370, 340, "still"), (4.0, 4.5, 300, 430, "run"),
+           (5.9, 6.2, 430, 330, "jump"), (9.6, 10.3, 330, 470, "jump"), (10.3, 11.0, 470, 280, "jump"),
+           (11.0, 11.7, 280, 360, "run"), (13.5, 13.95, 360, 230, "fly"),
+           (31.6, 32.0, 260, 330, "run"), (33.0, 33.6, 330, 420, "jump"), (36.0, 36.4, 420, 330, "jump"),
+           (39.4, 40.2, 330, 380, "run"), (42.2, 42.9, 380, 300, "jump")]
+# coups reçus : (t, force)
+HITS_K = [(2.06, 1.0)] + [(4.62 + i * 0.08, 0.35) for i in range(16)] + [(8.85, 2.2), (31.7, 1.8), (35.3, 1.6),
+                                                                        (38.4, 2.0), (40.8, 1.4), (41.3, 1.6), (44.3, 3.0)]
+HITS_L = [(3.1, 1.0), (6.4, 1.0), (12.3, 1.3), (13.5, 1.8), (34.2, 0.8)]
+DMG_K = {2.06: "-5%", 8.85: "-9%", 31.7: "-14%", 35.3: "-10%", 38.4: "-12%", 40.8: "-8%", 41.3: "-10%", 44.3: "-45%"}
+DMG_L = {3.1: "-10%", 6.4: "-11%", 12.3: "-8%", 13.5: "-22%"}
+
+
+def luffy_pos(t):
+    """x du perso + mode de déplacement en cours."""
+    x, mode, q = 300, None, 0.0
+    for t0, t1, x0, x1, m in L_MOVES:
+        if t >= t1:
+            x = x1
+        elif t >= t0:
+            q = (t - t0) / (t1 - t0)
+            x, mode = lerp(x0, x1, smooth(q)), m
+            break
+        else:
+            break
+    if t >= 25.0 and t < 31.6:
+        x = 260
+    if 13.95 <= t < 31.6:
+        x = 230 if t < 25.0 else 260
+    return x, mode, q
+
+
+def recent(hits, t, win=0.45):
+    best = None
+    for th, f in hits:
+        if 0 <= t - th < win:
+            best = (t - th, f)
+    return best
+
+
 def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
+    global LX, KX
     S = F.S
     img = Image.new("RGBA", (W, H), (12, 10, 22, 255))
     energy = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -342,6 +404,9 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
         return finish(img, energy, 0, t)
 
     # ---------- arène
+    LX, mode, mq = luffy_pos(t)
+    hk = recent(HITS_K, t)
+    KX = 790 + (int(70 * hk[1] * (1 - hk[0] / 0.45)) if hk else 0) + math.sin(t * 0.9) * 25
     dark = 0.0
     if 14.6 <= t < 25.0:
         dark = min(0.78, (t - 14.6) / 1.2 * 0.78)
@@ -349,7 +414,8 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
     F.header(img)
     gear5 = t >= 31.0
     lpose, lx_off = None, 0
-    kpose, kx, ky = S["k_idle"][int(t * 8) % len(S["k_idle"])], KX, KY + math.sin(t * 3) * 14
+    kpose, kx, ky = S["k_idle"][int(t * 8) % len(S["k_idle"])], KX, KY + math.sin(t * 3) * 22
+    hide_luffy = False
     lab = None
 
     if t < 14.6:                                                     # ---- phase 1
@@ -370,7 +436,6 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
             if 0.4 < a:
                 paste_c(energy, F.expl[int(a * 24) % 10], LX, LY - 110, 0.8)
                 shake = 8
-                lpose = S["l_charge"]
             lab = ("KAIDO", "BORO BREATH", (200, 170, 255))
         # Jet Gatling (4,5 → 5,9)
         if 4.5 <= t < 5.9:
@@ -435,7 +500,6 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
             if a > 0.5:
                 paste_c(energy, F.expl[int(a * 24) % 10].resize((420, 420)), LX, LY - 110, 0.9)
                 shake = 14
-                lpose = S["l_charge"]
             lab = ("KAIDO", "BORO BREATH", (200, 170, 255))
         if 13.9 <= t:
             lpose = S["l_dead"]
@@ -461,7 +525,7 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
             if a > 6.5 and int(t * 10) % 2 == 0:
                 img.alpha_composite(Image.new("RGBA", (W, H), (255, 255, 255, 90)))
     else:                                                            # ---- phase 3 : Gear 5
-        lpose = S["g_idle"][int(t * 8) % 6]
+        lpose = None
         if t < 31.6:
             paste_c(energy, F.ring[min(9, int((t - 31.0) * 18))].resize((700, 700)), LX, LY - 120)
             F.label(img, "LUFFY", "GEAR 5", (255, 255, 255), big=True, age=t - 31.0)
@@ -512,26 +576,28 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
         if 40.4 <= t < 42.2:
             a = t - 40.4
             g = S["g_giant"]
-            x = LX + 40 + min(1.0, a / 0.4) * 260
-            paste_foot(img, g, x + 120, LY - 40)
+            rev = int(g.width * (0.25 + 0.75 * smooth(a / 0.35)))
+            img.alpha_composite(g.crop((0, 0, rev, g.height)), (int(LX - 70), int(LY - g.height + 10)))
+            hide_luffy = True
             if a > 0.4:
                 paste_c(energy, F.expl[int(a * 24) % 10].resize((380, 380)), KX - 60, KY)
                 shake = 10
             lab = ("LUFFY", "GOMU GOMU NO GIANT", (255, 255, 255))
-            lpose = None
         # Bajrang Gun (43,0 → 47,0) : coup de grâce
         if 43.0 <= t:
             a = t - 43.0
-            lpose = None
             F.label(img, "LUFFY", "BAJRANG GUN", (255, 255, 255), big=a < 1.4, age=a)
             fr = S["g_bajrang"][int(t * 8) % 2]
+            hide_luffy = a < 2.2
             if a < 1.3:
-                x = -fr.width / 2 + (fr.width / 2 + 80) * min(1.0, a / 1.2) ** 2
-                paste_c(img, fr, x + 200, KY - 20)
+                rev = int(fr.width * (0.18 + 0.82 * smooth(a / 1.2)))
+                img.alpha_composite(fr.crop((0, 0, rev, fr.height)), (int(LX - 110), int(KY - fr.height / 2 - 20)))
                 shake = int(6 + 10 * a)
             elif a < 3.0:
                 b = a - 1.3
-                paste_c(img, fr, fr.width / 2 + 280, KY - 20, max(0, 1 - b * 1.5))
+                f2 = fr.copy()
+                f2.putalpha(f2.getchannel("A").point(lambda v: int(v * max(0, 1 - b * 1.2))))
+                img.alpha_composite(f2, (int(LX - 110), int(KY - fr.height / 2 - 20)))
                 paste_c(energy, F.expl[min(9, int(b * 14))].resize((900, 900)), KX, KY)
                 paste_c(energy, F.bolt_red[int(b * 24) % 10].resize((700, 700)), KX, KY, max(0, 1 - b))
                 shake = int(36 * max(0, 1 - b / 1.0))
@@ -545,11 +611,41 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
             if a > 4.5:                                             # écran WINNER
                 return winner(F, img, t)
 
-    # dessin des persos
+    # dessin des persos : Kaido encaisse (flash blanc, recul, il se tord), Luffy bouge en permanence
     if kpose is not None:
-        paste_c(img, kpose, kx, ky)
-    if lpose is not None:
-        paste_foot(img, lpose, LX, LY + (60 if lpose is S["l_dead"] else 0))
+        if hk and hk[1] >= 1.0 and hk[0] < 0.32 and t < 44.0:
+            kpose = S["k_fly"][(2 + int(hk[0] * 20)) % len(S["k_fly"])]          # il se tord sous le coup
+        if hk and hk[0] < 0.09:
+            kpose = whiten(kpose)
+        paste_c(img, kpose, kx, ky + (12 * math.sin(hk[0] * 40) * (1 - hk[0] / 0.45) if hk else 0))
+    hl = recent(HITS_L, t, 0.5)
+    if lpose is None and not hide_luffy:
+        if 13.95 <= t < 25.0:
+            lpose = S["l_dead"]
+        elif hl and hl[0] < 0.5:
+            lpose = (S["g_hurt"] if gear5 else S["l_hurt"])[min(2, int(hl[0] * 6))]
+        elif mode == "run":
+            lpose = (S["g_run"] if gear5 else S["l_run"])[int(t * 16) % (4 if gear5 else 8)]
+        elif mode == "jump":
+            lpose = (S["g_jump"] if gear5 else S["l_jump"])[min(5 if gear5 else 3, int(mq * (6 if gear5 else 4)))]
+        elif mode == "fly":
+            lpose = S["l_fly"][int(t * 10) % 2]
+        else:
+            lpose = (S["g_idle"][int(t * 8) % 6] if gear5 else S["l_idle"][int(t * 8) % 4])
+    if lpose is not None and not hide_luffy:
+        jy = -math.sin(mq * math.pi) * 160 if mode == "jump" else 0
+        kx_ = -int(40 * hl[1] * (1 - hl[0] / 0.5)) if hl else 0
+        if hl and hl[0] < 0.09:
+            lpose = whiten(lpose)
+        paste_foot(img, lpose, LX + kx_, LY + jy + (60 if lpose is S["l_dead"] else 0))
+    for th, txt in list(DMG_K.items()) + list(DMG_L.items()):
+        a_ = t - th
+        if 0 <= a_ < 0.9:
+            onK = th in DMG_K
+            x_, y_ = (KX - 40, KY - 230) if onK else (LX, LY - 330)
+            ImageDraw.Draw(img).text((x_, y_ - a_ * 120), txt, font=render.font(int(70 * (1 + 0.3 * max(0, 1 - a_ / 0.15)))),
+                                     anchor="mm", fill=(255, 70, 70) if onK else (190, 150, 255), stroke_width=6,
+                                     stroke_fill=(0, 0, 0))
     if lab and not (t >= 43.0):
         F.label(img, *lab)
     return finish(img, energy, shake, t)
@@ -571,6 +667,12 @@ def winner(F, img, t):
     render.draw_rich(img, (W / 2, 1420), "Who should fight next? Comment 👇", render.font(46), (255, 255, 255),
                      anchor="ma", stroke_width=5, stroke_fill=(0, 0, 0))
     return img.convert("RGB")
+
+
+def whiten(im):
+    w = Image.new("RGBA", im.size, (255, 255, 255, 255))
+    w.putalpha(im.getchannel("A"))
+    return Image.blend(im, w, 0.75)
 
 
 def finish(img, energy, shake, t):
