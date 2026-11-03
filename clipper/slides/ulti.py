@@ -103,10 +103,18 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
              subtitle: str = "SECRET TECHNIQUE", W: int = 1080, H: int = 1920, fps: int = 30, seconds: float = 4.2,
              seed: int = 7, clip: str | Path | None = None, clip_crop=None, clip_reverse: bool = False,
              clip_fit: str = "fill", energy=None, sounds: str = "anime", franchise: str | None = None,
-             voice: str | Path | None = None) -> Path:
+             voice: str | Path | None = None, voice_at: float = 0.45, clip_fps: float | None = None,
+             clip_start: float = 0.0, clip_end: float | None = None, clip_hit: float | None = None,
+             clip_loop=None, clip_fx: bool = False, attack_sound: str | Path | None = None,
+             attack_at: float = 0.0) -> Path:
     """Vidéo de l'ulti seul (pour juger le rendu sans lancer de combat). Renvoie le .mp4.
     `clip` = vidéo du perso animé par une IA (image vers vidéo) : remplace l'animation par déformation, tout le
-    reste (bandes, panneau, textes, énergie, impact frames, flashs) ne change pas."""
+    reste (bandes, panneau, textes, énergie, impact frames, flashs) ne change pas.
+    Synchro avec un GIF d'attaque qui a déjà ses effets (`clip_fx=True`) : le clip est lu à `clip_fps` (défaut =
+    vitesse du GIF) à partir de `clip_start` s (1re image tenue avant), coupé à `clip_end` s du clip ; `clip_hit` = s
+    du clip où l'attaque touche (impact frames + flash) ; `clip_loop` = (i0, i1) images rejouées en aller-retour si
+    l'ulti dure plus que le clip ; nos orbes et l'écran « avalé » sont retirés. `attack_sound` = fichier posé à
+    `attack_at` s (négatif = on coupe le début), `voice_at` = départ de la réplique."""
     image = Path(image)
     rig = load_rig(image)
     pup = Puppet(image, W, H, rig)
@@ -140,6 +148,24 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
             clip_frames.append(fr)
         if clip_reverse:
             clip_frames.reverse()
+        try:                                                     # vitesse d'origine du GIF
+            d = Image.open(clip).info.get("duration") or 0
+            native_fps = 1000 / d if d else 24
+        except Exception:
+            native_fps = 24
+        clip_fps = clip_fps or native_fps
+        if clip_end is not None:
+            clip_frames = clip_frames[:max(1, int(clip_end * native_fps))]
+
+    def clip_at(t):
+        i = int(max(0.0, t - clip_start) * clip_fps)
+        n = len(clip_frames)
+        if i >= n and clip_loop:
+            a, b = clip_loop
+            span = max(1, b - a)
+            k = (i - n) % (2 * span)
+            return clip_frames[b - k if k <= span else a + (k - span)]
+        return clip_frames[min(n - 1, i)]
     k = W / 1080
     col = tuple(int(c) for c in color[:3])
     light = tuple(min(255, int(c * 0.5 + 128)) for c in col)
@@ -170,6 +196,9 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
                              "-crf", "22", "-pix_fmt", "yuv420p", str(out)], stdin=subprocess.PIPE)
     life = 3.5 / fps
     t_orb, t_hit, t_out = seconds * 0.36, seconds * 0.66, seconds * 0.70
+    if clip_fx and clip_frames:
+        t_hit = clip_start + (clip_hit or 0) * native_fps / clip_fps     # temps du GIF → temps de l'ulti
+        t_orb, t_out = t_hit, seconds + 1                        # pas d'écran « avalé » : le GIF a son explosion
     try:
         for f in range(int(seconds * fps)):
             t = f / fps
@@ -183,14 +212,17 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
                 speedlines(img, t, light, W / 2, H * .38, a=0.7)
                 s = _back_out((t - 0.05) / 0.35)                 # le perso arrive de la droite (gacha)
                 if clip_frames:                                  # clip IA : 24 i/s, on garde la dernière image
-                    ch = clip_frames[min(len(clip_frames) - 1, int(t * 24))]
+                    ch = clip_at(t) if clip_fx else clip_frames[min(len(clip_frames) - 1, int(t * 24))]
                     if isinstance(ch, tuple):
                         band, by = ch
                         ch = Image.new("RGBA", (W, H), (0, 0, 0, 0))
                         ch.alpha_composite(band, (0, by))
                 else:
                     ch = pup.frame(t, wind=1.0 + (1.5 if t > t_orb + 0.4 else 0))
-                z = 1.0 + 0.05 * t + (0.12 * ((t - t_orb - .4) / 1.0) ** 2 if t > t_orb + .4 else 0)
+                if clip_fx:                                      # après l'impact : le clip grossit, plein cadre
+                    z = 1.0 + 0.04 * t + (0.55 * min(1, (t - t_hit) / 0.3) if t > t_hit else 0)
+                else:
+                    z = 1.0 + 0.05 * t + (0.12 * ((t - t_orb - .4) / 1.0) ** 2 if t > t_orb + .4 else 0)
                 ch = ch.resize((int(W * z), int(H * z)), Image.BILINEAR)
                 mask = Image.new("L", (W, H), 0)
                 ImageDraw.Draw(mask).polygon(((0, H * .10), (W, H * .02), (W, H * .90), (0, H * .98)), fill=255)
@@ -203,7 +235,7 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
                 d = ImageDraw.Draw(img)
                 d.line((0, H * .10, W, H * .02), fill=col + (255,), width=int(10 * k))
                 d.line((0, H * .98, W, H * .90), fill=col + (255,), width=int(10 * k))
-                if t > 0.35:                                     # nom + attaque qui glissent (gacha)
+                if t > 0.35 and not (clip_fx and t > t_hit):     # nom + attaque qui glissent (gacha)
                     q = _back_out((t - .35) / .3)
                     y0 = H * .70
                     d.text((W * .06 - (1 - q) * W, y0), name.upper(), font=fmid, fill=(255, 255, 255),
@@ -215,11 +247,11 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
                         y += fbig.size * 0.98
                     d.text((W * .07 - (1 - q) * W * 1.9, y + 10 * k), subtitle.upper(), font=fsm,
                            fill=(225, 220, 245), stroke_width=int(3 * k), stroke_fill=(0, 0, 0))
-                if t > seconds * 0.26:                           # yeux qui s'illuminent
+                if t > seconds * 0.26 and not clip_fx:           # yeux qui s'illuminent
                     g = min(1, (t - seconds * .26) / .3)
                     for x_, y_ in rig["eyes"]:
                         tex.spawn("light_03", W * x_, H * y_, 260 * k * g, life, light, hot=1.0)
-                if t_orb < t < t_hit:                            # l'énergie se forme à la main
+                if t_orb < t < t_hit and not clip_fx:            # l'énergie se forme à la main
                     q = min(1, (t - t_orb) / (t_hit - t_orb - 0.15))
                     dd = W * 0.30 * (1 - q * q)
                     for c_, sg in orbs:
@@ -231,7 +263,7 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
                                   rot=rr.uniform(0, 360), hot=1)
                     if f % 2 == 0:
                         cam.punch(t, ex, ey, 0.02, 0.2)
-            if t_hit <= t < t_out:                               # impact frames (2 tons)
+            if t_hit <= t < min(t_out, t_hit + (0.13 if clip_fx else 9)):   # impact frames (2 tons)
                 img = fxengine.impact_frame(img, col if f % 2 else (255, 255, 255), invert=f % 2 == 0)
             if t >= t_out:                                       # l'attaque avale l'écran
                 q = (t - t_out) / (seconds - t_out)
@@ -254,7 +286,10 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
             tex.draw(ng, glow=False)
             img.alpha_composite(ng)
             img = fxengine.bloom(img, energy, 1.0, 26)
-            shake = 22 * k if t_hit - .15 < t < t_out + .45 else (6 * k if t > t_orb else 0)
+            if clip_fx:
+                shake = 22 * k * max(0.0, 1 - (t - t_hit) / 0.8) if t > t_hit else 0
+            else:
+                shake = 22 * k if t_hit - .15 < t < t_out + .45 else (6 * k if t > t_orb else 0)
             img = cam.apply(img, t, shake=shake, seed=f)
             if t_out <= t < t_out + .2:
                 img = fxengine.chroma(img, int(14 * k))
@@ -262,7 +297,7 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
             d = ImageDraw.Draw(img)
             d.rectangle((0, 0, W, bars), fill=(0, 0, 0, 255))
             d.rectangle((0, H - bars, W, H), fill=(0, 0, 0, 255))
-            for t0, dur in ((0.0, .12), (t_out, .18)):           # flashs
+            for t0, dur in ((0.0, .12), (t_hit if clip_fx else t_out, .18)):   # flashs
                 if t0 <= t < t0 + dur:
                     img.alpha_composite(Image.new("RGBA", (W, H), (255, 255, 255, int(255 * (1 - (t - t0) / dur)))))
             if t > seconds - 0.25:
@@ -274,11 +309,13 @@ def generate(name: str, image: str | Path, move: str, out: Path, color=(175, 70,
     finally:
         if proc.poll() is None:
             proc.kill()
-    _soundtrack(out, seconds, t_orb, t_hit, t_out, move, sounds, franchise, voice, seed)
+    _soundtrack(out, seconds, t_orb, t_hit, t_out, move, sounds, franchise, voice, seed,
+                voice_at=voice_at, attack_sound=attack_sound if clip_fx or attack_sound else None, attack_at=attack_at)
     return out
 
 
-def _soundtrack(out: Path, seconds, t_orb, t_hit, t_out, move, sounds, franchise, voice, seed) -> None:
+def _soundtrack(out: Path, seconds, t_orb, t_hit, t_out, move, sounds, franchise, voice, seed, voice_at=0.45,
+                attack_sound=None, attack_at=0.0) -> None:
     """Son de l'ulti : flash d'entrée, montée d'énergie, charge à la main, choc, explosion finale (+ réplique)."""
     import numpy as np
     from . import domain, fusion
@@ -295,14 +332,21 @@ def _soundtrack(out: Path, seconds, t_orb, t_hit, t_out, move, sounds, franchise
 
     S = lambda fam, mv=None: domain.sfx(fam, move=mv, mode=sounds, seed=seed, franchise=franchise)
     put(0.0, S("vanish"), 0.8)                                   # flash + bandes noires
-    put(0.30, S("transform"), 0.9)                               # le perso arrive, l'énergie monte
-    put(t_orb, S("beam", move), 0.9)                             # l'attaque se charge à la main
-    put(t_hit - 0.05, S("clash"), 0.8)                           # impact frames
-    put(t_out, S("ko"), 1.0)                                     # l'attaque avale l'écran
+    if attack_sound:                                             # vrai son de l'attaque, calé sur le GIF
+        snd = fusion.load_sound(Path(attack_sound))
+        if attack_at < 0:
+            snd, attack_at = snd[int(-attack_at * R):], 0.0
+        put(attack_at, snd, 1.0)
+        put(0.30, S("transform"), 0.35)
+    else:
+        put(0.30, S("transform"), 0.9)                           # le perso arrive, l'énergie monte
+        put(t_orb, S("beam", move), 0.9)                         # l'attaque se charge à la main
+        put(t_hit - 0.05, S("clash"), 0.8)                       # impact frames
+        put(t_out, S("ko"), 1.0)                                 # l'attaque avale l'écran
     if voice:
         v = domain.voice_file(str(voice)) if not Path(str(voice)).is_file() else Path(str(voice))
         if v is not None:
-            put(0.45, fusion.load_sound(v), 1.0)
+            put(voice_at, fusion.load_sound(v), 1.1)
     peak = float(np.percentile(np.abs(audio), 99.7)) or 1.0
     audio = np.tanh(audio * (0.75 / peak) * 1.2)
     wav = out.with_suffix(".wav")
