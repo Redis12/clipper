@@ -1,0 +1,268 @@
+# Clipper : réglages (les clés vont dans .env, jamais ici)
+
+paths:
+  data: ./data                # vidéos, transcriptions, clips, base SQLite
+
+ingest:
+  format: "bv*[height<=1080]+ba/b[height<=1080]/b"   # 1080p max : les clips sortent en 1080p, inutile de télécharger plus
+  merge_output_format: mkv
+  max_videos_per_channel: 10  # une URL de chaîne = les N plus récentes
+  js_runtime: ""              # "" = auto ; sinon "deno" ou "node" (yt-dlp en a besoin pour YouTube)
+  cookies_from_browser: ""    # ex. "chrome" si YouTube demande une connexion
+  proxy_height: 480           # aperçu léger pour la page de revue
+
+transcription:
+  engine: deepgram            # deepgram | whisperx
+  language: fr
+  deepgram_model: nova-3
+  whisperx_model: large-v3    # si engine: whisperx (GPU NVIDIA conseillé)
+  whisperx_device: cuda
+
+selection:
+  model: claude-sonnet-5-5
+  min_clips: 5
+  max_clips: 15
+  max_overlap: 0.20           # chevauchement max entre deux clips (part du plus court)
+  single_pass_max_chars: 150000  # au-delà : découpage en blocs
+  chunk_minutes: 25
+  chunk_overlap_minutes: 6    # > durée max d'un clip, pour qu'aucun clip ne tombe entre deux blocs
+
+bounds:
+  margin: 0.3
+  min_duration: 120
+  max_duration: 300
+
+titles:
+  model: claude-sonnet-5-5
+  max_title_chars: 60
+  n_titles: 3
+  n_tags: 10
+  description_footer: ""      # ajouté sous chaque description (liens, réseaux…)
+
+cut:
+  max_height: 1080
+  crf: 18
+  preset: veryfast            # "slow" = meilleur fichier, 2 à 3 fois plus long
+  audio_fade: 0.3
+  loudness:
+    integrated: -14
+    true_peak: -1.5
+    lra: 11
+  render_before_review: true  # false = rend seulement les clips validés (plus rapide)
+
+thumbnail:
+  n_frames: 10
+  width: 1280
+  height: 720
+  max_bytes: 2000000
+  font_path: ""               # "" = auto (Arial Black / Arial Bold / DejaVu Sans Bold)
+  font_size_max: 130
+  font_size_min: 60
+  text_color: "#FFFFFF"
+  stroke_color: "#000000"
+  stroke_width: 8
+  uppercase: true
+  position: bottom-left       # bottom-left | bottom-right | top-left | top-right | center
+  padding: 60
+  max_lines: 2
+  shade_opacity: 0.55         # dégradé sombre derrière le texte, 0 = aucun
+  accent_word_color: "#FFD400" # dernier mot en couleur, "" = désactivé
+
+publish:
+  timezone: Europe/Brussels
+  slots: ["18:00"]            # heures de sortie, chaque jour autorisé
+  days: [mon, tue, wed, thu, fri, sat, sun]
+  min_lead_hours: 3           # jamais de créneau plus proche que ça
+  upload_ahead_days: 2        # on uploade (en privé) jusqu'à N jours avant la sortie
+  max_uploads_per_day: 6      # ton plafond à toi, sous celui de YouTube
+  playlist_id: ""             # playlist par défaut ("" = aucune)
+  playlist_by_source_channel: {}  # { "UCxxxx": "PLyyyy" } pour ranger par chaîne source
+  category_id: "27"           # 27 = Éducation, 22 = People & Blogs
+  default_language: fr
+  made_for_kids: false
+  auto_in_server: true        # `clipper serve` tente une publication toutes les 30 min
+
+quota:
+  # Doc YouTube du 2026-10-15 : videos.insert a son propre seau (100 appels/jour) ;
+  # les autres méthodes partagent 10 000 unités/jour. Remise à zéro : minuit heure du Pacifique.
+  buckets:
+    uploads: 100
+    search: 100               # search.list a aussi son propre seau (veille des tendances)
+    default: 10000
+  costs:
+    search.list: [search, 1]
+    videos.insert: [uploads, 1]
+    thumbnails.set: [default, 50]
+    playlistItems.insert: [default, 50]
+    playlists.list: [default, 1]
+    videos.list: [default, 1]
+    commentThreads.list: [default, 1]
+
+server:
+  host: 127.0.0.1
+  port: 8765
+  lan: false                # true (ou `clipper serve --lan`) : accessible depuis ton téléphone sur ton Wi-Fi
+
+# ---------------------------------------------------------------------------------------------
+# Slideshows (carrousels d'images + Short vertical) — niche anime, en anglais
+# ---------------------------------------------------------------------------------------------
+slides:
+  language: en
+  niche: anime
+  animes:                     # séries que Claude a le droit de proposer (et dossiers de la bibliothèque)
+    - Jujutsu Kaisen
+    - One Piece
+    - Naruto
+    - Demon Slayer
+    - Attack on Titan
+    - Chainsaw Man
+    - Frieren
+    - Solo Leveling
+    - Dandadan
+    - Hunter x Hunter
+    - Death Note
+    - My Hero Academia
+    - Cyberpunk Edgerunners
+  formats: [assign, zodiac, redflags, as_people, opinions, wallpaper, ranking, facts, recommendations, quiz, ratings, news]
+  # assign = « ton mois = ton perso » (12 slides) · zodiac = signes · redflags · as_people = « persos en collègues »
+  # opinions = avis impopulaires · wallpaper = fonds d'écran sans texte
+  model: claude-sonnet-5-5
+  ideas_per_batch: 12
+  min_slides: 5               # slides de contenu, hors couverture et fin
+  max_slides: 8
+  max_words_per_slide: 22
+  only_library_animes: true   # ne propose que des animes qui ont déjà des images dans la bibliothèque
+
+  library: ./library          # library/<Anime>/<Personnage>/*.jpg ; library/_music/*.mp3
+  upscale:                    # agrandissement IA des petites images (Real-ESRGAN anime, carte graphique, hors ligne)
+    enabled: true
+    min_side: 1080            # en dessous : agrandie à l'ajout (bouton Ajouter) ou avec `clipper upscale`
+    target_side: 1440         # petit côté visé après agrandissement
+    model: realesrgan-x4plus-anime
+    bin: ""                   # vide = tools/realesrgan/realesrgan-ncnn-vulkan.exe ou le PATH
+    models_dir: ""            # upscayl-bin : dossier « models » d'Upscayl
+  battle:                     # vidéos « Which anime character wins? » (page Battle)
+    size: [1080, 1920]
+    fps: 30
+    links_per: 10             # liens (vies) par perso au départ
+    intro_seconds: 1.2
+    speed: 0.38               # vitesse de départ (× rayon de l'arène par seconde)
+    accel: 1.03               # chaque rebond (mur ou balle) accélère (×) : plus tu vas vite, plus ça s'emballe
+    steal_boost: 1.03         # voler un lien donne aussi de l'élan (×)
+    max_speed_x: 14.0         # vitesse max = départ × ça
+    duel_seconds: 20          # les 2 derniers s'échangent leurs liens ~20 s (±3), puis CUT → le gagnant (le plus de liens)
+    min_seconds: 0            # 60 pour la monétisation TikTok : démarrage lent + duel prolongé ; 0 = libre
+    stall_seconds: 15         # 3+ persos sans élimination depuis 15 s : CUT, le plus faible sort
+    safety_seconds: 150       # filet de sécurité invisible
+  fusion:                     # vidéos « Fusion Battle » façon Suika (page Fusion)
+    size: [1080, 1920]
+    fps: 30
+    substeps: 6
+    style: bounce             # bounce = les icônes rebondissent partout (plus fun) ; pile = tas au fond façon Suika
+    speed: 0.6                # mode bounce : vitesse des icônes (× rayon du bol par seconde)
+    vision_faces: true        # icônes centrées sur la tête : Claude repère le visage (1 fois par image, mémorisé)
+    race_tries: 24            # Fusion Race : nb de courses simulées en secret pour garder la plus serrée
+    race_min_seconds: 25
+    race_max_seconds: 55
+  domain:                     # Domain War (page Battle)
+    next_cta: "Who should fight next? Comment 👇"   # sur l'écran WINNER, au-dessus du Follow ("" = rien)
+    drop_every: 0.55          # secondes entre deux icônes au début (ça accélère ensuite ; adapté au nb de niveaux)
+    drop_every_min: 0.26
+    max_seconds: 120          # au-delà, les icônes identiques s'attirent fort pour finir
+    final_seconds: 1.5        # écran « FINAL FORM » court (vidIQ : pas de fin qui traîne)
+    sound: ""                 # bruitage par défaut (nom d'un fichier de library/_sounds, "" = pop synthétisé)
+  min_image_side: 150         # images plus petites ignorées (< 480 : floues en plein écran, OK pour la grille)
+  frames:
+    scene_threshold: 0.30     # sensibilité aux changements de plan (plus bas = plus d'images)
+    max_per_source: 300
+    min_sharpness: 60
+    keep_source_video: false  # supprime l'épisode téléchargé une fois les images extraites
+    auto_tag: true            # Claude reconnaît les persos et range les captures dans library/<Anime>/<Perso>/
+    tag_min_confidence: 75    # en dessous, l'image reste « divers »
+  vision_candidates: 12       # images montrées à Claude pour choisir celle d'une slide
+  avoid_reuse_days: 30        # évite de réutiliser une image avant N jours
+
+  render:
+    font_path: ""             # "" = auto (Impact / Arial Black / DejaVu Sans Bold)
+    text_style: outline       # outline (texte blanc contour noir) | box (texte sur bandeau sombre)
+    text_position: middle     # top | middle | bottom
+    text_color: "#FFFFFF"
+    accent_color: "#FFD400"   # étiquettes (#1, Fact 3…) et mot-clé
+    stroke_color: "#000000"
+    stroke_width: 7
+    font_size_max: 86
+    font_size_min: 46
+    cover_font_size_max: 112
+    shade_opacity: 0.35       # assombrit l'image derrière le texte
+    padding: 70
+    jpeg_quality: 90
+    watermark: "@animelorehq"        # petit filigrane sur chaque slide ("" = aucun)
+    watermark_size: 34
+    watermark_opacity: 0.6
+    watermark_style: badge          # badge (pilule à notre DA, library/_brand/watermark.png) | text
+    watermark_highlight: "LORE"     # partie du nom en jaune dans le badge
+    news_tag: "NEWS"                # format news : petit titre entre deux traits
+    news_sub: "MORE DETAILS IN THE DESCRIPTION"
+    end_cta: ""   # vidIQ : pas de « Follow » à la fin (fuite de rétention) ; le Like & Follow est au début
+    sizes:
+      vertical: [1080, 1920]  # TikTok photo + Short
+      portrait: [1080, 1350]  # carrousel Instagram (4:5)
+
+  video:                      # Short YouTube généré à partir des slides
+    auto: false               # false = vidéo seulement quand tu cliques « Générer la vidéo » (pour YouTube Shorts)
+    cover_seconds: 3.0
+    seconds_per_slide: 2.6
+    end_seconds: 2.4
+    crossfade: 0.35
+    fps: 30
+    zoom: 1.06                # léger zoom lent sur chaque image (1.0 = aucun)
+    music_dir: ./library/_music   # musiques libres de droits ; vide = silence
+    music_lufs: -16
+
+  publish:
+    platforms: [youtube, instagram, tiktok]
+    timezone: America/New_York      # public anglophone : créneaux à l'heure de la côte Est
+    slots: ["12:30", "19:30"]
+    days: [mon, tue, wed, thu, fri, sat, sun]
+    min_lead_hours: 2
+    youtube:
+      auto: false                   # passe à true APRÈS `clipper auth` sur la chaîne AnimeLore HQ
+      category_id: "24"             # Divertissement
+      playlist_id: ""
+    instagram:
+      enabled: false                # nécessite IG_USER_ID + IG_ACCESS_TOKEN dans .env et un hébergement
+      graph_base: https://graph.instagram.com/v23.0
+    tiktok:
+      enabled: false                # true quand : clés dans .env + TikTok connecté + hébergement prêt
+      mode: inbox                   # inbox = déposé dans ton appli TikTok (tu ajoutes le son) | direct (privé sans audit)
+      inbox_ahead_minutes: 30       # envoi dans l'appli N min avant le créneau
+      privacy_level: PUBLIC_TO_EVERYONE   # mode direct seulement
+      auto_add_music: true                # mode direct seulement
+    hosting:                        # URL publique pour Instagram/TikTok (ils vont chercher les images)
+      kind: none                    # none | github (GitHub Pages, gratuit) | s3 (Cloudflare R2, AWS S3…)
+      repo: ""                      # github : "pseudo/animelore-media" (dépôt public, Pages activé sur main)
+      branch: main
+      endpoint_url: ""              # s3
+      bucket: ""                    # s3
+      public_base_url: ""           # github : https://pseudo.github.io/animelore-media
+
+  trends:                           # veille : ce qui marche en ce moment
+    refresh_hours: 24               # actualisation automatique (si `clipper serve` tourne)
+    youtube:
+      enabled: true
+      days: 7                       # Shorts publiés ces N derniers jours
+      queries_per_run: 6            # recherches par actualisation (quota : 100 / jour)
+      queries: ["anime facts", "anime ranking", "anime top 5", "anime you didn't know", "anime recommendations"]
+      add_anime_queries: true       # + une recherche par anime de la liste (tournante)
+      min_views: 20000
+      region: US
+      deep: 8                       # par actualisation : les N meilleurs Shorts « lus » en vrai (couverture + 20 commentaires)
+    anilist:                        # API publique gratuite, sans clé : animes et persos qui montent cette semaine
+      enabled: true
+      top: 15
+    instagram:
+      enabled: false                # nécessite l'app Meta (compte pro + IG_USER_ID + IG_FB_ACCESS_TOKEN)
+      graph_base: https://graph.facebook.com/v23.0
+      hashtags: [animefacts, animeslideshow, jujutsukaisen, onepiece, naruto]   # 30 hashtags différents / 7 jours max
+    keep_days: 30                   # au-delà, une tendance ne sert plus à inspirer les idées
+    inspire_top: 15                 # tendances montrées à Claude quand il propose des idées

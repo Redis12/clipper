@@ -1,0 +1,2 @@
+Textures : Kenney « Particle Pack » 1.1 (www.kenney.nl), licence CC0 1.0 (domaine public).
+Converties en niveaux de gris 256 px (intensité) pour être teintées par Clipper.

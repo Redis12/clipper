@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% from "_seo.html" import seo_box, seo_script %}
+{% block title %}Fusion · Clipper{% endblock %}
+{% block main %}
+<h1>Vidéos « Fusion Battle »</h1>
+<p class="sub">Façon Suika Game : des icônes tombent par un entonnoir dans un bol ; deux icônes identiques qui se touchent
+fusionnent en l'icône du niveau suivant, plus grosse. La vidéo s'arrête quand le dernier niveau apparaît (« FINAL FORM »).
+À chaque fusion, ton bruitage est rejoué de plus en plus grave, gras et avec de l'écho. Vidéo 9:16, environ 30 s à 1 min.</p>
+
+<div class="cols">
+<div class="panel">
+  <form method="post" action="/fusion" id="fform">
+    <input type="text" name="title" value="Fusion Battle" style="width:100%;margin-bottom:12px" placeholder="Titre en haut de la vidéo">
+
+    <b>1. Le son</b>
+    <div class="sound-row" style="margin:8px 0 4px">
+      <select name="sound" id="sound">
+        <option value="">Pop par défaut</option>
+        {% for s in sounds %}<option value="{{ s.name }}" {% if s.name == (request.query_params.get('sound') or default_sound) %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+      </select>
+      <label style="font-size:13px">Gras <input type="range" name="fat" id="fat" min="0" max="2" step="0.1" value="1" style="vertical-align:middle"></label>
+      <button type="button" id="listen">▶ Écouter (du plus petit au plus gros)</button>
+    </div>
+    <audio id="player" controls style="width:100%;display:none;margin-top:6px"></audio>
+    <p class="muted" style="font-size:12px;margin:4px 0 14px">« Gras » = à quel point le son devient grave/saturé/écho en montant de niveau (0 = presque normal, 2 = énorme).</p>
+
+    <b>2. Les niveaux (du plus petit au plus gros)</b>
+    {% if chains %}
+    <div style="margin:8px 0">
+      <select name="chain" id="chain">
+        <option value="">— cocher les persos ci-dessous —</option>
+        {% for c in chains %}<option value="{{ c.name }}">Dossier _fusion\{{ c.name }} ({{ c.count }} niveaux)</option>{% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <p class="muted" style="font-size:13px;margin:6px 0">Clique les persos <b>dans l'ordre</b> : le 1er cliqué = le plus petit, le dernier = la forme finale.
+      3 à 10 niveaux (idéal : 6–8). Pour des formes d'un même perso (Goku base → SSJ1 → SSJ2…), le plus simple :
+      un dossier <span class="mono">library\_fusion\Goku\</span> avec <span class="mono">1 Base.png</span>, <span class="mono">2 SSJ1.png</span>… (PNG sans fond = plus joli).</p>
+    <div class="fusion-order" id="order-view"><span class="muted">Ordre : aucun perso choisi</span></div>
+    <input type="hidden" name="order" id="order">
+    <div class="battle-roster" id="roster">
+    {% for r in roster %}
+      <label class="pick" data-id="{{ r.image_id }}" data-name="{{ r.name }}"><span class="num" hidden></span>
+        <img src="/media/lib/{{ r.image_id }}.jpg" loading="lazy"><span>{{ r.name }}</span><small>{{ r.anime }}</small></label>
+    {% else %}
+      <p class="muted">Aucun perso : ajoute des images rangées par perso dans la bibliothèque.</p>
+    {% endfor %}
+    </div>
+    <button class="primary" style="margin-top:12px" {% if current %}disabled{% endif %}>Générer la vidéo</button>
+  </form>
+
+  <form method="post" action="/fusion/race" style="margin-top:18px;border-top:1px solid var(--line);padding-top:12px">
+    <b>⚔ Fusion Race</b> <span class="muted" style="font-size:13px">2 bols en même temps (ex. Goku vs Naruto) : le premier à sa forme finale gagne.
+      Clipper simule une vingtaine de courses en secret et garde la plus serrée. Même nombre de niveaux conseillé.</span>
+    {% if chains|length >= 2 %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <select name="chain_a">{% for c in chains %}<option value="{{ c.name }}" {% if loop.index == 1 %}selected{% endif %}>{{ c.name }} ({{ c.count }})</option>{% endfor %}</select>
+      <select name="chain_b">{% for c in chains %}<option value="{{ c.name }}" {% if loop.index == 2 %}selected{% endif %}>{{ c.name }} ({{ c.count }})</option>{% endfor %}</select>
+      <select name="sound_a"><option value="">Son : pop par défaut</option>{% for s in sounds %}<option value="{{ s.name }}">Son : {{ s.name }}</option>{% endfor %}</select>
+      <select name="sound_b"><option value="">Son : pop par défaut</option>{% for s in sounds %}<option value="{{ s.name }}">Son : {{ s.name }}</option>{% endfor %}</select>
+    </div>
+    <input type="text" name="title" placeholder="Titre (vide = « Goku vs Naruto: who transforms first? »)" style="width:100%;margin-top:8px">
+    <input type="hidden" name="fat" value="1">
+    <button class="primary" style="margin-top:8px" {% if current %}disabled{% endif %}>Générer la course</button>
+    {% else %}
+    <p class="muted" style="font-size:13px">Il faut au moins 2 dossiers dans <span class="mono">library\_fusion\</span> (ex. Goku et Naruto).</p>
+    {% endif %}
+  </form>
+
+  <form method="post" action="/fusion/sound" enctype="multipart/form-data" style="margin-top:18px;border-top:1px solid var(--line);padding-top:12px">
+    <b>Ajouter un bruitage</b> <span class="muted" style="font-size:13px">(miaou, pouet… mp3 / wav, court c'est mieux)</span>
+    <div class="sound-row" style="margin-top:6px"><input type="file" name="file" accept="audio/*" required><button>Ajouter</button></div>
+  </form>
+</div>
+<div class="side">
+  <div class="panel">
+    <b>Vidéos prêtes</b>
+    {% for v in videos %}
+      <div style="margin-top:12px">
+        <video src="/media/fusion/{{ v.file }}" controls preload="metadata" style="width:100%;border-radius:8px"></video>
+        <div style="font-size:13px">{% if v.kind in ("race", "domain") %}{{ "🌀" if v.kind == "domain" else "⚔" }} {{ (v.names or [])|join(" vs ") }} · 🏆 {{ v.winner }}{% else %}⚡ {{ v.reached or "?" }}{% if v.complete == false %} (pas fini){% endif %}{% endif %} · {{ v.seconds or "?" }} s
+          · <a href="/media/fusion/{{ v.file }}" download>télécharger</a> · <form method="post" action="/media/fusion/{{ v.file }}/remove" class="rmform" onsubmit="return confirm('Retirer cette vidéo ? Elle part dans data\\archive (récupérable).')"><button class="linkbtn">🗑 Retirer</button></form></div>
+        {{ seo_box(v) }}
+      </div>
+    {% else %}
+      <p class="muted" style="font-size:13px">Pas encore de vidéo.</p>
+    {% endfor %}
+  </div>
+</div>
+</div>
+<script>
+(() => {
+  const order = [];
+  const view = document.getElementById('order-view'), hidden = document.getElementById('order');
+  function refresh() {
+    hidden.value = order.join(',');
+    document.querySelectorAll('#roster .pick').forEach(el => {
+      const i = order.indexOf(el.dataset.id), n = el.querySelector('.num');
+      n.hidden = i < 0; n.textContent = i + 1;
+      el.style.borderColor = i < 0 ? '' : 'var(--accent, #FFD400)';
+    });
+    view.innerHTML = order.length ? order.map((id, i) => {
+      const el = document.querySelector(`#roster .pick[data-id="${id}"]`);
+      return `${i ? '›' : ''}<img src="/media/lib/${id}.jpg" title="${el.dataset.name}">`;
+    }).join(' ') + (order.length < 3 ? ' <span class="muted">(au moins 3)</span>' : '') :
+      '<span class="muted">Ordre : aucun perso choisi</span>';
+  }
+  document.querySelectorAll('#roster .pick').forEach(el => el.addEventListener('click', e => {
+    e.preventDefault();
+    const i = order.indexOf(el.dataset.id);
+    if (i >= 0) order.splice(i, 1); else if (order.length < 10) order.push(el.dataset.id);
+    refresh();
+  }));
+  document.getElementById('listen').addEventListener('click', () => {
+    const p = document.getElementById('player');
+    const n = Math.max(3, Math.min(10, order.length || 7));
+    p.src = `/fusion/preview.wav?sound=${encodeURIComponent(document.getElementById('sound').value)}&tiers=${n}&fat=${document.getElementById('fat').value}&t=${Date.now()}`;
+    p.style.display = 'block'; p.play();
+  });
+  document.getElementById('fform').addEventListener('submit', e => {
+    const ch = document.getElementById('chain');
+    if ((!ch || !ch.value) && order.length < 3) { e.preventDefault(); alert('Choisis au moins 3 niveaux (ou un dossier _fusion).'); }
+  });
+})();
+</script>
+{{ seo_script() }}
+{% endblock %}

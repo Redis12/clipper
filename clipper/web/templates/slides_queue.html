@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Publication slideshows · Clipper{% endblock %}
+{% block main %}
+<h1>Publication des slideshows</h1>
+<p class="sub">Heures affichées : celle du public ({{ tz }}) et la tienne (Bruxelles).
+  Automatique : {% for p, on in auto.items() %}<span class="pill {{ 'ok' if on else '' }}">{{ p }} {{ 'auto' if on else 'à la main' }}</span> {% endfor %}</p>
+
+<div class="panel" style="margin-bottom:18px">
+  <b>TikTok automatique</b>
+  <span class="pill {{ 'ok' if tt.connected else '' }}">{{ 'connecté' if tt.connected else 'pas connecté' }}</span>
+  <span class="pill {{ 'ok' if tt.hosting != 'none' else '' }}">hébergement : {{ tt.hosting }}</span>
+  <span class="pill {{ 'ok' if tt.enabled else '' }}">{{ 'activé' if tt.enabled else 'désactivé (config.yaml)' }}</span>
+  {% if tt.mode == 'inbox' %}<p class="muted" style="font-size:13px;margin:6px 0">Mode boîte de réception : 30 min avant le créneau, Clipper envoie le carrousel dans ton appli TikTok. Ouvre la notification, ajoute un son, publie.</p>{% endif %}
+  {% if not tt.keys %}<p class="warn" style="font-size:13px">TIKTOK_CLIENT_KEY / TIKTOK_CLIENT_SECRET manquants dans .env.</p>
+  {% else %}<a href="/tiktok/connect"><button class="small {{ '' if tt.connected else 'primary' }}">{{ 'Reconnecter' if tt.connected else 'Connecter' }} TikTok</button></a>{% endif %}
+</div>
+
+<div class="panel" style="margin-bottom:18px">
+  <div class="quota">
+    <span>Uploads YouTube aujourd'hui : <b>{{ q.uploads_today }}</b> / plafond {{ q.cap }}</span>
+    {% for name, b in q.buckets.items() %}<span class="muted">{{ name }} : {{ b.remaining }}/{{ b.limit }}</span>{% endfor %}
+  </div>
+  <form method="post" action="/queue/publish" class="actions"><button class="primary" {% if current %}disabled{% endif %}>Publier maintenant ce qui est dû</button></form>
+</div>
+
+<div class="panel">
+<table>
+  <thead><tr><th>Sortie (public)</th><th>Slideshow</th><th>Plateforme</th><th>État</th><th></th></tr></thead>
+  <tbody>
+  {% for p in items %}
+    <tr>
+      <td class="mono">{{ p.audience }}<br><span class="muted">{{ p.local }} Bxl</span></td>
+      <td><a href="/slides/{{ p.slideshow_id }}">{{ p.topic }}</a><br><span class="muted">{{ p.anime }}</span></td>
+      <td>{{ p.platform }}</td>
+      <td>{% if p.status == 'done' and p.platform == 'tiktok' and p.mode == 'auto' and tt.mode == 'inbox' %}<span class="pill ok">dans ton appli TikTok</span>
+          {% elif p.status == 'done' %}<span class="pill ok">publié</span>{% if p.url %} <a href="{{ p.url }}" target="_blank">↗</a>{% endif %}
+          {% elif p.mode == 'manual' %}<span class="pill">à la main</span>
+          {% elif p.status == 'failed' %}<span class="pill no">échec ({{ p.attempts }}/5)</span>
+          {% else %}<span class="pill warn">auto</span>{% endif %}
+          {% if p.error %}<div class="err">{{ p.error }}</div>{% endif %}</td>
+      <td>{% if p.mode == 'manual' and p.status != 'done' %}<a href="/slides/{{ p.slideshow_id }}/pack/{{ p.platform }}.zip"><button class="small">Pack</button></a>
+          <button class="small" onclick="done({{ p.id }})">Posté</button>{% endif %}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5" class="muted">Rien de programmé. Valide un slideshow pour le placer ici.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function done(id) {
+  const url = prompt('Lien du post (facultatif) :') || '';
+  await fetch(`/api/posts/${id}/done`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url})});
+  location.reload();
+}
+</script>
+{% endblock %}

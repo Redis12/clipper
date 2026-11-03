@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Musique · Clipper{% endblock %}
+{% block main %}
+<h1>Ajouter une musique</h1>
+<p class="sub">Pour Instagram et YouTube Shorts : choisis une vidéo (Battle, Fusion, Race, Domain War) et une musique, Clipper la mélange
+sous les bruitages et crée une nouvelle vidéo « …_music.mp4 » (quelques secondes, l'image n'est pas réencodée). La musique est bouclée si
+elle est trop courte, avec un fondu au début et à la fin. Sur TikTok, ajoute plutôt un son tendance dans l'appli.<br>
+<b>YouTube :</b> uniquement des musiques libres de droits (YouTube Audio Library, Pixabay Music…), sinon la vidéo est réclamée.</p>
+
+{% if err %}<div class="panel" style="border-color:#d33;margin-bottom:12px">⚠ {{ err }}</div>{% endif %}
+{% if done %}
+<div class="panel" style="margin-bottom:12px">✅ Vidéo prête :
+  <video src="/media/{{ done }}" controls style="width:100%;max-width:300px;border-radius:8px;display:block;margin:8px 0"></video>
+  <a class="btnlike" href="/media/{{ done }}" download>⬇ Télécharger</a> <span class="muted" style="font-size:13px">(aussi sur la page Téléphone)</span>
+</div>
+{% endif %}
+
+<div class="cols">
+<div class="panel">
+  <form method="post" action="/music">
+    <b>1. La vidéo</b>
+    <select name="video" id="video" style="width:100%;margin:6px 0 4px">
+      {% for v in videos %}<option value="{{ v.media }}/{{ v.file }}">{{ v.kind }} · {{ v.title }}{% if v.seconds %} · {{ v.seconds }} s{% endif %}</option>
+      {% else %}<option value="">Aucune vidéo générée pour l'instant</option>{% endfor %}
+    </select>
+    <video id="vprev" controls muted preload="metadata" style="width:100%;max-width:260px;border-radius:8px;margin:6px 0"></video>
+
+    <b style="display:block;margin-top:10px">2. La musique</b>
+    <select name="music" id="music" style="width:100%;margin:6px 0">
+      {% for m in musics %}<option value="{{ m.name }}">{{ m.name }}{% if m.seconds %} ({{ m.seconds }} s){% endif %}</option>
+      {% else %}<option value="">Aucune musique : ajoute-en une ci-dessous</option>{% endfor %}
+    </select>
+    <div class="sound-row">
+      <label style="font-size:13px">Commencer la musique à <input type="number" name="start" id="start" value="0" min="0" step="0.5" style="width:80px"> s</label>
+      <button type="button" id="listen">▶ Écouter cet extrait</button>
+    </div>
+    <audio id="player" controls style="width:100%;display:none;margin-top:6px"></audio>
+
+    <b style="display:block;margin-top:12px">3. Le mélange</b>
+    <label style="font-size:13px;display:block">Volume musique <input type="range" name="music_volume" min="0" max="150" value="35" oninput="mv.textContent=this.value+' %'"> <span id="mv">35 %</span></label>
+    <label style="font-size:13px;display:block">Volume bruitages <input type="range" name="sfx_volume" min="0" max="150" value="100" oninput="sv.textContent=this.value+' %'"> <span id="sv">100 %</span></label>
+    <p class="muted" style="font-size:12px;margin:4px 0">Conseil : musique 25–40 % pour que les bruitages restent au premier plan.</p>
+    <button class="primary" style="margin-top:8px" {% if not videos or not musics %}disabled{% endif %}>Ajouter la musique</button>
+  </form>
+
+  <form method="post" action="/music/upload" enctype="multipart/form-data" style="margin-top:18px;border-top:1px solid var(--line);padding-top:12px">
+    <b>Ajouter une musique</b> <span class="muted" style="font-size:13px">(mp3, wav… · rangée dans library\_music)</span>
+    <div class="sound-row" style="margin-top:6px"><input type="file" name="file" accept="audio/*" required><button>Ajouter</button></div>
+  </form>
+</div>
+<div class="side">
+  <div class="panel">
+    <b>Vidéos avec musique</b>
+    {% for v in done_list %}
+      <div style="margin-top:12px">
+        <video src="/media/{{ v.media }}/{{ v.file }}" controls preload="metadata" style="width:100%;border-radius:8px"></video>
+        <div style="font-size:13px">🎵 {{ v.music or "?" }} · {{ v.title }} · <a href="/media/{{ v.media }}/{{ v.file }}" download>télécharger</a> · <form method="post" action="/media/{{ v.media }}/{{ v.file }}/remove" class="rmform" onsubmit="return confirm('Retirer cette vidéo ? Elle part dans data\\archive (récupérable).')"><button class="linkbtn">🗑 Retirer</button></form></div>
+      </div>
+    {% else %}
+      <p class="muted" style="font-size:13px">Pas encore de vidéo avec musique.</p>
+    {% endfor %}
+  </div>
+</div>
+</div>
+<script>
+(() => {
+  const sel = document.getElementById('video'), prev = document.getElementById('vprev');
+  const show = () => { if (sel.value) prev.src = '/media/' + sel.value; };
+  sel.addEventListener('change', show); show();
+  document.getElementById('listen').addEventListener('click', () => {
+    const m = document.getElementById('music').value; if (!m) return;
+    const p = document.getElementById('player');
+    p.src = `/music/preview.mp3?name=${encodeURIComponent(m)}&start=${document.getElementById('start').value || 0}&t=${Date.now()}`;
+    p.style.display = 'block'; p.play();
+  });
+})();
+</script>
+{% endblock %}

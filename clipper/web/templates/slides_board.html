@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Slideshows · Clipper{% endblock %}
+{% block main %}
+<h1>Slideshows</h1>
+<p class="sub">Claude propose des idées ; tu cliques sur « Produire » pour celles qui te plaisent. Le script, les images et le rendu se font tout seuls, puis tu valides.</p>
+
+{% if n_images == 0 %}
+<div class="panel" style="margin-bottom:18px;border-color:var(--warn)">
+  <b>Ta bibliothèque d'images est vide.</b> Les slideshows ont besoin d'images d'anime :
+  ajoute des dossiers d'images ou des épisodes/trailers à capturer sur la page <a href="/slides-library">Images</a>.
+</div>
+{% endif %}
+
+<div class="cols">
+<div>
+  {% set groups = [("review","À valider"),("drafting","En préparation"),("queued","En attente"),("failed","Échec"),("idea","Idées"),("approved","Validés / programmés"),("published","Publiés")] %}
+  {% for st, label in groups %}
+    {% set items = rows|selectattr("status","equalto",st)|list %}
+    {% if items %}
+    <h2 style="font-size:15px;margin:18px 0 8px">{{ label }} <span class="muted">({{ items|length }})</span></h2>
+    <div class="ideas">
+    {% for r in items %}
+      <div class="panel idea" id="ss-{{ r.id }}">
+        <div class="sc">{{ r.score if r.score is not none else "—" }}</div>
+        <div>
+          <div class="t">{% if r.status in ("review","approved","published") %}<a href="/slides/{{ r.id }}">{{ r.topic }}</a>{% else %}{{ r.topic }}{% endif %}</div>
+          <div class="meta">{{ r.anime }} · {{ r.format }}{% if r.hook %} · « {{ r.hook }} »{% endif %}{% if r.origin == 'user' %} · ton sujet{% endif %}</div>
+          {% if r.angle %}<div class="meta">{{ r.angle }}</div>{% endif %}
+          {% if r.inspiration %}<div class="meta">↗ inspiré de : {{ r.inspiration }}</div>{% endif %}
+          {% if r.step %}<div class="warn">{{ r.step }}…</div>{% endif %}
+          {% if r.error %}<div class="{{ 'err' if r.status == 'failed' else 'warn' }}">{{ r.error }}</div>{% endif %}
+          {% if r.publish_at %}<div class="meta">Sortie : {{ r.publish_at|local }} (Bruxelles)</div>{% endif %}
+        </div>
+        <div class="btns">
+          {% if r.status in ("idea","failed") %}<button class="small ok" onclick="act({{ r.id }},'produce')">Produire</button>{% endif %}
+          {% if r.status in ("review","approved","published") %}<a href="/slides/{{ r.id }}"><button class="small">Ouvrir</button></a>{% endif %}
+          {% if r.status not in ("published","drafting") %}<button class="small no" onclick="act({{ r.id }},'discard')" title="Jeter">✕</button>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+  {% else %}
+  {% endfor %}
+  {% if not rows %}<p class="muted">Aucun slideshow pour l'instant : génère des idées →</p>{% endif %}
+</div>
+
+<div class="side">
+  <div class="panel">
+    <form method="post" action="/slides/ideas"><button class="primary" style="width:100%">Générer {{ n_ideas }} idées</button></form>
+    <p class="muted" style="font-size:13px;margin:8px 0 0">Uniquement sur les animes qui ont des images dans ta bibliothèque, en s'inspirant des <a href="/slides-trends">tendances</a> du moment.</p>
+  </div>
+  <div class="panel">
+    <b>Mon propre sujet</b>
+    <form method="post" action="/slides/topic" enctype="multipart/form-data" style="display:grid;gap:8px;margin-top:8px">
+      <input type="text" name="topic" placeholder="Top 5 strongest villains in Naruto" required>
+      <input type="text" name="anime" list="board-animes" placeholder="Anime (choisis ou écris-en un nouveau)" value="{{ animes[0] if animes else '' }}" onfocus="this.select()">
+      <datalist id="board-animes">{% for a in animes %}<option>{{ a }}</option>{% endfor %}<option>Mixed</option></datalist>
+      <select name="format"><option value="">format : auto</option>{% for f in formats %}<option>{{ f }}</option>{% endfor %}</select>
+      <textarea name="notes" rows="3" placeholder="Consignes (facultatif) : persos à utiliser, ton, ce qu'il faut éviter… Pour « ratings » : EP1 8.1, EP2 7.9… overall 8.6 (IMDb)"></textarea>
+      <div class="muted" style="font-size:13px;display:grid;gap:4px">
+        <label><input type="checkbox" name="use_logo" checked> Logo de l'anime sur le graphique (format ratings)</label>
+        <label>Logo (PNG transparent, une seule fois par anime) : <input type="file" name="logo" accept="image/png,image/webp"></label>
+      </div>
+      <button class="ok">Produire</button>
+    </form>
+  </div>
+  <div class="panel">
+    <b>Bibliothèque</b>
+    {% for a in lib %}<div class="meta" style="font-size:13px">{{ a.anime }} : {{ a.library + a.frames }} images</div>{% else %}<div class="muted">vide</div>{% endfor %}
+    <a href="/slides-library" style="font-size:13px">Gérer les images →</a>
+  </div>
+</div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function act(id, a) {
+  const r = await fetch(`/api/slides/${id}/${a}`, {method: 'POST'});
+  if (!r.ok) { alertMsg((await r.json()).error); return; }
+  location.reload();
+}
+function alertMsg(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); }
+{% if current or waiting %}setTimeout(() => location.reload(), 5000);{% endif %}
+</script>
+{% endblock %}

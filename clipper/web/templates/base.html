@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Clipper{% endblock %}</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/slides">Clipper</a>
+  <nav><a href="/slides-trends">Tendances</a><a href="/slides">Slideshows</a><a href="/slides-library">Images</a><a href="/slides-queue">Publication slideshows</a><a href="/battle">Battle</a><a href="/fusion">Fusion</a><a href="/music">Musique</a><a href="/m">Téléphone</a><span class="sep"></span><a href="/">Vidéos</a><a href="/queue">Publication clips</a></nav>
+  <div class="spacer"></div>
+  {% if current %}<span class="pill warn" id="busy">En cours : {{ current }}</span>{% endif %}
+</header>
+<main>{% block main %}{% endblock %}</main>
+<div id="toast"></div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

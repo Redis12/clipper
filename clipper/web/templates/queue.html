@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}File de publication · Clipper{% endblock %}
+{% block main %}
+<h1>File de publication</h1>
+<p class="sub">Tout part en <b>privé</b> avec une date de sortie programmée. Upload jusqu’à {{ ahead }} jour(s) avant la sortie.</p>
+
+<div class="panel" style="margin-bottom:20px">
+  <div class="quota">
+    <span>Jour quota (heure du Pacifique) : <b>{{ q.pt_day }}</b></span>
+    <span>Uploads aujourd'hui : <b>{{ q.uploads_today }}</b> / plafond {{ q.cap }}</span>
+    <span>Encore possibles : <b>{{ q.clips_left_today }}</b></span>
+    {% for name, b in q.buckets.items() %}
+      <span>{{ name }} : <b>{{ b.remaining }}</b>/{{ b.limit }}{% if b.blocked %} <span class="pill no">épuisé (YouTube)</span>{% endif %}</span>
+    {% endfor %}
+  </div>
+  <form method="post" action="/queue/publish" class="actions">
+    <button class="primary" {% if current %}disabled{% endif %}>Uploader maintenant ce qui est dû</button>
+    {% if last_publish %}<span class="muted">Dernier passage : {{ last_publish }}</span>{% endif %}
+  </form>
+  {% if report %}<ul class="mono" style="margin:10px 0 0">{% for r in report %}<li>{{ r }}</li>{% endfor %}</ul>{% endif %}
+</div>
+
+<div class="panel">
+<table>
+  <thead><tr><th>Sortie</th><th>Clip</th><th>État</th><th></th></tr></thead>
+  <tbody>
+  {% for c in items %}
+    <tr>
+      <td class="mono">{{ c.publish_at|local }}</td>
+      <td><b>{{ (c.titles or [c.topic])[c.title_idx or 0] }}</b><br>
+          <span class="muted">{{ c.source_title }} · {{ c.start|tc }}–{{ c.end|tc }}</span></td>
+      <td>
+        {% if c.youtube_id %}<span class="pill warn">uploadé, finitions en attente</span>
+        {% elif c.id in due_ids %}<span class="pill warn">à uploader</span>
+        {% else %}<span class="pill">planifié</span>{% endif %}
+        {% if c.render_needed %}<span class="pill">rendu à refaire</span>{% endif %}
+        {% if c.error %}<div class="err">{{ c.error }}</div>{% endif %}
+      </td>
+      <td><a href="/video/{{ c.video_id }}#clip-{{ c.id }}"><button class="small">Ouvrir</button></a>
+          {% if not c.youtube_id %}<button class="small no" onclick="unq({{ c.id }})">Retirer</button>{% endif %}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4" class="muted">File vide. Valide des clips depuis une page vidéo.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if recent %}
+<h1 style="margin-top:30px;font-size:17px">Déjà uploadés</h1>
+<div class="panel"><table><tbody>
+{% for c in recent %}
+<tr><td class="mono">{{ c.publish_at|local }}</td>
+    <td>{{ (c.titles or [c.topic])[c.title_idx or 0] }}</td>
+    <td><a href="https://studio.youtube.com/video/{{ c.youtube_id }}/edit" target="_blank">Studio ↗</a>
+      {% if c.error %}<div class="err">{{ c.error }}</div>{% endif %}</td></tr>
+{% endfor %}
+</tbody></table></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+async function unq(id) {
+  await fetch(`/api/clip/${id}/reset`, {method: 'POST'});
+  location.reload();
+}
+{% if current %}setTimeout(() => location.reload(), 5000);{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% macro seo_box(v) %}{% set s = seo(v) %}{% set k = v.file|replace(".", "_") %}
+<details class="seo"><summary>🔎 SEO : titre, description, hashtags</summary>
+  <div class="seo-p"><b>YouTube Shorts</b>
+    <label>Titre <button type="button" class="linkbtn" onclick="seoCopy('{{ k }}-yt')">copier</button></label>
+    <textarea id="{{ k }}-yt" rows="1" readonly>{{ s.youtube.title }}</textarea>
+    <label>Description <button type="button" class="linkbtn" onclick="seoCopy('{{ k }}-yd')">copier</button></label>
+    <textarea id="{{ k }}-yd" rows="6" readonly>{{ s.youtube.description }}</textarea>
+    <label>Tags (Studio sur PC → Plus d'options) <button type="button" class="linkbtn" onclick="seoCopy('{{ k }}-yg')">copier</button></label>
+    <textarea id="{{ k }}-yg" rows="3" readonly>{{ s.youtube.tags }}</textarea></div>
+  <div class="seo-p"><b>TikTok</b> <button type="button" class="linkbtn" onclick="seoCopy('{{ k }}-tt')">copier</button>
+    <textarea id="{{ k }}-tt" rows="3" readonly>{{ s.tiktok }}</textarea></div>
+  <div class="seo-p"><b>Instagram</b> <button type="button" class="linkbtn" onclick="seoCopy('{{ k }}-ig')">copier</button>
+    <textarea id="{{ k }}-ig" rows="5" readonly>{{ s.instagram }}</textarea></div>
+</details>
+{% endmacro %}
+{% macro seo_script() %}
+<script>
+function seoCopy(id) {
+  const t = document.getElementById(id);
+  const done = ok => { const b = event && event.target; if (b) { const o = b.textContent; b.textContent = ok ? 'copié ✓' : 'sélectionne + copie'; setTimeout(() => b.textContent = o, 1400); } };
+  if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(t.value).then(() => done(true), () => done(false)); return; }
+  t.removeAttribute('readonly'); t.select(); t.setSelectionRange(0, 99999);
+  let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+  t.setAttribute('readonly', ''); done(ok);
+}
+</script>
+{% endmacro %}

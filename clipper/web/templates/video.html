@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ v.title or v.id }} · Clipper{% endblock %}
+{% block main %}
+<h1>{{ v.title or v.id }}</h1>
+<p class="sub">{{ v.channel or "" }} · {{ (v.duration or 0)|tc }} ·
+  <a href="https://youtu.be/{{ v.id }}" target="_blank">source ↗</a> ·
+  <span id="summary"></span> ·
+  <a href="#" onclick="toggleHelp();return false">raccourcis <span class="kbd">?</span></a></p>
+{% if v.error %}<p class="err">{{ v.error }}</p>{% endif %}
+
+<div id="clips"></div>
+
+{% if auto %}
+<details class="auto">
+  <summary>{{ auto|length }} proposition(s) écartée(s) automatiquement (durée hors limites)</summary>
+  <div class="panel" style="margin-top:10px"><table><tbody>
+  {% for c in auto %}
+    <tr><td><b>{{ c.topic }}</b><br><span class="muted">{{ c.reason }}</span></td>
+        <td class="mono">{{ c.start|tc }}–{{ c.end|tc }}<br><span class="err">{{ c.reject_reason }}</span></td>
+        <td class="mono">{{ c.score }}</td>
+        <td><button class="small" onclick="rescue({{ c.id }})">Repêcher</button></td></tr>
+  {% endfor %}
+  </tbody></table></div>
+</details>
+{% endif %}
+
+<div id="help" class="panel">
+  <b>Raccourcis</b>
+  <table>
+    <tr><td><span class="kbd">j</span> <span class="kbd">k</span> / <span class="kbd">↓</span> <span class="kbd">↑</span></td><td>clip suivant / précédent</td></tr>
+    <tr><td><span class="kbd">espace</span></td><td>lecture / pause</td></tr>
+    <tr><td><span class="kbd">d</span> · <span class="kbd">f</span></td><td>écouter le début · les 8 dernières s</td></tr>
+    <tr><td><span class="kbd">a</span> <span class="kbd">z</span></td><td>début −1 s / +1 s</td></tr>
+    <tr><td><span class="kbd">q</span> <span class="kbd">s</span></td><td>fin −1 s / +1 s</td></tr>
+    <tr><td><span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span></td><td>choisir le titre (ou &amp; é ")</td></tr>
+    <tr><td><span class="kbd">t</span> / <span class="kbd">⇧t</span></td><td>image de miniature suivante / précédente</td></tr>
+    <tr><td><span class="kbd">v</span></td><td>valider (entre dans la file)</td></tr>
+    <tr><td><span class="kbd">r</span></td><td>rejeter</td></tr>
+    <tr><td><span class="kbd">u</span></td><td>annuler la décision</td></tr>
+    <tr><td><span class="kbd">échap</span></td><td>quitter un champ texte</td></tr>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.CLIPPER = {
+  videoId: {{ v.id|tojson }},
+  clips: {{ clips|tojson }},
+  minD: {{ min_d }}, maxD: {{ max_d }}, maxChars: {{ max_chars }},
+};
+</script>
+<script src="/static/review.js"></script>
+{% endblock %}

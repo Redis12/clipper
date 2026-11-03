@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Images · Clipper{% endblock %}
+{% block main %}
+<h1>Bibliothèque d'images</h1>
+<p class="sub">Deux façons d'alimenter les slideshows. Les images restent sur ton PC, dans <span class="mono">{{ root }}</span>.</p>
+
+<div class="cols">
+<div>
+  <div class="panel" style="margin-bottom:18px">
+    <b>1. Capturer des images depuis des vidéos</b>
+    <p class="muted" style="font-size:14px;margin:4px 0 10px">Colle un épisode, un trailer, un opening ou une playlist. L'outil télécharge en 1080p, garde une image par changement de plan (nettes, sans doublons), supprime la vidéo, puis Claude <b>range chaque image dans le dossier du personnage</b> qu'il reconnaît (environ 0,03 $ pour 100 images).</p>
+    <form method="post" action="/slides-library/source" style="display:grid;grid-template-columns:1fr 200px auto;gap:8px">
+      <input type="url" name="url" placeholder="https://www.youtube.com/watch?v=…" required>
+      <input type="text" name="anime" list="animes" placeholder="Anime" required>
+      <datalist id="animes">{% for a in animes %}<option>{{ a }}</option>{% endfor %}</datalist>
+      <button class="primary">Capturer</button>
+    </form>
+  </div>
+
+  <div class="panel" style="margin-bottom:18px">
+    <b>2. Tes propres dossiers d'images</b> <span class="muted" style="font-size:13px">(le plus précis)</span>
+    <pre class="mono" style="margin:8px 0;white-space:pre-wrap">{{ root }}\
+  Jujutsu Kaisen\
+    Gojo Satoru\      ← une image par fichier, .jpg / .png / .webp
+    Sukuna\
+    autres images.jpg
+  _music\             ← musiques libres de droits pour les Shorts</pre>
+    <p class="muted" style="font-size:14px;margin:0 0 8px">Le nom du dossier du personnage aide Claude à choisir la bonne image. Après avoir ajouté des fichiers :</p>
+    <form method="post" action="/slides-library/scan"><button>Rescanner la bibliothèque</button></form>
+  </div>
+
+  {% if sources %}
+  <div class="panel">
+    <b>Captures</b>
+    <table><tbody>
+    {% for s in sources %}
+      <tr><td>{{ s.title or s.id }}<br><span class="muted mono">{{ s.anime }}</span></td>
+          <td>{% if s.status == 'done' %}<span class="pill ok">{{ s.n_frames }} images</span>
+              {% elif s.status == 'failed' %}<span class="pill no">échec</span><div class="err">{{ s.error }}</div>
+              {% else %}<span class="pill warn">{{ s.status }}</span>{% endif %}</td></tr>
+    {% endfor %}
+    </tbody></table>
+  </div>
+  {% endif %}
+</div>
+
+<div class="side">
+  <div class="panel">
+    <b>Par anime</b>
+    <table><tbody>
+    {% for a in lib %}
+      <tr><td><b>{{ a.anime }}</b>
+            {% if a.characters %}<div class="muted" style="font-size:12px">{{ a.characters|length }} perso(s) :
+              {% for c, n in a.characters.items()|sort %}{{ c }} ({{ n }}){{ ", " if not loop.last }}{% endfor %}</div>{% endif %}
+            {% if a.untagged %}<form method="post" action="/slides-library/tag" style="margin-top:6px">
+              <input type="hidden" name="anime" value="{{ a.anime }}">
+              <button class="small">Trier {{ a.untagged }} capture(s) par perso</button></form>{% endif %}</td>
+          <td class="mono">{{ a.library }} rangées<br>{{ a.frames }} captures{% if a.wallpaper %}<br>{{ a.wallpaper }} wallpapers{% endif %}</td></tr>
+    {% else %}
+      <tr><td class="muted">Aucune image pour l'instant.</td></tr>
+    {% endfor %}
+    </tbody></table>
+  </div>
+  <div class="panel">
+    <b>Musiques</b>
+    {% for m in music %}<div class="mono" style="font-size:13px">{{ m }}</div>{% else %}
+    <div class="muted" style="font-size:14px">Aucune : les Shorts seront muets. Mets des MP3 libres de droits (YouTube Audio Library…) dans <span class="mono">_music</span>. TikTok ajoute sa propre musique aux posts photo.</div>{% endfor %}
+  </div>
+</div>
+</div>
+{% endblock %}
+{% block scripts %}{% if current %}<script>setTimeout(() => location.reload(), 6000);</script>{% endif %}{% endblock %}

@@ -1,0 +1,127 @@
+{% from "_seo.html" import seo_box, seo_script %}
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Clipper · téléphone</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+  body { font-size: 16px; }
+  main { padding: 14px; max-width: 640px; }
+  .card { margin-bottom: 18px; }
+  .imgs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0; }
+  .imgs a { display: block; }
+  .imgs img { width: 100%; aspect-ratio: 9/16; object-fit: cover; border-radius: 8px; display: block; }
+  .imgs.portrait img { aspect-ratio: 4/5; }
+  .tabs { display: flex; gap: 6px; margin-top: 8px; }
+  .tabs button { flex: 1; }
+  textarea { font-size: 15px; }
+  .big { width: 100%; padding: 12px; font-size: 16px; margin-top: 6px; }
+  .hint { font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+{% if on_pc %}
+<div class="panel card">
+  <b>Ouvrir sur ton téléphone</b>
+  {% if not lan_on %}
+  <p class="warn">Le serveur n'est pas ouvert au téléphone. Arrête-le (Ctrl+C) et relance avec <code>clipper serve --lan</code>.</p>
+  {% else %}
+  <p class="hint">Même Wi-Fi que le PC. Scanne avec l'appareil photo du téléphone (ou envoie-toi le lien). Garde ce lien pour toi.</p>
+  {% if qr %}<div style="background:#fff;padding:8px;width:220px;border-radius:8px">{{ qr|safe }}</div>
+  {% else %}<p class="hint">(Pour avoir un QR code : <code>pip install qrcode</code>, puis relance le serveur.)</p>{% endif %}
+  <p class="mono" style="word-break:break-all;font-size:13px">{{ phone_url }}</p>
+  <p class="hint">Rien ne s'ouvre ? Windows a peut-être bloqué Python : Pare-feu Windows → « Autoriser une application » → coche Python pour les réseaux <b>privés</b>, et vérifie que ton Wi-Fi est en réseau privé.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% if battles %}
+<h1>Vidéos battle</h1>
+{% for v in battles %}
+<div class="panel card">
+  <b>🏆 {{ v.winner or "?" }}</b> <span class="hint">· {{ v.seconds or "?" }} s · {{ (v.fighters or [])|length }} persos</span>
+  <a class="btnlike big" style="display:block;text-align:center;margin-top:8px" href="/media/battle/{{ v.file }}" download>⬇ Télécharger la vidéo</a>
+  <div style="text-align:center;margin-top:6px"><form method="post" action="/media/battle/{{ v.file }}/remove" class="rmform" onsubmit="return confirm('Retirer cette vidéo ? Elle part dans data\\archive (récupérable).')"><button class="linkbtn">🗑 Retirer</button></form></div>
+  {{ seo_box(v) }}
+</div>
+{% endfor %}
+{% endif %}
+{% if fusions %}
+<h1>Vidéos fusion</h1>
+{% for v in fusions %}
+<div class="panel card">
+  <b>{% if v.kind == "race" %}⚔{% elif v.kind == "domain" %}🌀{% else %}⚡{% endif %} {{ v.title or "Fusion" }}</b> <span class="hint">· {{ v.seconds or "?" }} s{% if v.kind in ("race", "domain") %} · 🏆 {{ v.winner }}{% else %} · {{ (v.tiers or [])|length }} niveaux{% endif %}</span>
+  <a class="btnlike big" style="display:block;text-align:center;margin-top:8px" href="/media/fusion/{{ v.file }}" download>⬇ Télécharger la vidéo</a>
+  <div style="text-align:center;margin-top:6px"><form method="post" action="/media/fusion/{{ v.file }}/remove" class="rmform" onsubmit="return confirm('Retirer cette vidéo ? Elle part dans data\\archive (récupérable).')"><button class="linkbtn">🗑 Retirer</button></form></div>
+  {{ seo_box(v) }}
+</div>
+{% endfor %}
+{% endif %}
+<h1>À poster</h1>
+<p class="hint">Le plus rapide : « ⬇ Pack » télécharge toutes les images d'un coup (zip). Ouvre-le dans Fichiers (iPhone) ou Files/Fichiers (Android) pour le décompresser, puis enregistre les images.
+Sinon : touche une image pour l'ouvrir en grand, puis appui long → « Enregistrer l'image » (iPhone : « Ajouter à Photos »).
+Ensuite dans TikTok : + → Importer → choisis les images dans l'ordre → mode Photo → ajoute un son.</p>
+{% for s in items %}
+<div class="panel card" data-id="{{ s.id }}">
+  <b>{{ s.topic }}</b>
+  <div class="hint">{{ s.anime }} · {{ s.n }} slides
+    {% if s.when %} · sortie {{ s.when }} (Bxl) / {{ s.when_us }} (US){% else %} · pas encore validé{% endif %}</div>
+  <div class="tabs">
+    <button class="small primary" onclick="show({{ s.id }}, 'vertical', this)">TikTok (9:16)</button>
+    <button class="small" onclick="show({{ s.id }}, 'portrait', this)">Instagram (4:5)</button>
+    {% if s.grid %}<button class="small" onclick="show({{ s.id }}, 'grid', this)">Grille</button>{% endif %}
+  </div>
+  <div class="imgs" id="imgs-{{ s.id }}">
+    {% for i in range(1, s.n + 1) %}<a href="/media/slide/{{ s.id }}/vertical/{{ i }}.jpg" target="_blank"><img loading="lazy" src="/media/slide/{{ s.id }}/vertical/{{ i }}.jpg" alt="{{ i }}"></a>{% endfor %}
+  </div>
+  <div class="tabs">
+    <a class="btnlike small" style="flex:1;text-align:center" href="/slides/{{ s.id }}/pack/tiktok.zip">⬇ Pack TikTok</a>
+    <a class="btnlike small" style="flex:1;text-align:center" href="/slides/{{ s.id }}/pack/instagram.zip">⬇ Pack Instagram</a>
+  </div>
+  <textarea rows="4" readonly id="cap-{{ s.id }}">{{ s.caption_full }}</textarea>
+  <button class="big ok" onclick="copyCap({{ s.id }})">Copier la légende</button>
+  {% for pf in ["tiktok", "instagram"] %}{% set p = s.posts.get(pf) %}
+    {% if p and p.status != 'done' %}<button class="big" onclick="done({{ p.id }})">C'est posté sur {{ "TikTok" if pf == "tiktok" else "Instagram" }}</button>
+    {% elif p %}<div class="hint">✅ posté sur {{ pf }}</div>{% endif %}
+  {% endfor %}
+</div>
+{% else %}
+<p class="muted">Rien à poster pour l'instant : valide un slideshow sur ton PC.</p>
+{% endfor %}
+</main>
+<div id="toast"></div>
+<script>
+const N = { {% for s in items %}{{ s.id }}: {{ s.n }},{% endfor %} };
+function show(id, fmt, btn) {
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('primary'));
+  btn.classList.add('primary');
+  const box = document.getElementById('imgs-' + id);
+  box.classList.toggle('portrait', fmt === 'portrait');
+  if (fmt === 'grid') {
+    box.innerHTML = `<a href="/media/grid/${id}/vertical.jpg" target="_blank"><img src="/media/grid/${id}/vertical.jpg"></a>`;
+    return;
+  }
+  let h = '';
+  for (let i = 1; i <= N[id]; i++) h += `<a href="/media/slide/${id}/${fmt}/${i}.jpg" target="_blank"><img loading="lazy" src="/media/slide/${id}/${fmt}/${i}.jpg"></a>`;
+  box.innerHTML = h;
+}
+function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800); }
+function copyCap(id) {
+  const t = document.getElementById('cap-' + id);
+  t.removeAttribute('readonly'); t.select(); t.setSelectionRange(0, 99999);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) {}
+  t.setAttribute('readonly', '');
+  toast(ok ? 'Légende copiée' : 'Sélectionne le texte et copie-le');
+}
+async function done(pid) {
+  await fetch(`/api/posts/${pid}/done`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+  location.reload();
+}
+</script>
+{{ seo_script() }}
+</body>
+</html>

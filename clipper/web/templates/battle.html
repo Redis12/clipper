@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% from "_seo.html" import seo_box, seo_script %}
+{% block title %}Battle · Clipper{% endblock %}
+{% block main %}
+<h1>Vidéos « Which character wins? »</h1>
+<p class="sub">Les persos deviennent des balles qui rebondissent dans une arène. Chacun est relié au bord par des liens :
+toucher le lien d'un autre, c'est le lui voler. Un perso sans lien est éliminé ; à la fin du temps, celui qui a le plus
+de liens gagne. Le résultat est imprévisible : les gens commentent leur pronostic. Vidéo 9:16 pour Reels / TikTok
+(environ 1 à 2 minutes de calcul).</p>
+
+<div class="cols">
+<div class="panel">
+  <form method="post" action="/battle">
+    <div style="display:grid;grid-template-columns:1fr 120px;gap:8px;margin-bottom:10px">
+      <input type="text" name="title" value="Which anime character wins?">
+      <input type="number" name="links_per" value="{{ links_per }}" min="3" max="16" title="Liens par perso">
+    </div>
+    <p class="muted" style="font-size:13px;margin:0 0 8px">Coche de 4 à 16 persos (idéal : 10–12). Chaque perso de ta bibliothèque apparaît ici.</p>
+    <div class="battle-roster">
+    {% for r in roster %}
+      <label class="pick"><input type="checkbox" name="img" value="{{ r.image_id }}">
+        <img src="/media/lib/{{ r.image_id }}.jpg" loading="lazy"><span>{{ r.name }}</span><small>{{ r.anime }}</small></label>
+    {% else %}
+      <p class="muted">Aucun perso : ajoute des images rangées par perso dans la bibliothèque.</p>
+    {% endfor %}
+    </div>
+    <button class="primary" style="margin-top:12px" {% if current %}disabled{% endif %}>Générer la vidéo</button>
+  </form>
+</div>
+<div class="side">
+  <div class="panel">
+    <b>Vidéos prêtes</b>
+    {% for v in videos %}
+      <div style="margin-top:12px">
+        <video src="/media/battle/{{ v.file }}" controls preload="metadata" style="width:100%;border-radius:8px"></video>
+        <div style="font-size:13px">🏆 {{ v.winner or "?" }} · {{ v.seconds or "?" }} s
+          · <a href="/media/battle/{{ v.file }}" download>télécharger</a> · <form method="post" action="/media/battle/{{ v.file }}/remove" class="rmform" onsubmit="return confirm('Retirer cette vidéo ? Elle part dans data\\archive (récupérable).')"><button class="linkbtn">🗑 Retirer</button></form></div>
+        {{ seo_box(v) }}
+      </div>
+    {% else %}
+      <p class="muted" style="font-size:13px">Pas encore de vidéo.</p>
+    {% endfor %}
+  </div>
+</div>
+</div>
+<div class="panel" style="margin-top:16px">
+  <b>🌀 Domain War</b>
+  <p class="muted" style="font-size:13px;margin:4px 0 8px">① Coche <b>2 persos</b> · ② choisis <b>qui gagne</b> · ③ <b>Générer</b>.
+    Tout le reste est automatique (accroche VS, transformations, effets, sons, FINISH, écran de fin, SEO). Environ 6 min.</p>
+  <form method="post" action="/domain">
+    <div class="sound-row" style="margin-bottom:8px;font-size:14px">
+      <label><b>Qui gagne ?</b>
+        <select name="winner"><option value="">au hasard (le combat le plus serré)</option>
+          <option value="0">le 1er perso coché</option><option value="1">le 2e perso coché</option>
+          <option value="d0">égalité (le 1er coché perd d'abord puis revient)</option>
+          <option value="d1">égalité (le 2e coché perd d'abord puis revient)</option></select></label>
+      <label><input type="checkbox" name="comeback" checked> il perd d'abord puis se transforme et revient</label>
+    </div>
+    <details style="margin-bottom:8px;font-size:13px"><summary class="muted">Options avancées (pas besoin d'y toucher)</summary>
+      <div style="display:grid;grid-template-columns:1fr 100px;gap:8px;margin:8px 0">
+        <input type="text" name="title" placeholder="Titre (vide = « Gojo vs Sukuna: whose domain wins? »)">
+        <input type="number" name="seconds" value="35" min="15" max="90" title="Durée avant la phase finale (s)">
+      </div>
+      <div class="sound-row">
+        <label>Transformation
+          <select name="cine"><option value="auto">auto (pop-up si dispo, sinon clip)</option>
+            <option value="both">les 2 versions : clip de l'anime + pop-up (même combat)</option>
+            <option value="clip">clip de l'anime</option><option value="card">pop-up / carte (sans clip)</option></select></label>
+        <label>Sons
+          <select name="sounds"><option value="anime">sons de l'anime d'abord (défaut)</option>
+            <option value="auto">tous les packs mélangés</option>
+            <option value="safe">libres de droits seulement</option></select></label>
+      </div>
+      <p class="muted" style="margin:6px 0 0">Fiches des persos : <span class="mono">library\_domain\&lt;Perso&gt;.txt</span> ·
+        formes : <span class="mono">library\_fusion\&lt;Perso&gt;\</span> · cinématique : <span class="mono">library\_domain\cine\&lt;Perso&gt;\</span> ·
+        effets : <span class="mono">library\_domain\fx\</span> · sons : <span class="mono">library\_sfx\</span></p>
+    </details>
+    <p class="muted" style="font-size:13px;margin:0 0 6px">Le 1er coché = gauche, le 2e = droite (dans l'ordre de la liste).</p>
+    <div class="battle-roster">
+    {% for r in roster %}
+      <label class="pick"><input type="checkbox" name="img" value="{{ r.image_id }}">
+        <img src="/media/lib/{{ r.image_id }}.jpg" loading="lazy"><span>{{ r.name }}</span><small>{{ r.anime }}</small></label>
+    {% endfor %}
+    </div>
+    <button class="primary" style="margin-top:12px" {% if current %}disabled{% endif %}>Générer le Domain War</button>
+  </form>
+  <details style="margin-top:14px"><summary><b>Fiches des persos ({{ sheets|length }})</b></summary>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin-top:8px">
+    {% for s in sheets %}
+      <div class="panel" style="padding:10px;font-size:12px;border-left:4px solid {{ s.color or '#888' }}">
+        <b style="font-size:14px">{{ s.name }}</b>
+        <div class="muted" style="margin:4px 0">{{ s.about }}</div>
+        <div>💥 Zone : {{ s.zone.name if s.zone }} <span class="muted">({{ s.zone.fam if s.zone }})</span></div>
+        <div>➡ Devant : {{ s.front.name if s.front }}</div>
+        <div>• Projectiles : {{ s.shots.name if s.shots }}</div>
+        <div>⭐ Secret : {{ s.secret.name if s.secret }} <span class="muted">({{ s.secret.fam if s.secret }}{% if s.secret and s.secret.breaks %}, annule {{ s.secret.breaks }}{% endif %})</span></div>
+        <div>🛡 Passif : {{ s.passive.name if s.passive }} <span class="muted">({{ s.passive.fam if s.passive }})</span></div>
+        <div class="muted mono" style="margin-top:4px">{{ s.file }}</div>
+      </div>
+    {% endfor %}
+    </div>
+  </details>
+  {% for v in domains %}
+    <div style="margin-top:12px">
+      <video src="/media/fusion/{{ v.file }}" controls preload="metadata" style="width:100%;max-width:320px;border-radius:8px"></video>
+      <div style="font-size:13px">🌀 {{ (v.names or [])|join(" vs ") }} · 🏆 {{ v.winner }} · <a href="/media/fusion/{{ v.file }}" download>télécharger</a> · <form method="post" action="/media/fusion/{{ v.file }}/remove" class="rmform" onsubmit="return confirm('Retirer cette vidéo ? Elle part dans data\\archive (récupérable).')"><button class="linkbtn">🗑 Retirer</button></form></div>
+      <div style="max-width:520px">{{ seo_box(v) }}</div>
+    </div>
+  {% endfor %}
+</div>
+{{ seo_script() }}
+{% endblock %}

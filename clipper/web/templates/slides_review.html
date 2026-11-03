@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ s.topic }} · Clipper{% endblock %}
+{% block main %}
+<p class="sub" style="margin-bottom:4px"><a href="/slides">← Slideshows</a></p>
+<h1>{{ s.topic }}</h1>
+<p class="sub"><span id="status"></span> · {{ s.anime }} · {{ s.format }} · <span id="when"></span></p>
+<div id="warn" class="warn" style="margin-bottom:10px"></div>
+
+<div class="cols">
+<div>
+  <div class="strip" id="strip"></div>
+  <p class="muted" style="font-size:13px">Clique une miniature sous une slide pour changer l'image. Modifie le texte puis clique ailleurs : la slide est redessinée.
+    « Ajouter » : choisis toi-même une image sur ton PC (elle est aussi rangée dans la bibliothèque, dans le dossier du perso).
+    « Chercher » relance le choix automatique.</p>
+</div>
+<div class="side">
+  <div class="panel" id="gridbox" style="display:none">
+    <b>Version grille (une seule image)</b>
+    <img id="grid" style="width:100%;max-width:300px;border-radius:10px;display:block;margin-top:6px">
+    <div class="muted" style="font-size:13px;margin-top:4px">Incluse dans les packs (grille_image_unique.jpg) : poste-la seule, ou en dernière slide.</div>
+  </div>
+  <div class="panel">
+    <b>Vidéo (YouTube Shorts)</b>
+    <video class="short" id="short" controls preload="none" style="margin-top:6px"></video>
+    <div class="muted" id="novideo" style="font-size:13px;margin:4px 0">Pas de vidéo : TikTok et Instagram n'en ont pas besoin.</div>
+    <div class="actions"><button class="small" id="videobtn" onclick="rerender()">Générer la vidéo</button></div>
+  </div>
+  <div class="panel">
+    <div class="field"><span>Légende (TikTok / Instagram)</span><textarea rows="3" id="caption"></textarea></div>
+    <div class="field"><span>Hashtags</span><input type="text" id="hashtags"></div>
+    <div class="field"><span>Titre du Short YouTube</span><input type="text" id="yt_title" maxlength="100"></div>
+    <div class="actions" id="actions"></div>
+  </div>
+  <div class="panel">
+    <b>Publication</b>
+    <div id="posts" style="margin-top:6px"></div>
+    <div class="platforms" style="margin-top:8px">
+      <a href="/slides/{{ s.id }}/pack/tiktok.zip">Pack TikTok</a> ·
+      <a href="/slides/{{ s.id }}/pack/instagram.zip">Pack Instagram</a>
+      <span id="packshort"> · <a href="/slides/{{ s.id }}/pack/youtube.zip">Pack Short</a></span>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+window.SS = {{ data|tojson }};
+window.MAX_WORDS = {{ max_words }};
+</script>
+<script src="/static/slides.js"></script>
+{% endblock %}

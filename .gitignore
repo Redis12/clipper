@@ -1,0 +1,14 @@
+# secrets — never committed
+.env
+client_secret*.json
+*token*.json
+data/*
+!data/faces.json
+# local stuff
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+library/_videos pretes/
+library/_originals/
+*.lock

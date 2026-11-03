@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block main %}
+<h1>Vidéos</h1>
+<p class="sub">Colle une URL de vidéo, de playlist ou de chaîne. Chaque vidéo n'est traitée qu'une fois.</p>
+
+<form class="add" method="post" action="/add">
+  <input type="url" name="url" placeholder="https://www.youtube.com/watch?v=…  ou  /playlist?list=…  ou  /@chaine" required autofocus>
+  <button class="primary">Ajouter</button>
+</form>
+{% if error %}<p class="err">{{ error }}</p>{% endif %}
+
+<div class="panel" style="margin-bottom:20px">
+  <div class="quota">
+    <span>File : <b>{{ queue_len }}</b> clip(s) validé(s) en attente — <a href="/queue">voir</a></span>
+    <span>Encore <b>{{ q.clips_left_today }}</b> upload(s) possible(s) aujourd'hui</span>
+    {% for name, b in q.buckets.items() %}
+      <span class="muted">{{ name }} : {{ b.remaining }}/{{ b.limit }}{% if b.blocked %} <span class="pill no">bloqué</span>{% endif %}</span>
+    {% endfor %}
+    {% if waiting %}<span class="muted">{{ waiting }} tâche(s) en attente</span>{% endif %}
+  </div>
+</div>
+
+<div class="panel">
+<table>
+  <thead><tr><th>Vidéo</th><th>État</th><th>Clips</th><th></th></tr></thead>
+  <tbody>
+  {% for v in videos %}
+    {% set c = counts.get(v.id) %}
+    <tr>
+      <td>
+        <a href="/video/{{ v.id }}"><b>{{ v.title or v.id }}</b></a><br>
+        <span class="muted mono">{{ v.channel or "" }} {% if v.duration %}· {{ v.duration|tc }}{% endif %}</span>
+      </td>
+      <td>
+        {% if v.status == 'review' %}<span class="pill ok">prête</span>
+        {% elif v.status == 'failed' %}<span class="pill no">échec</span>
+        {% else %}<span class="pill warn">{{ v.step or v.status }}</span>{% endif %}
+        {% if v.error %}<div class="err">{{ v.error }}</div>{% endif %}
+      </td>
+      <td class="mono">
+        {% if c %}{{ c.review or 0 }} à revoir · {{ c.approved or 0 }} validés · {{ c.uploaded or 0 }} uploadés{% if c.pending %} · {{ c.pending }} en préparation{% endif %}{% endif %}
+      </td>
+      <td>
+        {% if v.status == 'failed' %}
+        <form method="post" action="/video/{{ v.id }}/retry"><button class="small">Relancer</button></form>
+        {% elif c %}<a href="/video/{{ v.id }}"><button class="small">Revoir</button></a>{% endif %}
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4" class="muted">Aucune vidéo pour l'instant.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Rafraîchit tant qu'un traitement tourne.
+if (document.getElementById('busy') || {{ waiting }} > 0) setTimeout(() => location.reload(), 5000);
+</script>
+{% endblock %}
