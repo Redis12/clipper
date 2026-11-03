@@ -112,6 +112,7 @@ shots: Ki Blast Volley
 secret: Stardust Breaker | meteor
 passive: Saiyan Power | speed
 form: _fusion/Gogeta
+voice: Gogeta Stardust Breaker voice
 aura: #38bdf8""",
 "Vegito": """match: vegito, vegetto, vegeto
 color: #0ea5e9
@@ -121,7 +122,8 @@ front: Spirit Sword
 shots: Scatter Finger Beam
 secret: Final Kamehameha | mega_beam
 passive: Afterimage Strike | speed
-form: _fusion/Vegito
+form: _fusion/Vegeto
+voice: Vegito Final Kamehameha voice
 aura: #60a5fa""",
 "Vegeta": """match: vegeta
 color: #2563eb
