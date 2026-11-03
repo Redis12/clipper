@@ -1,0 +1,3 @@
+Planches de sprites fournies par l'utilisateur (04/11) pour les bras élastiques de Luffy.
+sheet.png = Luffy base / Gear 2-3 (fond violet 128,128,255), gear4_sheet.jpg = Gear 4 (fond vert, jpg).
+On ne garde QUE les bras/poings, jamais le corps de Luffy (demande de l'utilisateur).
