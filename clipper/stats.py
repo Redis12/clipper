@@ -144,13 +144,15 @@ def collect(min_hours: float = 24.0, max_videos: int = 30) -> list[dict]:
     end = now.date().isoformat()
     for v in out:
         f = f"video=={v['id']}"
-        for metrics in ("engagedViews,averageViewPercentage,averageViewDuration,subscribersGained",
-                        "averageViewPercentage,averageViewDuration,subscribersGained"):
+        for metrics in ("views,engagedViews,averageViewPercentage,averageViewDuration,subscribersGained",
+                        "views,averageViewPercentage,averageViewDuration,subscribersGained"):
             try:
                 r = ya.reports().query(ids="channel==MINE", startDate=start, endDate=end, metrics=metrics,
                                        filters=f).execute()
                 if r.get("rows"):
-                    v.update(dict(zip([h["name"] for h in r["columnHeaders"]], r["rows"][0])))
+                    row = dict(zip([h["name"] for h in r["columnHeaders"]], r["rows"][0]))
+                    v["analytics_views"] = row.pop("views", 0)       # 0 alors que la vidéo a des vues = pas encore calculé
+                    v.update(row)
                 break
             except Exception as e:                                   # engagedViews pas dispo partout
                 log.debug("analytics %s : %s", metrics, e)
@@ -177,7 +179,7 @@ def report(videos: list[dict]) -> str:
     for v in sorted(videos, key=lambda x: x["published"], reverse=True):
         jn, fix = jail(v["views"])
         L.append(f"■ {v['title']}  ({v['age_h']:.0f} h, {v['duration']:.0f} s)")
-        ready = bool(v.get("averageViewPercentage"))          # YouTube Analytics a 48-72 h de retard
+        ready = bool(v.get("averageViewPercentage")) and bool(v.get("analytics_views"))   # Analytics : 48-72 h de retard
         ev = f", vues engagées {int(v['engagedViews'])}" if ready and "engagedViews" in v else ""
         pct = f"{v['averageViewPercentage']:.0f} % regardé" if ready else "% regardé pas encore calculé (48-72 h)"
         subs = f" · +{int(v.get('subscribersGained', 0))} abonnés" if ready else ""
