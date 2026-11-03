@@ -1,0 +1,9 @@
+1 Naruto Kid.jpg = Kid Naruto
+2 One Tail.jpg = One-Tail Cloak
+3 Base.jpg = Base
+4 four tails.jpg = Four-Tails
+5 toad sage.webp = Sage Mode
+6 KCM.jpg = Nine-Tails Chakra Mode
+7 KURAMA MODE.jpg = Kurama Mode
+8 SIX PATH.jpg = Six Paths Sage Mode
+9 Baryon Mode.jpg = Baryon Mode

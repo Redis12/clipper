@@ -1,0 +1,11 @@
+# Ordre des niveaux, du plus petit au plus gros : fichier = nom affiché dans la vidéo
+Kid Goku.webp = Kid Goku
+Base.png = Base
+Goku Kaioken.jpg = Kaioken
+SSJ1.jpg = SSJ1
+SSJ2.jpg = SSJ2
+SSJ3.jpg = SSJ3
+SSJGOD.jpg = SSJ God
+SSJBLUE.jpg = SSJ Blue
+ui.jpg = Ultra Instinct
+uimastered.jpg = UI Mastered

@@ -1,0 +1,10 @@
+WsT (by WsT) — License
+
+You may use these assets in unlimited personal and commercial projects (games, apps,
+videos, streams), modified or unmodified, without attribution (credit appreciated).
+
+You may NOT resell, redistribute, sublicense or share the assets themselves, on their own
+or as part of another asset pack / template / generator, even if modified, and you may not
+use them to train machine-learning models.
+
+The assets are provided "as is", without warranty of any kind.

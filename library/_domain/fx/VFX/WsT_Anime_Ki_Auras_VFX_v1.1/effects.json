@@ -1,0 +1,2185 @@
+{
+ "pack": "Anime Ki Auras & Energy VFX",
+ "version": "1.1",
+ "frame_ms": 50,
+ "format": {
+  "auras": "greyscale + alpha (R = G = B); colour = grey x tint; sheets have 4 identical columns and one frame per row; <id>_strip.png = the frames side by side; previews are tinted. Auras come in two layers: <id>_back_* is drawn behind the character, <id>_front_* over it (the wisps, the base and the sparks that wrap round the figure); same frame index for both. The six auras and the burst share one 112 x 144 cell with the figure's feet at (56, 105); the auras loop seamlessly over 48 frames. Marker masks: yellow = core, red = flame, green = rim, blue = sparks / licks / arcs; masks.presets gives a colour per region key as in v1.0 (head = core, body = flame, legs = rim, feet = sparks) and masks.marker_colors each key's mask colour: colour a pixel of mask colour marker_colors[k] with presets[name][k] x grey",
+  "projectiles": "greyscale + alpha (R = G = B); colour = grey x tint; the effect's brightest pixel is white; sheets have 4 identical columns and one frame per row; <id>_strip.png = the frames side by side; previews are tinted",
+  "techniques": "greyscale + alpha (R = G = B); colour = grey x tint; the effect's brightest pixel is white; sheets have 4 identical columns and one frame per row; <id>_strip.png = the frames side by side; previews are tinted. Layered techniques (ki_bomb, power_rocks, teleport) come in two layers: <id>_back_* is drawn behind the character, <id>_front_* over it, same frame index; their marker masks: yellow = core, red = flame, green = rim, blue = sparks; masks.presets gives a colour per region key as in v1.0 (head = core, body = flame, legs = rim, feet = sparks) and masks.marker_colors each key's mask colour: colour a pixel of mask colour marker_colors[k] with presets[name][k] x grey. Loops are seamless (ki_bomb and power_rocks loop over 48 frames like the auras, the spiral beam over 8 like the beam); one-shots start small and fade out. anchor = the cell pixel (from the top-left) the note names; points = further anchor points",
+  "spellcraft": "96 x 96 cells, the figure's feet at (48, 82); sheets have 4 identical columns and one frame per row, <id>_strip.png = the frames side by side, frames/ = single frames. native/ = Spellcraft colours (RGBA); grey/ = greyscale + alpha (R = G = B), colour = grey x tint, the effect's brightest pixel is white. Layers: <id>_back_* behind the character, <id>_front_* over it (same frame index); <id>_sheet.png = both merged, for an engine that draws the effect as one sprite over the target. Catalog: native / grey = the sheets {all, back, front}, strip.native / strip.grey = the strips {all, back, front}"
+ },
+ "effects": {
+  "aura_ki": {
+   "group": "Auras (back + front layers, loop)",
+   "frames": 48,
+   "loop": true,
+   "cell": [
+    112,
+    144
+   ],
+   "note": "aura; compact flame hugging the figure: white-hot core, darker rim, spiky tongues, licks and dithered sparks",
+   "anchor": [
+    56,
+    105
+   ],
+   "layers": {
+    "back": "effects/aura_ki/aura_ki_back_sheet.png",
+    "front": "effects/aura_ki/aura_ki_front_sheet.png"
+   },
+   "masks": {
+    "back": "effects/aura_ki/aura_ki_back_mask_sheet.png",
+    "front": "effects/aura_ki/aura_ki_front_mask_sheet.png",
+    "regions": "yellow = core, red = flame, green = rim, blue = sparks / licks / arcs",
+    "marker_colors": {
+     "head": [
+      255,
+      255,
+      0
+     ],
+     "body": [
+      255,
+      0,
+      0
+     ],
+     "legs": [
+      0,
+      255,
+      0
+     ],
+     "feet": [
+      0,
+      0,
+      255
+     ]
+    },
+    "presets": {
+     "super_gold": {
+      "head": [
+       255,
+       255,
+       230
+      ],
+      "body": [
+       255,
+       215,
+       70
+      ],
+      "legs": [
+       230,
+       140,
+       30
+      ],
+      "feet": [
+       255,
+       255,
+       200
+      ]
+     },
+     "kaio_red": {
+      "head": [
+       255,
+       240,
+       230
+      ],
+      "body": [
+       240,
+       70,
+       50
+      ],
+      "legs": [
+       150,
+       20,
+       40
+      ],
+      "feet": [
+       255,
+       200,
+       180
+      ]
+     },
+     "blue_god": {
+      "head": [
+       240,
+       250,
+       255
+      ],
+      "body": [
+       70,
+       160,
+       255
+      ],
+      "legs": [
+       30,
+       70,
+       200
+      ],
+      "feet": [
+       220,
+       245,
+       255
+      ]
+     },
+     "demon_violet": {
+      "head": [
+       250,
+       220,
+       255
+      ],
+      "body": [
+       160,
+       60,
+       220
+      ],
+      "legs": [
+       70,
+       20,
+       120
+      ],
+      "feet": [
+       255,
+       200,
+       255
+      ]
+     },
+     "shadow": {
+      "head": [
+       120,
+       110,
+       140
+      ],
+      "body": [
+       40,
+       30,
+       60
+      ],
+      "legs": [
+       10,
+       8,
+       20
+      ],
+      "feet": [
+       180,
+       160,
+       220
+      ]
+     }
+    }
+   },
+   "strip": {
+    "back": "effects/aura_ki/aura_ki_back_strip.png",
+    "front": "effects/aura_ki/aura_ki_front_strip.png"
+   },
+   "preview": {
+    "yellow": "effects/aura_ki/preview/aura_ki_yellow.gif",
+    "blue": "effects/aura_ki/preview/aura_ki_blue.gif",
+    "purple": "effects/aura_ki/preview/aura_ki_purple.gif",
+    "preset_blue_god": "effects/aura_ki/preview/aura_ki_preset_blue_god.gif",
+    "preset_demon_violet": "effects/aura_ki/preview/aura_ki_preset_demon_violet.gif",
+    "preset_kaio_red": "effects/aura_ki/preview/aura_ki_preset_kaio_red.gif",
+    "preset_shadow": "effects/aura_ki/preview/aura_ki_preset_shadow.gif",
+    "preset_super_gold": "effects/aura_ki/preview/aura_ki_preset_super_gold.gif"
+   }
+  },
+  "aura_blaze": {
+   "group": "Auras (back + front layers, loop)",
+   "frames": 48,
+   "loop": true,
+   "cell": [
+    112,
+    144
+   ],
+   "note": "aura; power-up form: bigger, spikier, faster flame",
+   "anchor": [
+    56,
+    105
+   ],
+   "layers": {
+    "back": "effects/aura_blaze/aura_blaze_back_sheet.png",
+    "front": "effects/aura_blaze/aura_blaze_front_sheet.png"
+   },
+   "masks": {
+    "back": "effects/aura_blaze/aura_blaze_back_mask_sheet.png",
+    "front": "effects/aura_blaze/aura_blaze_front_mask_sheet.png",
+    "regions": "yellow = core, red = flame, green = rim, blue = sparks / licks / arcs",
+    "marker_colors": {
+     "head": [
+      255,
+      255,
+      0
+     ],
+     "body": [
+      255,
+      0,
+      0
+     ],
+     "legs": [
+      0,
+      255,
+      0
+     ],
+     "feet": [
+      0,
+      0,
+      255
+     ]
+    },
+    "presets": {
+     "super_gold": {
+      "head": [
+       255,
+       255,
+       230
+      ],
+      "body": [
+       255,
+       215,
+       70
+      ],
+      "legs": [
+       230,
+       140,
+       30
+      ],
+      "feet": [
+       255,
+       255,
+       200
+      ]
+     },
+     "kaio_red": {
+      "head": [
+       255,
+       240,
+       230
+      ],
+      "body": [
+       240,
+       70,
+       50
+      ],
+      "legs": [
+       150,
+       20,
+       40
+      ],
+      "feet": [
+       255,
+       200,
+       180
+      ]
+     },
+     "blue_god": {
+      "head": [
+       240,
+       250,
+       255
+      ],
+      "body": [
+       70,
+       160,
+       255
+      ],
+      "legs": [
+       30,
+       70,
+       200
+      ],
+      "feet": [
+       220,
+       245,
+       255
+      ]
+     },
+     "demon_violet": {
+      "head": [
+       250,
+       220,
+       255
+      ],
+      "body": [
+       160,
+       60,
+       220
+      ],
+      "legs": [
+       70,
+       20,
+       120
+      ],
+      "feet": [
+       255,
+       200,
+       255
+      ]
+     },
+     "shadow": {
+      "head": [
+       120,
+       110,
+       140
+      ],
+      "body": [
+       40,
+       30,
+       60
+      ],
+      "legs": [
+       10,
+       8,
+       20
+      ],
+      "feet": [
+       180,
+       160,
+       220
+      ]
+     }
+    }
+   },
+   "strip": {
+    "back": "effects/aura_blaze/aura_blaze_back_strip.png",
+    "front": "effects/aura_blaze/aura_blaze_front_strip.png"
+   },
+   "preview": {
+    "yellow": "effects/aura_blaze/preview/aura_blaze_yellow.gif",
+    "blue": "effects/aura_blaze/preview/aura_blaze_blue.gif",
+    "purple": "effects/aura_blaze/preview/aura_blaze_purple.gif",
+    "preset_blue_god": "effects/aura_blaze/preview/aura_blaze_preset_blue_god.gif",
+    "preset_demon_violet": "effects/aura_blaze/preview/aura_blaze_preset_demon_violet.gif",
+    "preset_kaio_red": "effects/aura_blaze/preview/aura_blaze_preset_kaio_red.gif",
+    "preset_shadow": "effects/aura_blaze/preview/aura_blaze_preset_shadow.gif",
+    "preset_super_gold": "effects/aura_blaze/preview/aura_blaze_preset_super_gold.gif"
+   }
+  },
+  "aura_lightning": {
+   "group": "Auras (back + front layers, loop)",
+   "frames": 48,
+   "loop": true,
+   "cell": [
+    112,
+    144
+   ],
+   "note": "aura; serpentine arcs crawling up the flanks over a faint flame, flickering (re-rolled every frame)",
+   "anchor": [
+    56,
+    105
+   ],
+   "layers": {
+    "back": "effects/aura_lightning/aura_lightning_back_sheet.png",
+    "front": "effects/aura_lightning/aura_lightning_front_sheet.png"
+   },
+   "masks": {
+    "back": "effects/aura_lightning/aura_lightning_back_mask_sheet.png",
+    "front": "effects/aura_lightning/aura_lightning_front_mask_sheet.png",
+    "regions": "yellow = core, red = flame, green = rim, blue = sparks / licks / arcs",
+    "marker_colors": {
+     "head": [
+      255,
+      255,
+      0
+     ],
+     "body": [
+      255,
+      0,
+      0
+     ],
+     "legs": [
+      0,
+      255,
+      0
+     ],
+     "feet": [
+      0,
+      0,
+      255
+     ]
+    },
+    "presets": {
+     "super_gold": {
+      "head": [
+       255,
+       255,
+       230
+      ],
+      "body": [
+       255,
+       215,
+       70
+      ],
+      "legs": [
+       230,
+       140,
+       30
+      ],
+      "feet": [
+       255,
+       255,
+       200
+      ]
+     },
+     "kaio_red": {
+      "head": [
+       255,
+       240,
+       230
+      ],
+      "body": [
+       240,
+       70,
+       50
+      ],
+      "legs": [
+       150,
+       20,
+       40
+      ],
+      "feet": [
+       255,
+       200,
+       180
+      ]
+     },
+     "blue_god": {
+      "head": [
+       240,
+       250,
+       255
+      ],
+      "body": [
+       70,
+       160,
+       255
+      ],
+      "legs": [
+       30,
+       70,
+       200
+      ],
+      "feet": [
+       220,
+       245,
+       255
+      ]
+     },
+     "demon_violet": {
+      "head": [
+       250,
+       220,
+       255
+      ],
+      "body": [
+       160,
+       60,
+       220
+      ],
+      "legs": [
+       70,
+       20,
+       120
+      ],
+      "feet": [
+       255,
+       200,
+       255
+      ]
+     },
+     "shadow": {
+      "head": [
+       120,
+       110,
+       140
+      ],
+      "body": [
+       40,
+       30,
+       60
+      ],
+      "legs": [
+       10,
+       8,
+       20
+      ],
+      "feet": [
+       180,
+       160,
+       220
+      ]
+     }
+    }
+   },
+   "strip": {
+    "back": "effects/aura_lightning/aura_lightning_back_strip.png",
+    "front": "effects/aura_lightning/aura_lightning_front_strip.png"
+   },
+   "preview": {
+    "yellow": "effects/aura_lightning/preview/aura_lightning_yellow.gif",
+    "blue": "effects/aura_lightning/preview/aura_lightning_blue.gif",
+    "purple": "effects/aura_lightning/preview/aura_lightning_purple.gif",
+    "preset_blue_god": "effects/aura_lightning/preview/aura_lightning_preset_blue_god.gif",
+    "preset_demon_violet": "effects/aura_lightning/preview/aura_lightning_preset_demon_violet.gif",
+    "preset_kaio_red": "effects/aura_lightning/preview/aura_lightning_preset_kaio_red.gif",
+    "preset_shadow": "effects/aura_lightning/preview/aura_lightning_preset_shadow.gif",
+    "preset_super_gold": "effects/aura_lightning/preview/aura_lightning_preset_super_gold.gif"
+   }
+  },
+  "aura_dark": {
+   "group": "Auras (back + front layers, loop)",
+   "frames": 48,
+   "loop": true,
+   "cell": [
+    112,
+    144
+   ],
+   "note": "aura; evil ki: dense, slow, heavy smoke with black veins",
+   "anchor": [
+    56,
+    105
+   ],
+   "layers": {
+    "back": "effects/aura_dark/aura_dark_back_sheet.png",
+    "front": "effects/aura_dark/aura_dark_front_sheet.png"
+   },
+   "masks": {
+    "back": "effects/aura_dark/aura_dark_back_mask_sheet.png",
+    "front": "effects/aura_dark/aura_dark_front_mask_sheet.png",
+    "regions": "yellow = core, red = flame, green = rim, blue = sparks / licks / arcs",
+    "marker_colors": {
+     "head": [
+      255,
+      255,
+      0
+     ],
+     "body": [
+      255,
+      0,
+      0
+     ],
+     "legs": [
+      0,
+      255,
+      0
+     ],
+     "feet": [
+      0,
+      0,
+      255
+     ]
+    },
+    "presets": {
+     "super_gold": {
+      "head": [
+       255,
+       255,
+       230
+      ],
+      "body": [
+       255,
+       215,
+       70
+      ],
+      "legs": [
+       230,
+       140,
+       30
+      ],
+      "feet": [
+       255,
+       255,
+       200
+      ]
+     },
+     "kaio_red": {
+      "head": [
+       255,
+       240,
+       230
+      ],
+      "body": [
+       240,
+       70,
+       50
+      ],
+      "legs": [
+       150,
+       20,
+       40
+      ],
+      "feet": [
+       255,
+       200,
+       180
+      ]
+     },
+     "blue_god": {
+      "head": [
+       240,
+       250,
+       255
+      ],
+      "body": [
+       70,
+       160,
+       255
+      ],
+      "legs": [
+       30,
+       70,
+       200
+      ],
+      "feet": [
+       220,
+       245,
+       255
+      ]
+     },
+     "demon_violet": {
+      "head": [
+       250,
+       220,
+       255
+      ],
+      "body": [
+       160,
+       60,
+       220
+      ],
+      "legs": [
+       70,
+       20,
+       120
+      ],
+      "feet": [
+       255,
+       200,
+       255
+      ]
+     },
+     "shadow": {
+      "head": [
+       120,
+       110,
+       140
+      ],
+      "body": [
+       40,
+       30,
+       60
+      ],
+      "legs": [
+       10,
+       8,
+       20
+      ],
+      "feet": [
+       180,
+       160,
+       220
+      ]
+     }
+    }
+   },
+   "strip": {
+    "back": "effects/aura_dark/aura_dark_back_strip.png",
+    "front": "effects/aura_dark/aura_dark_front_strip.png"
+   },
+   "preview": {
+    "yellow": "effects/aura_dark/preview/aura_dark_yellow.gif",
+    "blue": "effects/aura_dark/preview/aura_dark_blue.gif",
+    "purple": "effects/aura_dark/preview/aura_dark_purple.gif",
+    "preset_blue_god": "effects/aura_dark/preview/aura_dark_preset_blue_god.gif",
+    "preset_demon_violet": "effects/aura_dark/preview/aura_dark_preset_demon_violet.gif",
+    "preset_kaio_red": "effects/aura_dark/preview/aura_dark_preset_kaio_red.gif",
+    "preset_shadow": "effects/aura_dark/preview/aura_dark_preset_shadow.gif",
+    "preset_super_gold": "effects/aura_dark/preview/aura_dark_preset_super_gold.gif"
+   }
+  },
+  "aura_wind": {
+   "group": "Auras (back + front layers, loop)",
+   "frames": 48,
+   "loop": true,
+   "cell": [
+    112,
+    144
+   ],
+   "note": "aura; spiral streaks racing round the body",
+   "anchor": [
+    56,
+    105
+   ],
+   "layers": {
+    "back": "effects/aura_wind/aura_wind_back_sheet.png",
+    "front": "effects/aura_wind/aura_wind_front_sheet.png"
+   },
+   "masks": {
+    "back": "effects/aura_wind/aura_wind_back_mask_sheet.png",
+    "front": "effects/aura_wind/aura_wind_front_mask_sheet.png",
+    "regions": "yellow = core, red = flame, green = rim, blue = sparks / licks / arcs",
+    "marker_colors": {
+     "head": [
+      255,
+      255,
+      0
+     ],
+     "body": [
+      255,
+      0,
+      0
+     ],
+     "legs": [
+      0,
+      255,
+      0
+     ],
+     "feet": [
+      0,
+      0,
+      255
+     ]
+    },
+    "presets": {
+     "super_gold": {
+      "head": [
+       255,
+       255,
+       230
+      ],
+      "body": [
+       255,
+       215,
+       70
+      ],
+      "legs": [
+       230,
+       140,
+       30
+      ],
+      "feet": [
+       255,
+       255,
+       200
+      ]
+     },
+     "kaio_red": {
+      "head": [
+       255,
+       240,
+       230
+      ],
+      "body": [
+       240,
+       70,
+       50
+      ],
+      "legs": [
+       150,
+       20,
+       40
+      ],
+      "feet": [
+       255,
+       200,
+       180
+      ]
+     },
+     "blue_god": {
+      "head": [
+       240,
+       250,
+       255
+      ],
+      "body": [
+       70,
+       160,
+       255
+      ],
+      "legs": [
+       30,
+       70,
+       200
+      ],
+      "feet": [
+       220,
+       245,
+       255
+      ]
+     },
+     "demon_violet": {
+      "head": [
+       250,
+       220,
+       255
+      ],
+      "body": [
+       160,
+       60,
+       220
+      ],
+      "legs": [
+       70,
+       20,
+       120
+      ],
+      "feet": [
+       255,
+       200,
+       255
+      ]
+     },
+     "shadow": {
+      "head": [
+       120,
+       110,
+       140
+      ],
+      "body": [
+       40,
+       30,
+       60
+      ],
+      "legs": [
+       10,
+       8,
+       20
+      ],
+      "feet": [
+       180,
+       160,
+       220
+      ]
+     }
+    }
+   },
+   "strip": {
+    "back": "effects/aura_wind/aura_wind_back_strip.png",
+    "front": "effects/aura_wind/aura_wind_front_strip.png"
+   },
+   "preview": {
+    "yellow": "effects/aura_wind/preview/aura_wind_yellow.gif",
+    "blue": "effects/aura_wind/preview/aura_wind_blue.gif",
+    "purple": "effects/aura_wind/preview/aura_wind_purple.gif",
+    "preset_blue_god": "effects/aura_wind/preview/aura_wind_preset_blue_god.gif",
+    "preset_demon_violet": "effects/aura_wind/preview/aura_wind_preset_demon_violet.gif",
+    "preset_kaio_red": "effects/aura_wind/preview/aura_wind_preset_kaio_red.gif",
+    "preset_shadow": "effects/aura_wind/preview/aura_wind_preset_shadow.gif",
+    "preset_super_gold": "effects/aura_wind/preview/aura_wind_preset_super_gold.gif"
+   }
+  },
+  "aura_sparkle": {
+   "group": "Auras (back + front layers, loop)",
+   "frames": 48,
+   "loop": true,
+   "cell": [
+    112,
+    144
+   ],
+   "note": "aura; calm glow with rising sparks, twinkling stars and a halo on the ground",
+   "anchor": [
+    56,
+    105
+   ],
+   "layers": {
+    "back": "effects/aura_sparkle/aura_sparkle_back_sheet.png",
+    "front": "effects/aura_sparkle/aura_sparkle_front_sheet.png"
+   },
+   "masks": {
+    "back": "effects/aura_sparkle/aura_sparkle_back_mask_sheet.png",
+    "front": "effects/aura_sparkle/aura_sparkle_front_mask_sheet.png",
+    "regions": "yellow = core, red = flame, green = rim, blue = sparks / licks / arcs",
+    "marker_colors": {
+     "head": [
+      255,
+      255,
+      0
+     ],
+     "body": [
+      255,
+      0,
+      0
+     ],
+     "legs": [
+      0,
+      255,
+      0
+     ],
+     "feet": [
+      0,
+      0,
+      255
+     ]
+    },
+    "presets": {
+     "super_gold": {
+      "head": [
+       255,
+       255,
+       230
+      ],
+      "body": [
+       255,
+       215,
+       70
+      ],
+      "legs": [
+       230,
+       140,
+       30
+      ],
+      "feet": [
+       255,
+       255,
+       200
+      ]
+     },
+     "kaio_red": {
+      "head": [
+       255,
+       240,
+       230
+      ],
+      "body": [
+       240,
+       70,
+       50
+      ],
+      "legs": [
+       150,
+       20,
+       40
+      ],
+      "feet": [
+       255,
+       200,
+       180
+      ]
+     },
+     "blue_god": {
+      "head": [
+       240,
+       250,
+       255
+      ],
+      "body": [
+       70,
+       160,
+       255
+      ],
+      "legs": [
+       30,
+       70,
+       200
+      ],
+      "feet": [
+       220,
+       245,
+       255
+      ]
+     },
+     "demon_violet": {
+      "head": [
+       250,
+       220,
+       255
+      ],
+      "body": [
+       160,
+       60,
+       220
+      ],
+      "legs": [
+       70,
+       20,
+       120
+      ],
+      "feet": [
+       255,
+       200,
+       255
+      ]
+     },
+     "shadow": {
+      "head": [
+       120,
+       110,
+       140
+      ],
+      "body": [
+       40,
+       30,
+       60
+      ],
+      "legs": [
+       10,
+       8,
+       20
+      ],
+      "feet": [
+       180,
+       160,
+       220
+      ]
+     }
+    }
+   },
+   "strip": {
+    "back": "effects/aura_sparkle/aura_sparkle_back_strip.png",
+    "front": "effects/aura_sparkle/aura_sparkle_front_strip.png"
+   },
+   "preview": {
+    "yellow": "effects/aura_sparkle/preview/aura_sparkle_yellow.gif",
+    "blue": "effects/aura_sparkle/preview/aura_sparkle_blue.gif",
+    "purple": "effects/aura_sparkle/preview/aura_sparkle_purple.gif",
+    "preset_blue_god": "effects/aura_sparkle/preview/aura_sparkle_preset_blue_god.gif",
+    "preset_demon_violet": "effects/aura_sparkle/preview/aura_sparkle_preset_demon_violet.gif",
+    "preset_kaio_red": "effects/aura_sparkle/preview/aura_sparkle_preset_kaio_red.gif",
+    "preset_shadow": "effects/aura_sparkle/preview/aura_sparkle_preset_shadow.gif",
+    "preset_super_gold": "effects/aura_sparkle/preview/aura_sparkle_preset_super_gold.gif"
+   }
+  },
+  "aura_burst": {
+   "group": "Power-up",
+   "frames": 12,
+   "loop": false,
+   "cell": [
+    112,
+    144
+   ],
+   "note": "one-shot power-up explosion (flash, ring racing out, flame tongues, dust), same cell and anchor as the auras",
+   "anchor": [
+    56,
+    105
+   ],
+   "sheet": "effects/aura_burst/aura_burst_sheet.png",
+   "strip": "effects/aura_burst/aura_burst_strip.png",
+   "preview": {
+    "yellow": "effects/aura_burst/preview/aura_burst_yellow.gif",
+    "blue": "effects/aura_burst/preview/aura_burst_blue.gif",
+    "purple": "effects/aura_burst/preview/aura_burst_purple.gif"
+   }
+  },
+  "ki_charge": {
+   "group": "Power-up",
+   "frames": 12,
+   "loop": true,
+   "cell": [
+    48,
+    56
+   ],
+   "note": "loop centred on the figure's chest: particles falling inward, a pulsing core, a faint ring contracting into it; anchor = the core's centre (put it on the chest)",
+   "anchor": [
+    24,
+    24
+   ],
+   "sheet": "effects/ki_charge/ki_charge_sheet.png",
+   "strip": "effects/ki_charge/ki_charge_strip.png",
+   "preview": {
+    "yellow": "effects/ki_charge/preview/ki_charge_yellow.gif",
+    "blue": "effects/ki_charge/preview/ki_charge_blue.gif"
+   }
+  },
+  "beam_charge": {
+   "group": "Power-up",
+   "frames": 21,
+   "loop": false,
+   "cell": [
+    48,
+    48
+   ],
+   "note": "charge-up at the hands; anchor = the charge point = the beam's root on its axis. segments: charge (frames 0-9, one-shot: particles stream into the hands, the sphere grows and flares), hold (10-17, a seamless loop: the flared sphere held while the beam fires - draw it over the beam's root, after the beam), release (18-20, one-shot: it fades out while the beam's tail - beam_tail - leaves the root). Without a beam play 0-9 then 18-20",
+   "anchor": [
+    26,
+    24
+   ],
+   "sheet": "effects/beam_charge/beam_charge_sheet.png",
+   "strip": "effects/beam_charge/beam_charge_strip.png",
+   "segments": {
+    "charge": {
+     "frames": [
+      0,
+      9
+     ],
+     "loop": false
+    },
+    "hold": {
+     "frames": [
+      10,
+      17
+     ],
+     "loop": true
+    },
+    "release": {
+     "frames": [
+      18,
+      20
+     ],
+     "loop": false
+    }
+   },
+   "preview": {
+    "yellow": "effects/beam_charge/preview/beam_charge_yellow.gif",
+    "blue": "effects/beam_charge/preview/beam_charge_blue.gif"
+   }
+  },
+  "ki_blast": {
+   "group": "Projectiles, beams and impacts",
+   "frames": 8,
+   "loop": true,
+   "cell": [
+    40,
+    32
+   ],
+   "note": "projectile flying right; anchor = the ball's centre, tail to the left (flip it for the other side)",
+   "anchor": [
+    21,
+    16
+   ],
+   "sheet": "effects/ki_blast/ki_blast_sheet.png",
+   "strip": "effects/ki_blast/ki_blast_strip.png",
+   "preview": {
+    "yellow": "effects/ki_blast/preview/ki_blast_yellow.gif",
+    "blue": "effects/ki_blast/preview/ki_blast_blue.gif"
+   }
+  },
+  "ki_blast_hit": {
+   "group": "Projectiles, beams and impacts",
+   "frames": 6,
+   "loop": false,
+   "cell": [
+    40,
+    40
+   ],
+   "note": "impact, centred on the hit point (one-shot: a flash, a ring and fragments flying off; the last frame is empty)",
+   "anchor": [
+    20,
+    20
+   ],
+   "sheet": "effects/ki_blast_hit/ki_blast_hit_sheet.png",
+   "strip": "effects/ki_blast_hit/ki_blast_hit_strip.png",
+   "preview": {
+    "yellow": "effects/ki_blast_hit/preview/ki_blast_hit_yellow.gif",
+    "blue": "effects/ki_blast_hit/preview/ki_blast_hit_blue.gif"
+   }
+  },
+  "energy_ball": {
+   "group": "Projectiles, beams and impacts",
+   "frames": 24,
+   "loop": true,
+   "cell": [
+    64,
+    64
+   ],
+   "note": "big swirling energy sphere with orbiting sparkles, centred",
+   "anchor": [
+    32,
+    32
+   ],
+   "sheet": "effects/energy_ball/energy_ball_sheet.png",
+   "strip": "effects/energy_ball/energy_ball_strip.png",
+   "preview": {
+    "yellow": "effects/energy_ball/preview/energy_ball_yellow.gif",
+    "blue": "effects/energy_ball/preview/energy_ball_blue.gif"
+   }
+  },
+  "beam_head": {
+   "group": "Projectiles, beams and impacts",
+   "frames": 8,
+   "loop": true,
+   "cell": [
+    56,
+    48
+   ],
+   "note": "beam front (right end); anchor = the join on the beam's axis, its left edge: its x = 0 continues beam_body, so draw it right after the last whole body tile, with the same frame index (the cell is taller than the body's for the cap's rays; the anchors line the axes up)",
+   "anchor": [
+    0,
+    24
+   ],
+   "sheet": "effects/beam_head/beam_head_sheet.png",
+   "strip": "effects/beam_head/beam_head_strip.png",
+   "preview": {
+    "yellow": "effects/beam_head/preview/beam_head_yellow.gif",
+    "blue": "effects/beam_head/preview/beam_head_blue.gif"
+   }
+  },
+  "beam_body": {
+   "group": "Projectiles, beams and impacts",
+   "frames": 8,
+   "loop": true,
+   "cell": [
+    32,
+    32
+   ],
+   "note": "beam segment, tiles along x with no seam (beam axis y = 16; the stripes flow right); same frame index as the head and tail. The beam starts at beam_charge's anchor (the charge point, on the beam axis): tile back from the head and cut the last tile there, then draw beam_charge's hold frames over that root (its flare hides the cut). When it stops, beam_tail is the back end that leaves the hands",
+   "anchor": [
+    16,
+    16
+   ],
+   "sheet": "effects/beam_body/beam_body_sheet.png",
+   "strip": "effects/beam_body/beam_body_strip.png",
+   "preview": {
+    "yellow": "effects/beam_body/preview/beam_body_yellow.gif",
+    "blue": "effects/beam_body/preview/beam_body_blue.gif"
+   }
+  },
+  "beam_tail": {
+   "group": "Projectiles, beams and impacts",
+   "frames": 8,
+   "loop": true,
+   "cell": [
+    32,
+    32
+   ],
+   "note": "beam back end (left end) for a beam that has stopped firing; anchor = the join on the beam's axis, its right edge: its x = 32 continues beam_body's x = 0 (its right 16 columns are the body tile), so draw it right before the first body tile, with the same frame index; the band closes in a rounded, fading end. Move it (and cut the body tiles behind it) towards the head while beam_charge plays its release; when it reaches the head, end the beam with ki_blast_hit at the head (or fade the head out)",
+   "anchor": [
+    32,
+    16
+   ],
+   "sheet": "effects/beam_tail/beam_tail_sheet.png",
+   "strip": "effects/beam_tail/beam_tail_strip.png",
+   "preview": {
+    "yellow": "effects/beam_tail/preview/beam_tail_yellow.gif",
+    "blue": "effects/beam_tail/preview/beam_tail_blue.gif"
+   }
+  },
+  "energy_disc": {
+   "group": "Projectiles, beams and impacts",
+   "frames": 8,
+   "loop": true,
+   "cell": [
+    32,
+    32
+   ],
+   "note": "spinning razor disc, centred",
+   "anchor": [
+    16,
+    16
+   ],
+   "sheet": "effects/energy_disc/energy_disc_sheet.png",
+   "strip": "effects/energy_disc/energy_disc_strip.png",
+   "preview": {
+    "yellow": "effects/energy_disc/preview/energy_disc_yellow.gif",
+    "blue": "effects/energy_disc/preview/energy_disc_blue.gif"
+   }
+  },
+  "ki_bomb": {
+   "group": "Techniques",
+   "frames": 48,
+   "loop": true,
+   "cell": [
+    112,
+    112
+   ],
+   "note": "giant energy sphere held over the raised hands, loop: the surface swirls, soft streaks and sparks of energy flow in from all around. anchor = the figure's feet; points.hands = where the raised hands touch the sphere (37 px above the feet), points.sphere = the sphere's centre (radius 23). To throw it, move the sprite by points.sphere and play explosion_dome where it lands",
+   "anchor": [
+    56,
+    109
+   ],
+   "points": {
+    "hands": [
+     56,
+     72
+    ],
+    "sphere": [
+     56,
+     49
+    ]
+   },
+   "layers": {
+    "back": "effects/ki_bomb/ki_bomb_back_sheet.png",
+    "front": "effects/ki_bomb/ki_bomb_front_sheet.png"
+   },
+   "masks": {
+    "back": "effects/ki_bomb/ki_bomb_back_mask_sheet.png",
+    "front": "effects/ki_bomb/ki_bomb_front_mask_sheet.png",
+    "regions": "yellow = core, red = flame, green = rim, blue = sparks",
+    "marker_colors": {
+     "head": [
+      255,
+      255,
+      0
+     ],
+     "body": [
+      255,
+      0,
+      0
+     ],
+     "legs": [
+      0,
+      255,
+      0
+     ],
+     "feet": [
+      0,
+      0,
+      255
+     ]
+    },
+    "presets": {
+     "super_gold": {
+      "head": [
+       255,
+       255,
+       230
+      ],
+      "body": [
+       255,
+       215,
+       70
+      ],
+      "legs": [
+       230,
+       140,
+       30
+      ],
+      "feet": [
+       255,
+       255,
+       200
+      ]
+     },
+     "kaio_red": {
+      "head": [
+       255,
+       240,
+       230
+      ],
+      "body": [
+       240,
+       70,
+       50
+      ],
+      "legs": [
+       150,
+       20,
+       40
+      ],
+      "feet": [
+       255,
+       200,
+       180
+      ]
+     },
+     "blue_god": {
+      "head": [
+       240,
+       250,
+       255
+      ],
+      "body": [
+       70,
+       160,
+       255
+      ],
+      "legs": [
+       30,
+       70,
+       200
+      ],
+      "feet": [
+       220,
+       245,
+       255
+      ]
+     },
+     "demon_violet": {
+      "head": [
+       250,
+       220,
+       255
+      ],
+      "body": [
+       160,
+       60,
+       220
+      ],
+      "legs": [
+       70,
+       20,
+       120
+      ],
+      "feet": [
+       255,
+       200,
+       255
+      ]
+     },
+     "shadow": {
+      "head": [
+       120,
+       110,
+       140
+      ],
+      "body": [
+       40,
+       30,
+       60
+      ],
+      "legs": [
+       10,
+       8,
+       20
+      ],
+      "feet": [
+       180,
+       160,
+       220
+      ]
+     }
+    }
+   },
+   "strip": {
+    "back": "effects/ki_bomb/ki_bomb_back_strip.png",
+    "front": "effects/ki_bomb/ki_bomb_front_strip.png"
+   },
+   "preview": {
+    "yellow": "effects/ki_bomb/preview/ki_bomb_yellow.gif",
+    "blue": "effects/ki_bomb/preview/ki_bomb_blue.gif",
+    "purple": "effects/ki_bomb/preview/ki_bomb_purple.gif",
+    "preset_blue_god": "effects/ki_bomb/preview/ki_bomb_preset_blue_god.gif",
+    "preset_demon_violet": "effects/ki_bomb/preview/ki_bomb_preset_demon_violet.gif",
+    "preset_kaio_red": "effects/ki_bomb/preview/ki_bomb_preset_kaio_red.gif",
+    "preset_shadow": "effects/ki_bomb/preview/ki_bomb_preset_shadow.gif",
+    "preset_super_gold": "effects/ki_bomb/preview/ki_bomb_preset_super_gold.gif"
+   }
+  },
+  "power_rocks": {
+   "group": "Techniques",
+   "frames": 48,
+   "loop": true,
+   "cell": [
+    112,
+    144
+   ],
+   "note": "power-up debris, loop: rocks tear out of the ground, float up round the figure and crumble, pebbles rise, dust churns at the feet, ki glows through ground cracks. Same cell and anchor as the auras (112 x 144, the figure's feet at [56, 105]) and the same 48-frame loop, so it layers with any aura at the same offset (back under the aura's back, front over the aura's front). Tint white for grey stone (preview power_rocks_white.gif) or with the aura's colour for ki-lit rocks; the mask presets colour the rocks too",
+   "anchor": [
+    56,
+    105
+   ],
+   "layers": {
+    "back": "effects/power_rocks/power_rocks_back_sheet.png",
+    "front": "effects/power_rocks/power_rocks_front_sheet.png"
+   },
+   "masks": {
+    "back": "effects/power_rocks/power_rocks_back_mask_sheet.png",
+    "front": "effects/power_rocks/power_rocks_front_mask_sheet.png",
+    "regions": "yellow = core, red = flame, green = rim, blue = sparks",
+    "marker_colors": {
+     "head": [
+      255,
+      255,
+      0
+     ],
+     "body": [
+      255,
+      0,
+      0
+     ],
+     "legs": [
+      0,
+      255,
+      0
+     ],
+     "feet": [
+      0,
+      0,
+      255
+     ]
+    },
+    "presets": {
+     "super_gold": {
+      "head": [
+       255,
+       255,
+       230
+      ],
+      "body": [
+       255,
+       215,
+       70
+      ],
+      "legs": [
+       230,
+       140,
+       30
+      ],
+      "feet": [
+       255,
+       255,
+       200
+      ]
+     },
+     "kaio_red": {
+      "head": [
+       255,
+       240,
+       230
+      ],
+      "body": [
+       240,
+       70,
+       50
+      ],
+      "legs": [
+       150,
+       20,
+       40
+      ],
+      "feet": [
+       255,
+       200,
+       180
+      ]
+     },
+     "blue_god": {
+      "head": [
+       240,
+       250,
+       255
+      ],
+      "body": [
+       70,
+       160,
+       255
+      ],
+      "legs": [
+       30,
+       70,
+       200
+      ],
+      "feet": [
+       220,
+       245,
+       255
+      ]
+     },
+     "demon_violet": {
+      "head": [
+       250,
+       220,
+       255
+      ],
+      "body": [
+       160,
+       60,
+       220
+      ],
+      "legs": [
+       70,
+       20,
+       120
+      ],
+      "feet": [
+       255,
+       200,
+       255
+      ]
+     },
+     "shadow": {
+      "head": [
+       120,
+       110,
+       140
+      ],
+      "body": [
+       40,
+       30,
+       60
+      ],
+      "legs": [
+       10,
+       8,
+       20
+      ],
+      "feet": [
+       180,
+       160,
+       220
+      ]
+     }
+    }
+   },
+   "strip": {
+    "back": "effects/power_rocks/power_rocks_back_strip.png",
+    "front": "effects/power_rocks/power_rocks_front_strip.png"
+   },
+   "preview": {
+    "yellow": "effects/power_rocks/preview/power_rocks_yellow.gif",
+    "blue": "effects/power_rocks/preview/power_rocks_blue.gif",
+    "purple": "effects/power_rocks/preview/power_rocks_purple.gif",
+    "white": "effects/power_rocks/preview/power_rocks_white.gif",
+    "preset_blue_god": "effects/power_rocks/preview/power_rocks_preset_blue_god.gif",
+    "preset_demon_violet": "effects/power_rocks/preview/power_rocks_preset_demon_violet.gif",
+    "preset_kaio_red": "effects/power_rocks/preview/power_rocks_preset_kaio_red.gif",
+    "preset_shadow": "effects/power_rocks/preview/power_rocks_preset_shadow.gif",
+    "preset_super_gold": "effects/power_rocks/preview/power_rocks_preset_super_gold.gif"
+   }
+  },
+  "teleport": {
+   "group": "Techniques",
+   "frames": 20,
+   "loop": false,
+   "cell": [
+    64,
+    112
+   ],
+   "note": "instant teleport, one-shot: vanish (frames 0-9: a light pillar flares over the figure, thins to a line and zips away upward, a glowing afterimage flickers and erodes away, sparks) - hide the figure from frame 2; appear (frames 10-19, at the destination) - show the figure again from frame 17. anchor = the figure's feet",
+   "anchor": [
+    32,
+    100
+   ],
+   "segments": {
+    "vanish": {
+     "frames": [
+      0,
+      9
+     ],
+     "loop": false,
+     "hide_figure_from": 2
+    },
+    "appear": {
+     "frames": [
+      10,
+      19
+     ],
+     "loop": false,
+     "show_figure_from": 17
+    }
+   },
+   "layers": {
+    "back": "effects/teleport/teleport_back_sheet.png",
+    "front": "effects/teleport/teleport_front_sheet.png"
+   },
+   "masks": {
+    "back": "effects/teleport/teleport_back_mask_sheet.png",
+    "front": "effects/teleport/teleport_front_mask_sheet.png",
+    "regions": "yellow = core, red = flame, green = rim, blue = sparks",
+    "marker_colors": {
+     "head": [
+      255,
+      255,
+      0
+     ],
+     "body": [
+      255,
+      0,
+      0
+     ],
+     "legs": [
+      0,
+      255,
+      0
+     ],
+     "feet": [
+      0,
+      0,
+      255
+     ]
+    },
+    "presets": {
+     "super_gold": {
+      "head": [
+       255,
+       255,
+       230
+      ],
+      "body": [
+       255,
+       215,
+       70
+      ],
+      "legs": [
+       230,
+       140,
+       30
+      ],
+      "feet": [
+       255,
+       255,
+       200
+      ]
+     },
+     "kaio_red": {
+      "head": [
+       255,
+       240,
+       230
+      ],
+      "body": [
+       240,
+       70,
+       50
+      ],
+      "legs": [
+       150,
+       20,
+       40
+      ],
+      "feet": [
+       255,
+       200,
+       180
+      ]
+     },
+     "blue_god": {
+      "head": [
+       240,
+       250,
+       255
+      ],
+      "body": [
+       70,
+       160,
+       255
+      ],
+      "legs": [
+       30,
+       70,
+       200
+      ],
+      "feet": [
+       220,
+       245,
+       255
+      ]
+     },
+     "demon_violet": {
+      "head": [
+       250,
+       220,
+       255
+      ],
+      "body": [
+       160,
+       60,
+       220
+      ],
+      "legs": [
+       70,
+       20,
+       120
+      ],
+      "feet": [
+       255,
+       200,
+       255
+      ]
+     },
+     "shadow": {
+      "head": [
+       120,
+       110,
+       140
+      ],
+      "body": [
+       40,
+       30,
+       60
+      ],
+      "legs": [
+       10,
+       8,
+       20
+      ],
+      "feet": [
+       180,
+       160,
+       220
+      ]
+     }
+    }
+   },
+   "strip": {
+    "back": "effects/teleport/teleport_back_strip.png",
+    "front": "effects/teleport/teleport_front_strip.png"
+   },
+   "preview": {
+    "yellow": "effects/teleport/preview/teleport_yellow.gif",
+    "blue": "effects/teleport/preview/teleport_blue.gif",
+    "purple": "effects/teleport/preview/teleport_purple.gif",
+    "preset_blue_god": "effects/teleport/preview/teleport_preset_blue_god.gif",
+    "preset_demon_violet": "effects/teleport/preview/teleport_preset_demon_violet.gif",
+    "preset_kaio_red": "effects/teleport/preview/teleport_preset_kaio_red.gif",
+    "preset_shadow": "effects/teleport/preview/teleport_preset_shadow.gif",
+    "preset_super_gold": "effects/teleport/preview/teleport_preset_super_gold.gif"
+   }
+  },
+  "afterimage": {
+   "group": "Techniques",
+   "frames": 12,
+   "loop": false,
+   "cell": [
+    96,
+    48
+   ],
+   "note": "speed dash, one-shot, facing right (flip for left): speed streaks at head and foot height, soft half-alpha ghosts of a side-on runner fading one after another, dust puffs. anchor = the figure's feet where the dash ends; the figure moves in from points.dash_start (60 px to the left) during frames 0-2. Draw it behind the figure",
+   "anchor": [
+    78,
+    39
+   ],
+   "points": {
+    "dash_start": [
+     18,
+     39
+    ]
+   },
+   "sheet": "effects/afterimage/afterimage_sheet.png",
+   "strip": "effects/afterimage/afterimage_strip.png",
+   "preview": {
+    "yellow": "effects/afterimage/preview/afterimage_yellow.gif",
+    "blue": "effects/afterimage/preview/afterimage_blue.gif",
+    "purple": "effects/afterimage/preview/afterimage_purple.gif"
+   }
+  },
+  "kiai_wave": {
+   "group": "Techniques",
+   "frames": 14,
+   "loop": false,
+   "cell": [
+    96,
+    64
+   ],
+   "note": "invisible force push (kiai), one-shot, facing right (flip for left): soft broken shockwave arcs racing out from the hands, a dust burst along the ground, pebbles. anchor = the figure's feet; points.origin = where the push leaves the hands. Draw it over the figure",
+   "anchor": [
+    18,
+    49
+   ],
+   "points": {
+    "origin": [
+     27,
+     31
+    ]
+   },
+   "sheet": "effects/kiai_wave/kiai_wave_sheet.png",
+   "strip": "effects/kiai_wave/kiai_wave_strip.png",
+   "preview": {
+    "yellow": "effects/kiai_wave/preview/kiai_wave_yellow.gif",
+    "blue": "effects/kiai_wave/preview/kiai_wave_blue.gif",
+    "purple": "effects/kiai_wave/preview/kiai_wave_purple.gif"
+   }
+  },
+  "punch_impact": {
+   "group": "Techniques",
+   "frames": 8,
+   "loop": false,
+   "cell": [
+    64,
+    48
+   ],
+   "note": "melee hit, one-shot: flash, star burst, a short shockwave ring, speed dashes and sparks. anchor = the hit point (e.g. the target's chest, 20 px above its feet)",
+   "anchor": [
+    32,
+    26
+   ],
+   "sheet": "effects/punch_impact/punch_impact_sheet.png",
+   "strip": "effects/punch_impact/punch_impact_strip.png",
+   "preview": {
+    "yellow": "effects/punch_impact/preview/punch_impact_yellow.gif",
+    "blue": "effects/punch_impact/preview/punch_impact_blue.gif",
+    "purple": "effects/punch_impact/preview/punch_impact_purple.gif"
+   }
+  },
+  "explosion_dome": {
+   "group": "Techniques",
+   "frames": 23,
+   "loop": false,
+   "cell": [
+    176,
+    96
+   ],
+   "note": "big ki explosion, one-shot: white flash, a dome of energy rising and eroding, a ground shockwave ring with a dust skirt, debris on arcs, dark smoke fading out; only the last frame is empty. anchor = ground zero (on the ground)",
+   "anchor": [
+    88,
+    69
+   ],
+   "sheet": "effects/explosion_dome/explosion_dome_sheet.png",
+   "strip": "effects/explosion_dome/explosion_dome_strip.png",
+   "preview": {
+    "yellow": "effects/explosion_dome/preview/explosion_dome_yellow.gif",
+    "blue": "effects/explosion_dome/preview/explosion_dome_blue.gif",
+    "purple": "effects/explosion_dome/preview/explosion_dome_purple.gif"
+   }
+  },
+  "solar_flash": {
+   "group": "Techniques",
+   "frames": 18,
+   "loop": false,
+   "cell": [
+    112,
+    96
+   ],
+   "note": "blinding flash from the face, one-shot: rays, a cross glint and a white-out bloom that holds and fades. anchor = the figure's feet; points.face = the flash's centre (26 px above the feet). Draw it over the figure",
+   "anchor": [
+    56,
+    76
+   ],
+   "points": {
+    "face": [
+     56,
+     50
+    ]
+   },
+   "sheet": "effects/solar_flash/solar_flash_sheet.png",
+   "strip": "effects/solar_flash/solar_flash_strip.png",
+   "preview": {
+    "yellow": "effects/solar_flash/preview/solar_flash_yellow.gif",
+    "blue": "effects/solar_flash/preview/solar_flash_blue.gif",
+    "purple": "effects/solar_flash/preview/solar_flash_purple.gif"
+   }
+  },
+  "spiral_beam_body": {
+   "group": "Techniques",
+   "frames": 8,
+   "loop": true,
+   "cell": [
+    32,
+    32
+   ],
+   "note": "drilling beam segment, tiles along x with no seam (beam axis y = 16; the coil spins and the stripes flow right, 2 px a frame like beam_body); same frame index as spiral_beam_head. Start it at beam_charge's anchor like beam_body",
+   "anchor": [
+    16,
+    16
+   ],
+   "sheet": "effects/spiral_beam_body/spiral_beam_body_sheet.png",
+   "strip": "effects/spiral_beam_body/spiral_beam_body_strip.png",
+   "preview": {
+    "yellow": "effects/spiral_beam_body/preview/spiral_beam_body_yellow.gif",
+    "blue": "effects/spiral_beam_body/preview/spiral_beam_body_blue.gif",
+    "purple": "effects/spiral_beam_body/preview/spiral_beam_body_purple.gif"
+   }
+  },
+  "spiral_beam_head": {
+   "group": "Techniques",
+   "frames": 8,
+   "loop": true,
+   "cell": [
+    64,
+    32
+   ],
+   "note": "drilling beam front (right end): coil and core taper together into a drill point. anchor = the join on the beam's axis, its left edge: its x = 0 continues spiral_beam_body, so draw it right after the last whole body tile with the same frame index",
+   "anchor": [
+    0,
+    16
+   ],
+   "sheet": "effects/spiral_beam_head/spiral_beam_head_sheet.png",
+   "strip": "effects/spiral_beam_head/spiral_beam_head_strip.png",
+   "preview": {
+    "yellow": "effects/spiral_beam_head/preview/spiral_beam_head_yellow.gif",
+    "blue": "effects/spiral_beam_head/preview/spiral_beam_head_blue.gif",
+    "purple": "effects/spiral_beam_head/preview/spiral_beam_head_purple.gif"
+   }
+  },
+  "whirlwind": {
+   "group": "Spellcraft effects (native colours + tintable grey)",
+   "name": "Whirlwind",
+   "spellcraft_category": "melee",
+   "frames": 20,
+   "loop": false,
+   "cell": [
+    96,
+    96
+   ],
+   "anchor": [
+    48,
+    82
+   ],
+   "note": "one-shot spin slash round the fighter (melee); anchored at the feet like the auras (its own 96 x 96 cell, feet at (48, 82))",
+   "native": {
+    "all": "effects/whirlwind/native/whirlwind_native_sheet.png",
+    "back": "effects/whirlwind/native/whirlwind_native_back_sheet.png",
+    "front": "effects/whirlwind/native/whirlwind_native_front_sheet.png"
+   },
+   "grey": {
+    "all": "effects/whirlwind/grey/whirlwind_grey_sheet.png",
+    "back": "effects/whirlwind/grey/whirlwind_grey_back_sheet.png",
+    "front": "effects/whirlwind/grey/whirlwind_grey_front_sheet.png"
+   },
+   "strip": {
+    "native": {
+     "all": "effects/whirlwind/native/whirlwind_native_strip.png",
+     "back": "effects/whirlwind/native/whirlwind_native_back_strip.png",
+     "front": "effects/whirlwind/native/whirlwind_native_front_strip.png"
+    },
+    "grey": {
+     "all": "effects/whirlwind/grey/whirlwind_grey_strip.png",
+     "back": "effects/whirlwind/grey/whirlwind_grey_back_strip.png",
+     "front": "effects/whirlwind/grey/whirlwind_grey_front_strip.png"
+    }
+   },
+   "preview": {
+    "native": "effects/whirlwind/preview/whirlwind_native.gif",
+    "white": "effects/whirlwind/preview/whirlwind_white.gif",
+    "blue": "effects/whirlwind/preview/whirlwind_blue.gif"
+   }
+  },
+  "shadow_shroud": {
+   "group": "Spellcraft effects (native colours + tintable grey)",
+   "name": "Shadow Shroud",
+   "spellcraft_category": "auras",
+   "frames": 40,
+   "loop": true,
+   "cell": [
+    96,
+    96
+   ],
+   "anchor": [
+    48,
+    82
+   ],
+   "note": "loop; a breathing cloak of shadow with blinking eyes, dark pool at the feet",
+   "native": {
+    "all": "effects/shadow_shroud/native/shadow_shroud_native_sheet.png",
+    "back": "effects/shadow_shroud/native/shadow_shroud_native_back_sheet.png",
+    "front": "effects/shadow_shroud/native/shadow_shroud_native_front_sheet.png"
+   },
+   "grey": {
+    "all": "effects/shadow_shroud/grey/shadow_shroud_grey_sheet.png",
+    "back": "effects/shadow_shroud/grey/shadow_shroud_grey_back_sheet.png",
+    "front": "effects/shadow_shroud/grey/shadow_shroud_grey_front_sheet.png"
+   },
+   "strip": {
+    "native": {
+     "all": "effects/shadow_shroud/native/shadow_shroud_native_strip.png",
+     "back": "effects/shadow_shroud/native/shadow_shroud_native_back_strip.png",
+     "front": "effects/shadow_shroud/native/shadow_shroud_native_front_strip.png"
+    },
+    "grey": {
+     "all": "effects/shadow_shroud/grey/shadow_shroud_grey_strip.png",
+     "back": "effects/shadow_shroud/grey/shadow_shroud_grey_back_strip.png",
+     "front": "effects/shadow_shroud/grey/shadow_shroud_grey_front_strip.png"
+    }
+   },
+   "preview": {
+    "native": "effects/shadow_shroud/preview/shadow_shroud_native.gif",
+    "purple": "effects/shadow_shroud/preview/shadow_shroud_purple.gif",
+    "red": "effects/shadow_shroud/preview/shadow_shroud_red.gif"
+   }
+  },
+  "gale_hit": {
+   "group": "Spellcraft effects (native colours + tintable grey)",
+   "name": "Gale Hit",
+   "spellcraft_category": "impacts",
+   "frames": 20,
+   "loop": false,
+   "cell": [
+    96,
+    96
+   ],
+   "anchor": [
+    48,
+    82
+   ],
+   "note": "one-shot wind impact on the fighter (hit point at the chest); fine as one layer",
+   "native": {
+    "all": "effects/gale_hit/native/gale_hit_native_sheet.png",
+    "back": "effects/gale_hit/native/gale_hit_native_back_sheet.png",
+    "front": "effects/gale_hit/native/gale_hit_native_front_sheet.png"
+   },
+   "grey": {
+    "all": "effects/gale_hit/grey/gale_hit_grey_sheet.png",
+    "back": "effects/gale_hit/grey/gale_hit_grey_back_sheet.png",
+    "front": "effects/gale_hit/grey/gale_hit_grey_front_sheet.png"
+   },
+   "strip": {
+    "native": {
+     "all": "effects/gale_hit/native/gale_hit_native_strip.png",
+     "back": "effects/gale_hit/native/gale_hit_native_back_strip.png",
+     "front": "effects/gale_hit/native/gale_hit_native_front_strip.png"
+    },
+    "grey": {
+     "all": "effects/gale_hit/grey/gale_hit_grey_strip.png",
+     "back": "effects/gale_hit/grey/gale_hit_grey_back_strip.png",
+     "front": "effects/gale_hit/grey/gale_hit_grey_front_strip.png"
+    }
+   },
+   "preview": {
+    "native": "effects/gale_hit/preview/gale_hit_native.gif",
+    "white": "effects/gale_hit/preview/gale_hit_white.gif",
+    "green": "effects/gale_hit/preview/gale_hit_green.gif"
+   }
+  },
+  "shield_bubble": {
+   "group": "Spellcraft effects (native colours + tintable grey)",
+   "name": "Shield Bubble",
+   "spellcraft_category": "status",
+   "frames": 40,
+   "loop": true,
+   "cell": [
+    96,
+    96
+   ],
+   "anchor": [
+    48,
+    82
+   ],
+   "note": "loop; translucent hex-plated bubble round the fighter, a ripple sweeping over it",
+   "native": {
+    "all": "effects/shield_bubble/native/shield_bubble_native_sheet.png",
+    "back": "effects/shield_bubble/native/shield_bubble_native_back_sheet.png",
+    "front": "effects/shield_bubble/native/shield_bubble_native_front_sheet.png"
+   },
+   "grey": {
+    "all": "effects/shield_bubble/grey/shield_bubble_grey_sheet.png",
+    "back": "effects/shield_bubble/grey/shield_bubble_grey_back_sheet.png",
+    "front": "effects/shield_bubble/grey/shield_bubble_grey_front_sheet.png"
+   },
+   "strip": {
+    "native": {
+     "all": "effects/shield_bubble/native/shield_bubble_native_strip.png",
+     "back": "effects/shield_bubble/native/shield_bubble_native_back_strip.png",
+     "front": "effects/shield_bubble/native/shield_bubble_native_front_strip.png"
+    },
+    "grey": {
+     "all": "effects/shield_bubble/grey/shield_bubble_grey_strip.png",
+     "back": "effects/shield_bubble/grey/shield_bubble_grey_back_strip.png",
+     "front": "effects/shield_bubble/grey/shield_bubble_grey_front_strip.png"
+    }
+   },
+   "preview": {
+    "native": "effects/shield_bubble/preview/shield_bubble_native.gif",
+    "blue": "effects/shield_bubble/preview/shield_bubble_blue.gif",
+    "yellow": "effects/shield_bubble/preview/shield_bubble_yellow.gif"
+   }
+  },
+  "cursed": {
+   "group": "Spellcraft effects (native colours + tintable grey)",
+   "name": "Cursed",
+   "spellcraft_category": "status",
+   "frames": 40,
+   "loop": true,
+   "cell": [
+    96,
+    96
+   ],
+   "anchor": [
+    48,
+    82
+   ],
+   "note": "loop; sigil-eye over the head, barbed rune chain, wisps and void motes",
+   "native": {
+    "all": "effects/cursed/native/cursed_native_sheet.png",
+    "back": "effects/cursed/native/cursed_native_back_sheet.png",
+    "front": "effects/cursed/native/cursed_native_front_sheet.png"
+   },
+   "grey": {
+    "all": "effects/cursed/grey/cursed_grey_sheet.png",
+    "back": "effects/cursed/grey/cursed_grey_back_sheet.png",
+    "front": "effects/cursed/grey/cursed_grey_front_sheet.png"
+   },
+   "strip": {
+    "native": {
+     "all": "effects/cursed/native/cursed_native_strip.png",
+     "back": "effects/cursed/native/cursed_native_back_strip.png",
+     "front": "effects/cursed/native/cursed_native_front_strip.png"
+    },
+    "grey": {
+     "all": "effects/cursed/grey/cursed_grey_strip.png",
+     "back": "effects/cursed/grey/cursed_grey_back_strip.png",
+     "front": "effects/cursed/grey/cursed_grey_front_strip.png"
+    }
+   },
+   "preview": {
+    "native": "effects/cursed/preview/cursed_native.gif",
+    "purple": "effects/cursed/preview/cursed_purple.gif",
+    "green": "effects/cursed/preview/cursed_green.gif"
+   }
+  }
+ }
+}
