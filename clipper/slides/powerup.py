@@ -191,7 +191,8 @@ def _rich_line(d: ImageDraw.ImageDraw, cx: float, y: float, parts: list, f, stro
 
 def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str | None = None,
              seconds: float = 60, out: Path | None = None, seed: int | None = None, sound: str | None = None,
-             target: float | None = None, fail: bool = False, max_form: str | None = None) -> Path:
+             target: float | None = None, fail: bool = False, max_form: str | None = None,
+             hakai: float | None = None, part: str | None = None) -> Path:
     """`chain` = dossier library/_fusion/<chain> (formes du héros, de la plus faible à la plus forte) ;
     `boss` = nom d'une forme de ce dossier (retirée des formes du héros) ou chemin d'une image."""
     from . import faces, fxengine, vfxgen, vfxpack  # noqa: F401
@@ -220,14 +221,17 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
     sim = simulate(seed, seconds, S, len(forms))
     hits = sim["hits"]
     target = float(target or c.get("target", 9.0e12))
-    if fail:                                             # défaite : pas de coup après le chrono
-        hits = [h for h in hits if h[0] <= seconds - 0.05]
+    if hakai:                                            # « Part 2 » : le boss efface le héros (Hakai) à t = hakai
+        fail = True
+    stop_at = float(hakai) if hakai else seconds
+    if fail:                                             # défaite : pas de coup après le chrono / le Hakai
+        hits = [h for h in hits if h[0] <= stop_at - 0.05]
     ds, mults, HP = damages([h[0] for h in hits], sim["tf"], target)
     left_pct = 0.0
     if fail:                                             # le boss survit avec ~4 % de vie
-        left_pct = float(pcfg().get("fail_left", 0.04))
+        left_pct = float(pcfg().get("fail_left", 0.04)) if not hakai else 0.11
         HP = sum(ds) / (1 - left_pct)
-    kill_t = hits[-1][0] if not fail else seconds
+    kill_t = hits[-1][0] if not fail else stop_at
     ox, oy = (W - S) / 2, H * 0.215
 
     # images
@@ -288,8 +292,8 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
     end_frames = int(fps * 1.5)                 # vidIQ : un Short « se termine », pas d'écran qui traîne
     n_sim = len(sim["frames"])
     if fail:                                    # chrono à 0 : figé, « TIME'S UP! » puis « FAILED »
-        n_sim = min(n_sim, int(seconds * fps) + 1)
-        end_frames = int(fps * (1.3 + 1.8))
+        n_sim = min(n_sim, int(stop_at * fps) + 1)
+        end_frames = int(fps * ((2.6 if hakai else 1.3) + 1.8))
     try:
         for fi in range(n_sim + end_frames):
             t = fi / fps
@@ -332,7 +336,7 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
             img = bg.copy()
             d = ImageDraw.Draw(img)
             # titre : « Can Kid Goku beat SSJ God Goku in under / 37 Seconds »
-            left = max(0, math.ceil(seconds - t - 1e-6)) if not kill_done else 0
+            left = max(0, math.ceil(seconds - min(t, stop_at) - 1e-6)) if not kill_done else 0
             _rich_line(d, W / 2, H * 0.045, [("Can ", (255, 255, 255)), (hero_name, HERO_COL), (" beat", (255, 255, 255))],
                        tf1, int(4 * k))
             _rich_line(d, W / 2, H * 0.045 + 74 * k, [(boss_name, BOSS_COL), (" in under", (255, 255, 255))],
@@ -342,6 +346,11 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
             d.text((W / 2, H * 0.045 + 150 * k), f"{left} Seconds", font=sf, anchor="ma",
                    fill=(255, 80, 80) if left <= 10 else (255, 255, 255), stroke_width=int(4 * k),
                    stroke_fill=(0, 0, 0))
+            if part:                                              # « PART 2 » : pilule rouge en haut à droite de la boîte
+                pf_ = render.font(int(34 * k))
+                tw_ = render.text_width(d, part.upper(), pf_) + 30 * k
+                d.rounded_rectangle((ox + S - tw_, oy - 58 * k, ox + S, oy - 14 * k), radius=10 * k, fill=(235, 60, 70))
+                d.text((ox + S - tw_ / 2, oy - 36 * k), part.upper(), font=pf_, anchor="mm", fill=(255, 255, 255))
             # boss
             if not kill_done:
                 bim = boss_icon
@@ -367,7 +376,8 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
                                            fill=(255, 220, 90, int(60 + 18 * form)))
                 au = au.filter(ImageFilter.GaussianBlur(hs * 0.3))
                 img.alpha_composite(au, (int(ox + hx - au.width / 2), int(oy + hy - au.height / 2)))
-            img.alpha_composite(hero_icon(form, hs), (int(ox + hx - hs / 2), int(oy + hy - hs / 2)))
+            if not (hakai and ended):                             # Hakai : le héros est dessiné à part
+                img.alpha_composite(hero_icon(form, hs), (int(ox + hx - hs / 2), int(oy + hy - hs / 2)))
             # textes qui flottent (« -1,597 »)
             keep = []
             for (ft, fx_, fy_, s_) in floats:
@@ -438,15 +448,51 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
                     kf = render.font(int(180 * k * (1 + 0.4 * (1 - a))))
                     d.text((W / 2, oy + S / 2), "K.O.!", font=kf, anchor="mm", fill=(255, 214, 10),
                            stroke_width=int(8 * k), stroke_fill=(0, 0, 0))
-            if fail and ended:                                    # défaite : TIME'S UP! puis FAILED
-                e_ = t - seconds
-                if e_ < 1.3:
+            if fail and ended:                                    # défaite : TIME'S UP! / HAKAI puis FAILED
+                e_ = t - stop_at
+                T1 = 2.6 if hakai else 1.3
+                if hakai and e_ < T1:                             # HAKAI : violet, le héros se désintègre
+                    dk = Image.new("RGBA", (W, H), (40, 0, 60, int(150 * min(1.0, e_ / 0.3))))
+                    img.alpha_composite(dk)
+                    hs_ = int(r * 2)
+                    au = Image.new("RGBA", (int(RB * 4), int(RB * 4)), (0, 0, 0, 0))
+                    ImageDraw.Draw(au).ellipse((RB * 0.6, RB * 0.6, RB * 3.4, RB * 3.4),
+                                               fill=(170, 60, 255, int(90 + 60 * math.sin(e_ * 12) ** 2)))
+                    au = au.filter(ImageFilter.GaussianBlur(RB * 0.35))
+                    img.alpha_composite(au, (int(ox + bx - au.width / 2), int(oy + by - au.height / 2)))
+                    img.alpha_composite(boss_icon, (int(ox + bx - RB), int(oy + by - RB)))
+                    q = max(0.0, (e_ - 0.7) / 1.4)                # le héros : violet puis s'efface en morceaux
+                    hi_ = hero_icon(form, hs_).copy()
+                    pur = Image.new("RGBA", hi_.size, (190, 90, 255, 255))
+                    pur.putalpha(hi_.getchannel("A"))
+                    hi_ = Image.blend(hi_, pur, min(1.0, e_ / 0.7) * 0.7)
+                    if q > 0:
+                        rq = random.Random(7)
+                        import numpy as _np
+                        a_ = _np.array(hi_.getchannel("A")).astype(_np.float32)
+                        noise = _np.array([[rq.random() for _ in range(hs_)] for _ in range(hs_)], _np.float32)
+                        a_[noise < q * 1.1] = 0
+                        hi_.putalpha(Image.fromarray(a_.astype(_np.uint8)))
+                        if int(e_ * fps) % 2 == 0 and q < 1:
+                            parts.emit(ox + hx, oy + hy, 14, speed=(80 * k, 380 * k), col=(200, 120, 255),
+                                       life=(0.4, 1.0), size=(3 * k, 7 * k), kind=fxengine.EMBER)
+                    img.alpha_composite(hi_, (int(ox + hx - hs_ / 2), int(oy + hy - hs_ / 2)))
+                    en_ = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+                    parts.draw(en_, 1.0)
+                    img = fxengine.bloom(img, en_, 0.8)
+                    d = ImageDraw.Draw(img)
+                    if e_ > 0.25:
+                        a = min(1.0, (e_ - 0.25) / 0.2)
+                        kf = render.font(int(170 * k * (1 + 0.4 * (1 - a))))
+                        d.text((W / 2, oy + S * 0.5), "HAKAI", font=kf, anchor="mm", fill=(190, 90, 255),
+                               stroke_width=int(8 * k), stroke_fill=(0, 0, 0))
+                elif not hakai and e_ < 1.3:
                     a = min(1.0, e_ / 0.25)
                     kf = render.font(int(150 * k * (1 + 0.4 * (1 - a))))
                     d.text((W / 2, oy + S / 2), "TIME'S UP!", font=kf, anchor="mm", fill=(255, 70, 70),
                            stroke_width=int(8 * k), stroke_fill=(0, 0, 0))
                 else:
-                    dim = Image.new("RGBA", (W, H), (0, 0, 0, int(210 * min(1.0, (e_ - 1.3) / 0.3))))
+                    dim = Image.new("RGBA", (W, H), (0, 0, 0, int(210 * min(1.0, (e_ - T1) / 0.3))))
                     img.alpha_composite(dim)
                     d = ImageDraw.Draw(img)
                     big = int(W * 0.46)
@@ -455,10 +501,12 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
                     d = ImageDraw.Draw(img)
                     d.text((W / 2, H * 0.24), "FAILED", font=render.font(int(120 * k)), anchor="mm",
                            fill=(255, 60, 60), stroke_width=int(6 * k), stroke_fill=(0, 0, 0))
-                    d.text((W / 2, H * 0.31), f"{boss_name.upper()} SURVIVED · {round(left_pct * 100)}% LEFT",
+                    d.text((W / 2, H * 0.31), f"{boss_name.upper()} USED HAKAI" if hakai else
+                           f"{boss_name.upper()} SURVIVED · {round(left_pct * 100)}% LEFT",
                            font=render.font(int(54 * k)), anchor="mm", fill=(255, 255, 255),
                            stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
-                    render.draw_rich(img, (W / 2, H * 0.36 + big + 40 * k), "Who could beat him? Comment 👇",
+                    render.draw_rich(img, (W / 2, H * 0.36 + big + 40 * k), "Should Goku get a Part 3? Comment 👇" if hakai
+                                     else "Who could beat him? Comment 👇",
                                      render.font(int(46 * k)), (255, 255, 255), "ma", int(3 * k), (0, 0, 0))
             keep_r = []
             for t0, rx, ry in ripples:
@@ -522,8 +570,14 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
         put(ft, S_("powerup", 1), 0.8)
     tick = S_("tick")
     for s_ in range(10, 0, -1):                                    # tic-tac des 10 dernières secondes
-        put(seconds - s_, tick, 0.5)
-    put(kill_t + (0 if fail else stop_shift + 1.4), S_("win"), 0.8)
+        if seconds - s_ < stop_at:
+            put(seconds - s_, tick, 0.5)
+    if hakai:                                                      # Hakai : gong très grave + désintégration
+        put(stop_at + 0.05, S_("summon"), 1.0)
+        put(stop_at + 0.7, S_("vanish"), 0.8)
+        put(stop_at + 2.6, S_("win"), 0.8)
+    else:
+        put(kill_t + (0 if fail else stop_shift + 1.4), S_("win"), 0.8)
     lvl = float(np.percentile(np.abs(audio), 99.7)) or 1.0
     audio = audio * min(1.0, 0.75 / lvl)
     wav = out.with_suffix(".wav")
@@ -532,9 +586,10 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
                     "-b:a", "160k", "-shortest", str(out)], check=True)
     tmp.unlink(missing_ok=True)
     wav.unlink(missing_ok=True)
-    meta = {"kind": "powerup", "title": f"Can {hero_name} beat {boss_name} in under {int(seconds)} seconds?",
+    meta = {"kind": "powerup", "title": f"Can {hero_name} beat {boss_name} in under {int(seconds)} seconds?"
+            + (f" {part}" if part else ""),
             "hero": hero_name, "boss": boss_name, "names": [hero_name, boss_name], "seed": seed, "hits": len(hits),
-            "forms": [f["name"] for f in forms], "result": "fail" if fail else "win", "seconds": round(duration, 1), "created_at": db.now()}
+            "forms": [f["name"] for f in forms], "result": "hakai" if hakai else ("fail" if fail else "win"), "part": part, "seconds": round(duration, 1), "created_at": db.now()}
     out.with_suffix(".json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
     _brand_video(out)
     log.info("power up : %s vs %s, %d coups, %.0f s → %s", hero_name, boss_name, len(hits), duration, out.name)
