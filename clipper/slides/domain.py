@@ -992,6 +992,11 @@ def _summon_icon(name: str, color: tuple) -> Image.Image:
     found = battle.fighters_from_library([name])
     if found:
         return fusion.icon(found[0]["image_path"], 256, color)
+    for d in sorted(library.root().glob("*/*")):                 # sans base d'images : dossier <Anime>/<Nom>/
+        if d.is_dir() and d.name.lower() == name.lower():
+            imgs = sorted(x for x in d.iterdir() if x.suffix.lower() in fusion.IMG_EXT)
+            if imgs:
+                return fusion.icon(str(imgs[0]), 256, color)
     im = fusion.icon(None, 256, mix(color, 0.35, (0, 0, 0)))
     ImageDraw.Draw(im).text((128, 128), name[:1].upper(), font=render.font(150), anchor="mm", fill=(255, 255, 255))
     return im
