@@ -249,3 +249,10 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
 
 ## Moteur 3D (03/11) — mis de côté
 - Idée « PS2 → 4K + shader boost » (short BT3 qui perce, charge de ki à chaque palier de résolution). Prototype three.js + Chromium dans `tools/3d/` (modèle GLB Goku fourni par l'utilisateur, poses par os). Rendu jugé « pas ouf » par l'utilisateur → abandonné pour l'instant. Alternative : qu'il enregistre lui-même BT3 dans un émulateur aux 6 résolutions, Claude fait le montage.
+
+## Luffy vs Kaido — décisions (04/11, 1h26)
+- Pixel-art « pas ouf pour ce format » : Luffy ET Kaido en ICÔNES (Domain War normal). L'utilisateur fournira les formes de Kaido (images, une tête visible : humain → hybride → dragon) dans `library/_fusion/Kaido/`.
+- On GARDE : les attaques (bras élastiques de Luffy qui passent devant Kaido, King Kong Gun, Dawn Whip, poings géants, Bajrang Gun ; Boro Breath / Thunder Bagua / dragon qui vole de Kaido), le scénario (mort → tambours Gear 5 → cinématique → retour), les dégâts affichés.
+- Voix MUGEN : seulement Zoro (Sanzen Sekai, groupe 0 n°3) + les « Gomu Gomu no… » de Luffy (MUGEN Luffy groupe 0 : 9 Jet Pistol, 3 Gatling, 11 Elephant/KKG, 12 Red Hawk, 13 Elephant Gatling, 17 Jet Bazooka) — les autres voix ne collent pas.
+- Zoro reste en sprite MUGEN (marche perdu sous l'arène puis Sanzen Sekai).
+- Outils : `clipper/slides/mugen.py` (lecteur SFF v1/AIR/SND), `tools/pixel/luffy_vs_kaido_v4.py`. Jump Force MUGEN (56 persos, SFF v2 non géré) : Goku UI, Naruto Asura, Ichigo final, Saitama… pour plus tard.
