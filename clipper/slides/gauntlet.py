@@ -23,7 +23,8 @@ W, H, FPS = 1080, 1920, 30
 HERO_COL, BOSS_COL, YELLOW = (255, 150, 40), (235, 60, 70), (255, 214, 10)
 
 
-def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, specials: list | None = None):
+def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, specials: list | None = None,
+             lose_at: int | None = None, lose_after: float = 3.0):
     """Rend les positions image par image et les chocs. Le boss change après `hits_for(i)` coups (+ pause K.O.)."""
     rnd = random.Random(seed)
     rh = S * 0.075
@@ -45,7 +46,11 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
     a = rnd.uniform(-2.4, -0.7)
     hv = S * 1.05
     hvx, hvy = math.cos(a) * hv, math.sin(a) * hv
+    foe_t0 = 0.0
     while foe < n_foes:
+        if lose_at is not None and foe == lose_at and t - foe_t0 >= lose_after:   # gauntlet inversé : il tombe
+            events.append(("lose", foe, t, hx, hy))
+            break
         if pause > 0:                                     # K.O. : tout s'arrête un instant
             pause -= dt
             if pause <= 0:
@@ -54,6 +59,7 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
                     break
                 RB, bx, by, bvx, bvy = new_boss(foe)
                 got = 0
+                foe_t0 = t
                 sp = specials[foe] or {}
                 if sp.get("gag"):                         # gag au début (Sanji cuisine, Talk no Jutsu…)
                     gag_until = t + float(sp.get("gag_s", 1.3))
@@ -142,16 +148,19 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
 
 
 def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Path | None = None,
-             seed: int | None = None, base_hits: int = 3, step_hits: int = 2, dmg: int = 9001) -> Path:
+             seed: int | None = None, base_hits: int = 3, step_hits: int = 2, dmg: int = 9001,
+             lose_at: int | None = None, lose_after: float = 3.0, title: tuple | None = None,
+             lose_move: str | None = None) -> Path:
     from . import fxengine, vfxgen
     k = W / 1080
     n = len(foes)
     S = W * 0.86
     ox, oy = (W - S) / 2, H * 0.215
-    hits_for = lambda i: base_hits + step_hits * i                                      # noqa: E731
+    hits_for = lambda i: (10 ** 6 if i == lose_at else base_hits + step_hits * i)        # noqa: E731
     seed = seed if seed is not None else random.randrange(1_000_000)
     specials = [{k_: v for k_, v in f.items() if k_ in ("gag", "gag_s", "tp", "kamui", "say", "fake")} or None for f in foes]
-    sim = simulate(seed, S, n, hits_for, specials=specials)
+    sim = simulate(seed, S, n, hits_for, specials=specials, lose_at=lose_at, lose_after=lose_after)
+    lost = next((e for e in sim["events"] if e[0] == "lose"), None)
     evs = sim["events"]
     frames = sim["frames"]
     hit_by_frame: dict = {}
@@ -209,7 +218,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
         for i_, ln in enumerate(lines):
             render.draw_rich(img_, (x0 + bw / 2, y0 + 15 * k + i_ * lh), ln, f_, (20, 20, 20), "ma", 0, (0, 0, 0))
     hit_t, ko_t = [], []
-    end_frames = int(FPS * 2.0)
+    end_frames = int(FPS * (2.0 + (1.4 if lost else 0)))
     try:
         for fi in range(len(frames) + end_frames):
             t = fi / FPS
@@ -231,10 +240,14 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
             img = bg.copy()
             d = ImageDraw.Draw(img)
             # titre
-            render.draw_rich(img, (W / 2, H * 0.04), f"Can Base {hero['name']} beat", tf, (255, 255, 255), "ma",
+            t1, t2 = title or (f"Can Base {hero['name']} beat", f"the {universe.upper()} GAUNTLET?")
+            render.draw_rich(img, (W / 2, H * 0.04), t1, tf, (255, 255, 255), "ma",
                              int(4 * k), (0, 0, 0))
             d = ImageDraw.Draw(img)
-            d.text((W / 2, H * 0.04 + 76 * k), f"the {universe.upper()} GAUNTLET?", font=render.font(int(70 * k)),
+            f2 = render.font(int(70 * k))
+            while f2.size > 30 and render.text_width(d, t2, f2) > W * 0.94:
+                f2 = render.font(f2.size - 3)
+            d.text((W / 2, H * 0.04 + 76 * k), t2, font=f2,
                    anchor="ma", fill=BOSS_COL, stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
             kills = sum(1 for x in ko_at)
             d.text((W / 2, oy - 34 * k), f"KILLS {kills}/{n}", font=render.font(int(44 * k)), anchor="mm",
@@ -402,7 +415,36 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                     d.line((x + sz - 10, y + 10, x + 10, y + sz - 10), fill=(235, 50, 60), width=int(8 * k))
                 elif i == foe and not ended:
                     d.ellipse((x - 4, y - 4, x + sz + 4, y + sz + 4), outline=YELLOW, width=int(5 * k))
-            if ended:                                             # écran de fin
+            if ended and lost and t - len(frames) / FPS < 1.4:  # il tombe : écran rouge, icône grise qui tremble
+                e = t - len(frames) / FPS
+                img.alpha_composite(Image.new("RGBA", (W, H), (150, 0, 0, int(120 * min(1.0, e / 0.2)))))
+                lb = frames[-1]                                   # le vainqueur reste à sa place
+                bic = foe_icons[lost[1]].resize((int(lb[2] * 2), int(lb[2] * 2)), Image.LANCZOS)
+                img.alpha_composite(bic, (int(ox + lb[0] - lb[2]), int(oy + lb[1] - lb[2])))
+                hs = int(rh * 2)
+                g = hero_icon.resize((hs, hs)).convert("LA").convert("RGBA")
+                g.putalpha(hero_icon.resize((hs, hs)).getchannel("A"))
+                sh_ = 10 * k * max(0.0, 1 - e / 0.8) * math.sin(e * 70)
+                img.alpha_composite(g, (int(ox + lost[3] - hs / 2 + sh_), int(oy + lost[4] - hs / 2)))
+                d = ImageDraw.Draw(img)
+                banner(img, lose_move or f"{foes[lost[1]]['name'].upper()}!", e, (255, 60, 60))
+                d.text((ox + lost[3], oy + lost[4] - hs), "DOWN!", font=render.font(int(60 * k)), anchor="mm",
+                       fill=(255, 255, 255), stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
+            elif ended and lost:                                  # écran de défaite
+                e = t - len(frames) / FPS - 1.4
+                img.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, int(205 * min(1.0, e / 0.3)))))
+                big = int(W * 0.46)
+                img.alpha_composite(foe_icons[lost[1]].resize((big, big), Image.LANCZOS),
+                                    (int(W / 2 - big / 2), int(H * 0.36)))
+                d = ImageDraw.Draw(img)
+                d.text((W / 2, H * 0.24), f"SURVIVED {lost[1]}/{n}", font=render.font(int(86 * k)), anchor="mm",
+                       fill=YELLOW, stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
+                d.text((W / 2, H * 0.24 + 92 * k), f"STOPPED BY {foes[lost[1]]['name'].upper()}",
+                       font=render.font(int(58 * k)), anchor="mm", fill=(255, 80, 80), stroke_width=int(5 * k),
+                       stroke_fill=(0, 0, 0))
+                render.draw_rich(img, (W / 2, H * 0.36 + big + 40 * k), "Did he deserve to lose? Comment 👇",
+                                 render.font(int(46 * k)), (255, 255, 255), "ma", int(3 * k), (0, 0, 0))
+            elif ended:                                           # écran de fin
                 e = t - len(frames) / FPS
                 dim = Image.new("RGBA", (W, H), (0, 0, 0, int(205 * min(1.0, e / 0.3))))
                 img.alpha_composite(dim)
@@ -449,7 +491,10 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
     for ev in evs:
         if ev[0] in ("tp", "kamui", "fake"):
             put(ev[2], domain.sfx("vanish", mode="anime", franchise=franchise), 0.7)
-    put(len(frames) / FPS, domain.sfx("win"), 0.8)
+    if lost:
+        put(lost[2], domain.sfx("ko", mode="anime", franchise=franchise), 1.0)
+        put(lost[2] + 0.05, domain.sfx("bomb", mode="anime", seed=2, franchise=franchise), 0.8)
+    put(len(frames) / FPS + (1.4 if lost else 0), domain.sfx("win"), 0.8)
     lvl = float(np.percentile(np.abs(audio), 99.7)) or 1.0
     audio = audio * min(1.0, 0.75 / lvl)
     wav = out.with_suffix(".wav")
@@ -458,7 +503,8 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                     "-b:a", "160k", "-shortest", str(out)], check=True)
     tmp.unlink(missing_ok=True)
     wav.unlink(missing_ok=True)
-    meta = {"kind": "gauntlet", "title": f"Can Base {hero['name']} beat the {universe} gauntlet?",
+    meta = {"kind": "gauntlet", "title": " ".join(title) if title else f"Can Base {hero['name']} beat the {universe} gauntlet?",
+            "lost_to": foes[lost[1]]["name"] if lost else None,
             "hero": hero["name"], "names": [hero["name"]] + [f["name"] for f in foes], "universe": universe,
             "seed": seed, "seconds": round(dur, 1), "created_at": db.now()}
     out.with_suffix(".json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")

@@ -39,3 +39,15 @@ if "op" in sys.argv or "all" in sys.argv:
 if "naruto" in sys.argv or "all" in sys.argv:
     print(gauntlet.generate(GOKU, naruto, universe="Naruto", seed=4, base_hits=1, step_hits=0,
                             out=OUT / "Gauntlet - Goku vs Naruto.mp4"))
+if "sage" in sys.argv or "all" in sys.argv:          # gauntlet inversé : Naruto Sage Mode tombe contre Itachi
+    SAGE = {"name": "Naruto", "image_path": L + "_fusion/Naruto/5 toad sage.webp"}
+    foes = [{"name": n, "image_path": N + p} for n, p in [
+        ("Ichiraku", "Teuchi/Teuchi.jpg"), ("TenTen", "TenTen/TenTen.jpg"), ("Sakura", "Sakura/Sakura.jpg"),
+        ("Orochimaru", "Orochimaru/Orochimaru.jpg"), ("Kakashi", "Kakashi/Kakashi.jpg"), ("Jiraiya", "Jiraya/Jiraya.png"),
+        ("Pain", "Pain/Pain.jpg"), ("Itachi", "Itachi/Itachi.jpg"), ("Minato", "Minato/Minato.jpg"),
+        ("Obito", "Obito/Obito.png"), ("Madara", "Madara/Madara.jpg")]]
+    foes[0].update(gag=True, gag_s=1.3, say="Free ramen if you lose! 🍜")
+    print(gauntlet.generate(SAGE, foes, universe="Naruto", seed=5, base_hits=1, step_hits=0, dmg=500,
+                            lose_at=7, lose_after=3.0, lose_move="TSUKUYOMI!",
+                            title=("Can Sage Mode Naruto", "SURVIVE the NARUTO GAUNTLET?"),
+                            out=OUT / "Gauntlet - Sage Naruto survive.mp4"))
