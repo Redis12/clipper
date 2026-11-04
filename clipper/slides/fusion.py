@@ -760,7 +760,7 @@ def _easter_overlay(img: Image.Image, egg: dict, icon_im: Image.Image, t: float,
 
 def generate(tiers: list[dict], title: str = "Fusion Battle", sound: str | None = None, seed: int | None = None,
              step: float | None = None, fat: float = 1.0, out: Path | None = None, easter: dict | None = None,
-             opts: dict | None = None) -> Path:
+             opts: dict | None = None, music: str | None = None, music_gain: float = 0.5) -> Path:
     """Simule et rend la vidéo jusqu'à l'apparition du dernier niveau. Rend le chemin du MP4.
     `easter` = {"image_path", "name", "text"} : un perso « perdu » traverse l'écran juste avant la forme finale
     (aussi : ligne « fichier = Nom | easter » dans ordre.txt)."""
@@ -820,14 +820,28 @@ def generate(tiers: list[dict], title: str = "Fusion Battle", sound: str | None 
             proc.kill()
     duration = frames / fps
     wav = out.with_suffix(".wav")
-    write_wav(wav, mix_events(sim.events, duration, len(tiers), sound, step, fat))
+    audio = mix_events(sim.events, duration, len(tiers), sound, step, fat)
+    if music:                                              # musique de fond jouée une fois, en continu (pas par fusion)
+        import numpy as np
+        r = subprocess.run([ffmpeg, "-loglevel", "error", "-i", str(music), "-t", f"{duration:.2f}", "-ac", "1",
+                            "-ar", str(RATE), "-f", "f32le", "-"], capture_output=True)
+        m = np.frombuffer(r.stdout, dtype=np.float32).copy()
+        if len(m):
+            m = m / (float(np.max(np.abs(m))) or 1.0)
+            if len(m) < len(audio):                        # trop courte : on la boucle
+                m = np.tile(m, len(audio) // len(m) + 1)
+            m = m[:len(audio)]
+            f = int(1.0 * RATE)
+            m[-f:] *= np.linspace(1, 0, f)                 # fondu de fin
+            audio = audio + m * float(fcfg().get("volume", 0.13)) * music_gain
+    write_wav(wav, audio)
     subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(tmp_video), "-i", str(wav), "-c:v", "copy",
                     "-c:a", "aac", "-b:a", "160k", "-shortest", str(out)], check=True)
     tmp_video.unlink(missing_ok=True)
     wav.unlink(missing_ok=True)
     meta = {"title": title, "seed": seed, "seconds": round(duration, 1), "tiers": [t["name"] for t in tiers],
             "reached": tiers[sim.best]["name"], "complete": sim.best >= sim.top,
-            "sound": ([Path(x).name for x in sound] if isinstance(sound, (list, tuple)) else
+            "music": Path(music).name if music else None, "sound": ([Path(x).name for x in sound] if isinstance(sound, (list, tuple)) else
                       (Path(sound).name if sound else None)), "created_at": db.now()}
     out.with_suffix(".json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
     _brand_video(out)
