@@ -1,0 +1,6 @@
+1 CELL LARVA.jpg = Larva
+2 IMPERFECT CELL.jpg = Imperfect Cell
+3 SEMI-PERFECT CELL.jpg = Semi-Perfect
+4 PERFECT CELLL.jpg = Perfect Cell
+5 ZENKAI CELL.jpg = Super Perfect
+6 CELL MMAX.jpg = Cell Max

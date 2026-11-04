@@ -759,11 +759,13 @@ def _easter_overlay(img: Image.Image, egg: dict, icon_im: Image.Image, t: float,
 
 
 def generate(tiers: list[dict], title: str = "Fusion Battle", sound: str | None = None, seed: int | None = None,
-             step: float | None = None, fat: float = 1.0, out: Path | None = None, easter: dict | None = None) -> Path:
+             step: float | None = None, fat: float = 1.0, out: Path | None = None, easter: dict | None = None,
+             opts: dict | None = None) -> Path:
     """Simule et rend la vidéo jusqu'à l'apparition du dernier niveau. Rend le chemin du MP4.
     `easter` = {"image_path", "name", "text"} : un perso « perdu » traverse l'écran juste avant la forme finale
     (aussi : ligne « fichier = Nom | easter » dans ordre.txt)."""
-    c = fcfg()
+    c = dict(fcfg())
+    c.update(opts or {})                                   # réglages ponctuels (ex. lâchers plus lents : ≥ 30 s)
     eggs = [t for t in tiers if t.get("easter")]
     tiers = [t for t in tiers if not t.get("easter")]
     if easter is None and eggs:

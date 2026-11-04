@@ -406,5 +406,35 @@
   0.06,
   0.62,
   0.18
+ ],
+ "tail:Cell/1 CELL LARVA.jpg": [
+  0.0,
+  0.5,
+  0.3,
+  0.8
+ ],
+ "tail:Cell/2 IMPERFECT CELL.jpg": [
+  0.4,
+  0.32,
+  0.62,
+  0.78
+ ],
+ "tail:Cell/3 SEMI-PERFECT CELL.jpg": [
+  0.34,
+  0.05,
+  0.66,
+  0.65
+ ],
+ "tail:Cell/4 PERFECT CELLL.jpg": [
+  0.43,
+  0.12,
+  0.58,
+  0.35
+ ],
+ "tail:Cell/5 ZENKAI CELL.jpg": [
+  0.36,
+  0.1,
+  0.6,
+  0.85
  ]
 }
