@@ -93,6 +93,17 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
                 events.append(("tp", foe, t, ox_, oy_, bx, by))
                 dx, dy = hx - bx, hy - by
                 dist = math.hypot(dx, dy) or 1
+            elif dist < RB + rh and sp.get("fake") and ("fake", foe) not in used:
+                used.add(("fake", foe))                   # Itachi : genjutsu, il « meurt »… et revient derrière Goku
+                gag_until = t + 1.3
+                hv_ = math.hypot(hvx, hvy) or 1
+                nbx = min(max(hx - hvx / hv_ * (RB + rh + 30), RB), S - RB)
+                nby = min(max(hy - hvy / hv_ * (RB + rh + 30), RB), S - RB)
+                events.append(("fake", foe, t, gag_until, bx, by))
+                bx, by = nbx, nby
+                hx, hy = hx + hvx / hv_ * 40, hy + hvy / hv_ * 40
+                hx, hy = min(max(hx, rh), S - rh), min(max(hy, rh), S - rh)
+                continue
             elif dist < RB + rh and sp.get("kamui") and ("kamui", foe) not in used:
                 used.add(("kamui", foe))                  # Obito : Kamui, Goku passe à travers
                 phase_until = t + 0.6
@@ -139,7 +150,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
     ox, oy = (W - S) / 2, H * 0.215
     hits_for = lambda i: base_hits + step_hits * i                                      # noqa: E731
     seed = seed if seed is not None else random.randrange(1_000_000)
-    specials = [{k_: v for k_, v in f.items() if k_ in ("gag", "gag_s", "tp", "kamui", "say")} or None for f in foes]
+    specials = [{k_: v for k_, v in f.items() if k_ in ("gag", "gag_s", "tp", "kamui", "say", "fake")} or None for f in foes]
     sim = simulate(seed, S, n, hits_for, specials=specials)
     evs = sim["events"]
     frames = sim["frames"]
@@ -230,23 +241,40 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                    fill=YELLOW, stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
             # adversaire du moment (pas pendant le K.O.)
             if not ended and not paused:
-                ic = foe_icons[foe].resize((int(RB * 2), int(RB * 2)), Image.LANCZOS)
+                gnow = [e for e in evs if e[0] in ("gag", "fake") and e[1] == foe and e[2] <= t < e[3]]
+                fxk = foes[foe].get("fx")
+                sc_, dx_ = 1.0, 0.0
+                hide = False
+                if gnow:
+                    q = (t - gnow[0][2]) / max(0.1, gnow[0][3] - gnow[0][2])
+                    if fxk == "inflate":                         # Gear 5 : gonfle comme un ballon
+                        sc_ = 1 + 0.45 * math.sin(min(1.0, q) * math.pi / 2) + 0.05 * math.sin(t * 30)
+                    elif fxk == "lost":                          # Zoro arrive par le mauvais côté
+                        dx_ = (1 - min(1.0, q / 0.6)) * (S * 0.6)
+                    if gnow[0][0] == "fake" and q < 0.5:
+                        hide = True
+                RBd = int(RB * 2 * sc_)
+                ic = foe_icons[foe].resize((RBd, RBd), Image.LANCZOS)
+                if hide:
+                    ic.putalpha(0)
                 if any(e[0] == "kamui" and e[1] == foe and e[2] <= t < e[3] for e in evs):
                     ic.putalpha(ic.getchannel("A").point(lambda v: v * 35 // 100))   # intangible
                 if hit_by_frame.get(fi) or hit_by_frame.get(fi - 1):
                     red = Image.new("RGBA", ic.size, (255, 40, 40, 255))
                     red.putalpha(ic.getchannel("A").point(lambda v: v // 2))
                     ic = Image.alpha_composite(ic, red)
-                img.alpha_composite(ic, (int(ox + bx - RB), int(oy + by - RB)))
+                img.alpha_composite(ic, (int(ox + bx + dx_ - RBd / 2), int(oy + by - RBd / 2)))
                 d = ImageDraw.Draw(img)
                 hp = 1 - dealt[foe] / hits_for(foe)
                 bw = RB * 1.6
-                x0, y0 = ox + bx - bw / 2, oy + by - RB - 26 * k
+                x0, y0 = ox + bx + dx_ - bw / 2, oy + by - RBd / 2 - 26 * k
                 if y0 < oy + 50 * k:                              # trop haut (sous « KILLS ») : sous la balle
-                    y0 = oy + by + RB + 46 * k
-                d.rectangle((x0 - 3, y0 - 3, x0 + bw + 3, y0 + 16 * k + 3), fill=(0, 0, 0))
-                d.rectangle((x0, y0, x0 + bw * hp, y0 + 16 * k), fill=(235, 60, 70))
-                d.text((ox + bx, y0 - 8 * k), foes[foe]["name"].upper(), font=render.font(int(30 * k)), anchor="md",
+                    y0 = oy + by + RBd / 2 + 46 * k
+                if not hide:
+                    d.rectangle((x0 - 3, y0 - 3, x0 + bw + 3, y0 + 16 * k + 3), fill=(0, 0, 0))
+                    d.rectangle((x0, y0, x0 + bw * hp, y0 + 16 * k), fill=(235, 60, 70))
+                if not hide:
+                  d.text((ox + bx + dx_, y0 - 8 * k), foes[foe]["name"].upper(), font=render.font(int(30 * k)), anchor="md",
                        fill=(255, 255, 255), stroke_width=int(3 * k), stroke_fill=(0, 0, 0))
             # héros
             hs = int(rh * 2)
@@ -282,10 +310,44 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                     if age < 0.7:
                         dl.text((ox + hx, oy + hy - 70 * k), "MISS!", font=render.font(int(44 * k)), anchor="mm",
                                 fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
+                elif kind == "fake" and t0 <= t < ev[3] + 0.4:   # genjutsu : corbeaux, écran rouge, il revient
+                    q = age / (ev[3] - t0)
+                    tint = Image.new("RGBA", (W, H), (140, 0, 0, int(110 * max(0.0, 1 - abs(q - 0.4) * 1.6))))
+                    img.alpha_composite(tint)
+                    dl = ImageDraw.Draw(img)
+                    if q < 0.7:                                  # corbeaux qui s'envolent de l'ancienne place
+                        rc = random.Random(ef)
+                        for j in range(16):
+                            ang = rc.uniform(0, 2 * math.pi)
+                            dd_ = RB * (0.3 + 2.2 * q) * rc.uniform(0.6, 1.2)
+                            cx_ = ox + ev[4] + math.cos(ang) * dd_
+                            cy_ = oy + ev[5] + math.sin(ang) * dd_ - 60 * k * q
+                            w_ = 22 * k
+                            dl.polygon([(cx_ - w_, cy_), (cx_, cy_ - w_ * 0.4), (cx_ + w_, cy_), (cx_, cy_ + w_ * 0.25)],
+                                       fill=(10, 10, 14))
+                    if q < 0.45:
+                        dl.text((ox + ev[4], oy + ev[5]), "K.O.?", font=render.font(int(90 * k)), anchor="mm",
+                                fill=YELLOW, stroke_width=int(6 * k), stroke_fill=(0, 0, 0))
+                    else:
+                        banner(img, foes[ef].get("fake_label", "GENJUTSU!"), age - (ev[3] - t0) * 0.45, (230, 40, 40))
+                        dl.text((ox + bx, max(oy + 40 * k, oy + by - RB - 70 * k)), "Behind you.", font=render.font(int(44 * k)), anchor="mm",
+                                fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
+                elif kind == "gag" and t0 <= t < ev[3] and foes[ef].get("fx") == "strings":
+                    dl = ImageDraw.Draw(img)                     # Doflamingo : fils de marionnette qui ratent
+                    q = age / (ev[3] - t0)
+                    for j in range(6):
+                        ex_ = ox + hx + (j - 2.5) * 30 * k + 60 * k * math.sin(j + t * 5)
+                        ey_ = oy + hy - 80 * k
+                        fx_ = ox + bx + (ex_ - ox - bx) * min(1.0, q * 1.5)
+                        fy_ = oy + by + (ey_ - oy - by) * min(1.0, q * 1.5)
+                        dl.line((ox + bx, oy + by, fx_, fy_), fill=(240, 240, 255), width=int(3 * k))
+                    bubble(img, ox + bx, oy + by - RB - 40 * k, foes[ef].get("say", ""))
+                    banner(img, foes[ef].get("gag_label", ""), age, (255, 150, 220))
                 elif kind == "gag" and t0 <= t < ev[3]:          # bulle de dialogue, texte qui s'écrit
                     say = foes[ef].get("say", "...")
                     nch = max(1, int(len(say) * min(1.0, age / max(0.3, (ev[3] - t0) * 0.7))))
-                    bubble(img, ox + bx, oy + by - RB - 40 * k, say[:nch])
+                    bx_b = bx + (S * 0.6 * (1 - min(1.0, (age / (ev[3] - t0)) / 0.6)) if foes[ef].get("fx") == "lost" else 0)
+                    bubble(img, ox + bx_b, oy + by - RB - 40 * k, say[:nch])
                     if foes[ef].get("gag_label"):
                         banner(img, foes[ef]["gag_label"], age, (255, 255, 255))
             # « -9,001 »
@@ -385,7 +447,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
         put(tt, domain.sfx("ko", mode="anime", franchise=franchise), 0.9)
         put(tt + 0.05, domain.sfx("bomb", mode="anime", seed=3, franchise=franchise), 0.8)
     for ev in evs:
-        if ev[0] in ("tp", "kamui"):
+        if ev[0] in ("tp", "kamui", "fake"):
             put(ev[2], domain.sfx("vanish", mode="anime", franchise=franchise), 0.7)
     put(len(frames) / FPS, domain.sfx("win"), 0.8)
     lvl = float(np.percentile(np.abs(audio), 99.7)) or 1.0

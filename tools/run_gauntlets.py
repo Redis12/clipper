@@ -12,12 +12,16 @@ GOKU = {"name": "Goku", "image_path": L + "_fusion/Goku/1 Base.png"}
 one_piece = [{"name": n, "image_path": f"{OP}{n}/{n}.jpg"} for n in ["Nami", "Sanji", "Crocodile", "Hody Jones",
                                                                    "Doflamingo", "Jack"]]
 one_piece[1].update(gag=True, gag_s=1.6, say="Wait! Let me cook for you first 🍳", gag_label="SANJI IS COOKING...")
-one_piece += [{"name": "Zoro", "image_path": L + "_fusion/Luffy/7 Zoro.jpeg"},
-              {"name": "Kizaru", "image_path": OP + "Kizaru/Kizaru.jpg"},
+one_piece[4].update(gag=True, gag_s=1.4, fx="strings", say="Fufufu... you're my puppet now!", gag_label="STRING!")
+one_piece += [{"name": "Zoro", "image_path": L + "_fusion/Luffy/7 Zoro.jpeg", "gag": True, "gag_s": 1.7, "fx": "lost",
+               "say": "Where am I? 🗺️", "gag_label": "ZORO GOT LOST..."},
+              {"name": "Kizaru", "image_path": OP + "Kizaru/Kizaru.jpg", "gag": True, "gag_s": 1.5,
+               "say": "Have you ever been kicked at the speed of light?"},
               {"name": "Akainu", "image_path": OP + "Akainu/Akainu.jpg"},
               {"name": "Luffy Gear 4", "image_path": L + "_fusion/Luffy/4 Gear 4 BoundMan.jpg"},
               {"name": "Kaido", "image_path": L + "_domain/forms/Kaido/3 Hybrid.jpg"},
-              {"name": "Luffy Gear 5", "image_path": L + "_fusion/Luffy/6 Gear 5.jpg"}]
+              {"name": "Luffy Gear 5", "image_path": L + "_fusion/Luffy/6 Gear 5.jpg", "gag": True, "gag_s": 1.5,
+               "fx": "inflate", "say": "HAHAHA! 😂", "gag_label": "GEAR 5!"}]
 naruto = [("Ichiraku", "Teuchi/Teuchi.jpg"), ("TenTen", "TenTen/TenTen.jpg"), ("Sakura", "Sakura/Sakura.jpg"),
           ("Jiraiya", "Jiraya/Jiraya.png"), ("Orochimaru", "Orochimaru/Orochimaru.jpg"),
           ("Kakashi", "Kakashi/Kakashi.jpg"), ("Raikage", "Raikage/Raikage.jpg"), ("Minato", "Minato/Minato.jpg"),
@@ -25,6 +29,7 @@ naruto = [("Ichiraku", "Teuchi/Teuchi.jpg"), ("TenTen", "TenTen/TenTen.jpg"), ("
           ("Madara", "Madara/Madara.jpg")]
 naruto = [{"name": n, "image_path": N + p} for n, p in naruto]
 naruto[7]["tp"] = True
+naruto[8]["fake"] = True
 naruto[10]["kamui"] = True
 naruto.append({"name": "Naruto", "image_path": L + "_fusion/Naruto/8 SIX PATH.jpg", "gag": True, "gag_s": 1.2,
                "say": "Listen Goku... I know your pain, believe it—", "gag_label": "TALK NO JUTSU!"})
