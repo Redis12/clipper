@@ -130,12 +130,14 @@ def mix_events(events: list[tuple[float, int]], duration: float, tiers: int, sou
                step: float | None = None, fat: float = 1.0):
     """Piste son de la vidéo : un bruitage par fusion, au niveau atteint."""
     import numpy as np
-    base = load_sound(sound)
-    cache = {}
+    paths = [x for x in (sound if isinstance(sound, (list, tuple)) else str(sound or "").split("|")) if x] or [None]
+    bases = [load_sound(x) for x in paths]                  # plusieurs sons (04/11 : « varie les sons ») : du plus
+    cache = {}                                              # léger (petits niveaux) au plus lourd (formes finales)
     n = int(duration * RATE) + RATE
     audio = np.zeros(n, dtype=np.float32)
     for t, tier in events:
         if tier not in cache:
+            base = bases[min(len(bases) - 1, tier * len(bases) // max(1, tiers))]
             cache[tier] = tier_sound(base, tier, tiers, step, fat)
         s = cache[tier]
         i = int(t * RATE)
@@ -823,7 +825,8 @@ def generate(tiers: list[dict], title: str = "Fusion Battle", sound: str | None 
     wav.unlink(missing_ok=True)
     meta = {"title": title, "seed": seed, "seconds": round(duration, 1), "tiers": [t["name"] for t in tiers],
             "reached": tiers[sim.best]["name"], "complete": sim.best >= sim.top,
-            "sound": Path(sound).name if sound else None, "created_at": db.now()}
+            "sound": ([Path(x).name for x in sound] if isinstance(sound, (list, tuple)) else
+                      (Path(sound).name if sound else None)), "created_at": db.now()}
     out.with_suffix(".json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
     _brand_video(out)
     log.info("fusion : %s atteint en %.0f s → %s", meta["reached"], duration, out.name)
