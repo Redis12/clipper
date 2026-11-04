@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFilter
 
 from .. import config, db
 from ..util import log, require_bin
-from . import faces, fusion, render
+from . import faces, fusion, library, render
 
 W, H, FPS = 1080, 1920, 30
 GUESS_S, REVEAL_S, END_S = 2.7, 1.1, 1.6
@@ -193,3 +193,197 @@ def generate(rounds: list[dict], title: str = "GUESS THE ANIME CHARACTER", out: 
     _brand_video(out)
     log.info("guess : %d persos → %s", len(rounds), out.name)
     return out
+
+
+# --------------------------------------------------------------------------- « Guess the FUSED characters »
+# Idée de l'utilisateur (04/11) : 2 persos « fusionnés » (moitié gauche de l'un, moitié droite de l'autre,
+# yeux alignés, raccord fondu), compte à rebours, puis la fusion se sépare en 2 têtes + « A + B ».
+
+def fuse(a: dict, b: dict, size: int = 900) -> Image.Image:
+    """Tête fusionnée : A à gauche, B à droite, B décalé pour que les yeux soient à la même hauteur."""
+    import numpy as np
+    ha = faces.head_square(Image.open(a["image_path"]).convert("RGB"), a["image_path"]).resize((size, size), Image.LANCZOS)
+    hb = faces.head_square(Image.open(b["image_path"]).convert("RGB"), b["image_path"]).resize((size, size), Image.LANCZOS)
+    dy = int((float(a.get("eye_y", 0.42)) - float(b.get("eye_y", 0.42))) * size)
+    hb2 = Image.new("RGB", (size, size), (0, 0, 0))
+    hb2.paste(hb, (0, dy))
+    if dy > 0:                                                   # bord vide : on étire la 1re ligne
+        hb2.paste(hb.crop((0, 0, size, 1)).resize((size, dy)), (0, 0))
+    elif dy < 0:
+        hb2.paste(hb.crop((0, size - 1, size, size)).resize((size, -dy)), (0, size + dy))
+    x = np.linspace(-1, 1, size)
+    m = np.clip(0.5 + x * 3.2, 0, 1)                             # raccord fondu au milieu (~30 % de la largeur)
+    m = np.tile(m, (size, 1))
+    A, B = np.asarray(ha, np.float32), np.asarray(hb2, np.float32)
+    out = A * (1 - m[..., None]) + B * m[..., None]
+    return Image.fromarray(out.clip(0, 255).astype(np.uint8))
+
+
+def _circle(im: Image.Image, D: int, col) -> Image.Image:
+    im = im.resize((D, D), Image.LANCZOS).convert("RGBA")
+    mk = Image.new("L", (D, D), 0)
+    ImageDraw.Draw(mk).ellipse((0, 0, D - 1, D - 1), fill=255)
+    out = Image.new("RGBA", (D, D), (0, 0, 0, 0))
+    out.paste(im, (0, 0), mk)
+    ImageDraw.Draw(out).ellipse((2, 2, D - 3, D - 3), outline=col + (255,), width=max(4, D // 30))
+    return out
+
+
+def generate_fused(pairs: list[tuple[dict, dict]], title: str = "GUESS THE FUSED CHARACTERS",
+                   out: Path | None = None) -> Path:
+    k = W / 1080
+    fused = []
+    for a, b in pairs:                                           # image faite par une IA (si elle existe) : prioritaire
+        ai = None
+        d_ = library.root() / "_guess"
+        for nm in (f"{a['name']} + {b['name']}", f"{b['name']} + {a['name']}"):
+            for ext in (".png", ".jpg", ".jpeg", ".webp"):
+                if (d_ / (nm + ext)).is_file():
+                    ai = d_ / (nm + ext)
+        if ai is not None:
+            im = Image.open(ai).convert("RGB")
+            sd = min(im.size)
+            fused.append(im.crop(((im.width - sd) // 2, 0, (im.width - sd) // 2 + sd, sd)).resize((900, 900)))
+        else:
+            fused.append(fuse(a, b))
+    heads = [(faces.head_square(Image.open(a["image_path"]).convert("RGB"), a["image_path"]),
+              faces.head_square(Image.open(b["image_path"]).convert("RGB"), b["image_path"])) for a, b in pairs]
+    bg = Image.new("RGB", (W, H), (14, 12, 24))
+    d0 = ImageDraw.Draw(bg)
+    for i in range(0, H, 6):
+        c = int(14 + 18 * (1 - abs(i - H * 0.45) / (H * 0.6)))
+        d0.line((0, i, W, i), fill=(c, max(0, c - 4), c + 14), width=6)
+    tf, sf = render.font(int(82 * k)), render.font(int(46 * k))
+    n = len(pairs)
+    D = int(W * 0.66)
+    cy0 = int(H * 0.47)
+    out = out or config.data_dir() / "fusions" / "guess_fused.mp4"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_suffix(".video.mp4")
+    ffmpeg = require_bin("ffmpeg")
+    proc = subprocess.Popen([ffmpeg, "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
+                             "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-preset", "veryfast",
+                             "-crf", "20", "-pix_fmt", "yuv420p", str(tmp)], stdin=subprocess.PIPE)
+    G, R = 3.0, 1.5                                              # un peu plus long : c'est plus dur
+    per = G + R
+    total = n * per + END_S
+    ticks, dings = [], []
+    try:
+        for fi in range(int(total * FPS)):
+            t = fi / FPS
+            img = bg.copy()
+            d = ImageDraw.Draw(img)
+            ri = min(n - 1, int(t // per))
+            lt = t - ri * per
+            ended = t >= n * per
+            y = int(H * 0.045)
+            for line in render.wrap(title, tf, int(W * 0.92), d):
+                d.text((W / 2, y), line, font=tf, anchor="ma", fill=(255, 255, 255), stroke_width=int(5 * k),
+                       stroke_fill=(0, 0, 0))
+                y += int(92 * k)
+            render.draw_rich(img, (W / 2, y + 8 * k), "Name BOTH to win 😳", sf, YELLOW, "ma", int(4 * k), (0, 0, 0))
+            d = ImageDraw.Draw(img)
+            if not ended:
+                a, b = pairs[ri]
+                top = cy0 - D / 2
+                d.text((W / 2, top - 95 * k), f"#{ri + 1}/{n}", font=render.font(int(64 * k)), anchor="mm",
+                       fill=(200, 200, 220), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
+                for j in range(n):
+                    cx = W / 2 + (j - (n - 1) / 2) * 46 * k
+                    col = YELLOW if j < ri or (j == ri and lt >= G) else ((255, 255, 255) if j == ri else (70, 70, 90))
+                    d.ellipse((cx - 11 * k, top - 45 * k, cx + 11 * k, top - 23 * k), fill=col)
+                if lt < G:
+                    pulse = 1 + 0.015 * math.sin(lt * 9)
+                    c = _circle(fused[ri], int(D * pulse), (255, 255, 255))
+                    img.paste(c, (int(W / 2 - c.width / 2), int(cy0 - c.height / 2)), c)
+                    d = ImageDraw.Draw(img)
+                    sec = 3 - int(lt / (G / 3))
+                    aa = (lt % (G / 3)) / (G / 3)
+                    if aa < 1.5 / FPS and sec >= 1:
+                        ticks.append(t)
+                    cy_ = cy0 + D / 2 + 150 * k
+                    Rr = 105 * k
+                    d.ellipse((W / 2 - Rr, cy_ - Rr, W / 2 + Rr, cy_ + Rr), fill=(20, 20, 30), outline=(255, 255, 255),
+                              width=int(7 * k))
+                    d.arc((W / 2 - Rr, cy_ - Rr, W / 2 + Rr, cy_ + Rr), -90, -90 + 360 * (1 - aa), fill=(255, 70, 70),
+                          width=int(12 * k))
+                    d.text((W / 2, cy_), str(max(1, sec)), font=render.font(int(120 * k * (1.25 - 0.25 * _ease(aa * 3)))),
+                           anchor="mm", fill=(255, 255, 255), stroke_width=int(6 * k), stroke_fill=(0, 0, 0))
+                else:                                            # la fusion se sépare : A + B
+                    bb = lt - G
+                    if bb < 1.5 / FPS:
+                        dings.append(t)
+                    s = _ease(bb / 0.4)
+                    d2 = int(D * (1 - 0.38 * s))
+                    off = (W * 0.24) * s
+                    for side, (hd, who, col) in enumerate(((heads[ri][0], a, (255, 120, 80)),
+                                                           (heads[ri][1], b, (90, 170, 255)))):
+                        c = _circle(hd, d2, col)
+                        x = W / 2 + (-off if side == 0 else off) - c.width / 2
+                        img.paste(c, (int(x), int(cy0 - c.height / 2)), c)
+                    d = ImageDraw.Draw(img)
+                    if s > 0.6:
+                        al = min(1.0, (s - 0.6) / 0.4)
+                        f_ = render.font(int(62 * k))
+                        d.text((W / 2 - W * 0.24, cy0 + d2 / 2 + 60 * k), a["name"].upper(), font=f_, anchor="mm",
+                               fill=YELLOW, stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
+                        d.text((W / 2 + W * 0.24, cy0 + d2 / 2 + 60 * k), b["name"].upper(), font=f_, anchor="mm",
+                               fill=YELLOW, stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
+                        d.text((W / 2, cy0), "+", font=render.font(int(140 * k * al)), anchor="mm", fill=(255, 255, 255),
+                               stroke_width=int(6 * k), stroke_fill=(0, 0, 0))
+                    if bb < 0.12:
+                        img = Image.blend(img, Image.new("RGB", img.size, (255, 255, 255)), 0.6 * (1 - bb / 0.12))
+            else:
+                e = t - n * per
+                aa = _back(e / 0.35)
+                f_ = render.font(int(88 * k * max(0.1, aa)))
+                d.text((W / 2, H * 0.42), "HOW MANY", font=f_, anchor="mm", fill=(255, 255, 255),
+                       stroke_width=int(6 * k), stroke_fill=(0, 0, 0))
+                d.text((W / 2, H * 0.42 + 105 * k), "DID YOU GET?", font=f_, anchor="mm", fill=YELLOW,
+                       stroke_width=int(6 * k), stroke_fill=(0, 0, 0))
+                render.draw_rich(img, (W / 2, H * 0.58), "Comment your score 👇", render.font(int(62 * k)),
+                                 (255, 255, 255), "ma", int(4 * k), (0, 0, 0))
+            proc.stdin.write(img.convert("RGB").tobytes())
+        proc.stdin.close()
+        if proc.wait() != 0:
+            raise RuntimeError("ffmpeg a échoué")
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+    _soundtrack(out, tmp, ffmpeg, total, ticks, dings, n * per)
+    meta = {"kind": "guess", "title": "Guess the fused anime characters",
+            "names": [f"{a['name']} + {b['name']}" for a, b in pairs], "seconds": round(total, 1),
+            "created_at": db.now()}
+    out.with_suffix(".json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+    from .domain import _brand_video
+    _brand_video(out)
+    return out
+
+
+def _soundtrack(out, tmp, ffmpeg, total, ticks, dings, end_t):
+    import numpy as np
+    from . import domain
+    rate = fusion.RATE
+    na = int(total * rate) + rate
+    audio = np.zeros(na, dtype=np.float32)
+
+    def put(tt, x, g):
+        i = int(tt * rate)
+        if x is not None and 0 <= i < na:
+            seg = x[: na - i]
+            audio[i:i + len(seg)] += seg * g
+    tick, ding, pop = domain.sfx("tick"), domain.sfx("win"), domain.sfx("hit", mode="auto", seed=1)
+    for tt in ticks:
+        put(tt, tick, 0.6)
+    for tt in dings:
+        put(tt, pop, 0.5)
+        put(tt + 0.02, ding[: int(rate * 1.2)], 0.7)
+    put(end_t, ding, 0.6)
+    lvl = float(np.percentile(np.abs(audio), 99.7)) or 1.0
+    audio = np.tanh(audio * min(1.0, 0.75 / lvl) * 1.1) / math.tanh(1.1) * float(fusion.fcfg().get("volume", 0.13)) * 2.2
+    wav = out.with_suffix(".wav")
+    fusion.write_wav(wav, audio)
+    subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(tmp), "-i", str(wav), "-c:v", "copy", "-c:a", "aac",
+                    "-b:a", "160k", "-shortest", str(out)], check=True)
+    tmp.unlink(missing_ok=True)
+    wav.unlink(missing_ok=True)
