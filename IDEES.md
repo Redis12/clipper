@@ -262,3 +262,9 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
 - 18,9k vues (13,3k engagées), 76 % ont continué à regarder, 0:50 regardées en moyenne sur 1:06, +13 abonnés, 94,8 % depuis le flux Shorts, courbe qui accélère encore.
 - Pourquoi : les gens ont beaucoup réagi parce que « Beerus qui perd contre Kid Goku, c'est pas logique ». Les commentaires de désaccord poussent la vidéo.
 - Règle : un duel « injuste mais crédible » (un petit qui bat un dieu) déclenche les commentaires. À garder pour la série Power Up (Kid Sasuke vs Madara jeudi 18h). Jamais insultant, et le titre reste une question (« Can X beat Y? »).
+
+## Déjà publiés (à ne pas refaire, vérifier ici avant de proposer)
+- Transformations : Naruto (lun. 02/11), Goku, Luffy (mar. 03/11), Vegeta (mer. 04/11), Sasuke (jeu. 05/11).
+- Power Up : Kid Goku vs Beerus, Kid Naruto vs Sasuke, Kid Sasuke vs Madara (défaite), Kid Goku vs Beerus Part 2 (Hakai, ven. 06/11).
+- Domain War : Goku vs Vegeta, Naruto vs Sasuke, #5 Gogeta vs Vegito, #6 Luffy vs Kaido.
+- Battle : Naruto (11 persos).
