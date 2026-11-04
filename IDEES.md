@@ -228,6 +228,7 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
   Naruto vs Sasuke (Domain War, DRAW, 22h).
 - Rappels programmés : demander les stats mardi 14h et mercredi 14h (vues vs swipes, rétention, % regardé, commentaires).
 - But : garder les 2-3 formats qui marchent le mieux et en faire des séries.
+- **Luffy Transformations (04/11)** : 14k vues en ~22 h, 9,4k vues engagées, 78,2 % ont continué à regarder (21,8 % ont balayé), durée moyenne 0:25 sur 29 s (≈ 86 %). Meilleure vidéo de la chaîne → format court (≈ 30 s) + easter egg Zoro = la formule. Sortie de la prison 1k → 10k.
 - **Résultat (03/11, dit par l'utilisateur)** : les 3 vidéos « Transformations » (Fusion Battle) sont celles qui ont le mieux marché sur YouTube → en faire une série prioritaire (Fusion Battle + Fusion Race).
 - **Tendances (03/11, dit par l'utilisateur)** : Dragon Ball (remake) et One Piece (collab Fortnite) sont en tendance → priorité à ces deux franchises.
 - **Planning décidé (03/11)** : jeudi 05/11 = Domain War Luffy vs Kaido + Sasuke Transformations ; vendredi 06/11 = Ichigo Transformations. Images à fournir : Kaido (formes), Sasuke (2–4 formes de plus), Ichigo (formes).
