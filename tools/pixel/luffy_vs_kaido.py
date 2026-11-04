@@ -23,12 +23,13 @@ from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from clipper.slides import render, vfxgen  # noqa: E402
+from clipper.slides import render, vfxgen, mugen  # noqa: E402
 
 LIB = ROOT / "library"
 LS = LIB / "_domain/fx/_luffy_sheet"
 KS = LIB / "_domain/fx/_kaido_sheet"
 SFX = LIB / "_sfx/One Piece/One Piece SFX"
+MCH = LIB / "One Piece/one-piece-mugen/One Piece MUGEN/chars"
 W, H, FPS = 1080, 1920, 30
 TITLE = "DOMAIN WAR #6"
 
@@ -117,6 +118,8 @@ def load_sprites():
     zoro = Image.open(LIB / "_fusion/Luffy/7 Zoro.jpeg").convert("RGB")
     S["zoro"] = zoro
     S["slash"] = [trim(Image.open(p).convert("RGBA")) for p in sorted((LIB / "_domain/_effets_jaunes").glob("slash_*.png"))]
+    S["mL"] = mugen.Char(MCH / "G6_Luffy", "Luffy")
+    S["mZ"] = mugen.Char(MCH / "G6_Zoro", "Zoro")
     return S
 
 
@@ -272,7 +275,7 @@ def build(F: Fight):
     snd = F.sounds
     K += [(0.0, 0.5), (1.6, 0.5)]
     # Phase 1 : Luffy base
-    K += [(2.3, 0.55), (3.6, 0.45), (5.4, 0.53), (6.9, 0.42), (8.9, 0.52), (10.6, 0.38), (12.6, 0.30)]
+    K += [(2.3, 0.55), (3.6, 0.45), (5.4, 0.53), (6.9, 0.42), (9.4, 0.42), (9.9, 0.53), (11.2, 0.40), (12.6, 0.30)]
     K += [(13.4, 0.30), (14.6, 0.08), (25.0, 0.08)]
     # Phase 2 : Gear 5 (après la cinématique, 25.0 → 31.0)
     K += [(32.0, 0.08), (33.4, 0.22), (35.4, 0.32), (36.8, 0.27), (38.6, 0.44), (40.2, 0.40), (42.0, 0.58),
@@ -283,8 +286,8 @@ def build(F: Fight):
     s(3.0, "explosion with debris.mp3", 0.8)                                   # Boro Breath 1
     s(4.6, "consecutive attacks.mp3")                                          # Jet Gatling
     s(6.3, "explosion.mp3", 0.8)                                               # Thunder Bagua
-    s(7.6, "Armament Haki (Busoshoku Haki ) v1.mp3"); s(8.6, "big punch.mp3"); s(8.85, "Big explosion.mp3", 0.8)
-    s(9.6, "Terror.mp3", 0.6)                                                   # Kaido vole
+    s(7.2, "Armament Haki (Busoshoku Haki ) v1.mp3"); s(9.45, "big punch.mp3"); s(9.55, "Big explosion.mp3", 0.8)
+    s(10.3, "Terror.mp3", 0.6)                                                   # Kaido vole
     s(11.9, "explosion with debris.mp3"); s(13.4, "explosion with debris.mp3")  # Boro Breath final
     s(14.2, "at death's door.mp3")
     s(16.3, "Gear 5 drums.mp3", 1.1)                                           # tambours (8,5 s)
@@ -298,6 +301,17 @@ def build(F: Fight):
     s(41.2, "big punch.mp3"); s(41.6, "Big explosion.mp3", 0.6)               # poings géants
     s(43.0, "conqueror's Haki (Haoshoku Haki) v1.mp3", 0.6)
     s(44.3, "big punch.mp3"); s(44.6, "Big explosion.mp3"); s(45.2, "explosion with debris.mp3")  # Bajrang Gun
+    L = F.S["mL"]
+    tmp = Path("/tmp/mugen_snd")
+    tmp.mkdir(exist_ok=True)
+    def ms(t, g, n, v=1.0):
+        w = L.sounds.get((g, n))
+        if w:
+            f = tmp / f"L_{g}_{n}.wav"
+            f.write_bytes(w)
+            snd.append((t, str(f), v))
+    ms(7.2, 4, 18); ms(7.2 + 35 / 60, 4, 4, 0.8); ms(7.2 + 40 / 60, 4, 17); ms(7.2 + 90 / 60, 4, 16)   # Gear 4
+    ms(8.87, 4, 21); ms(8.87 + 30 / 60, 4, 4, 0.8); ms(8.87 + 70 / 60, 4, 19)                           # King Kong Gun
     return 49.0
 
 
@@ -314,16 +328,16 @@ def smooth(q):
 
 
 # Luffy : (t0, t1, x0, x1, mode) — mode = run / jump / back / still
-L_MOVES = [(1.6, 1.9, 300, 370, "run"), (2.4, 2.7, 370, 340, "still"), (4.0, 4.5, 300, 430, "run"),
-           (5.9, 6.2, 430, 330, "jump"), (9.6, 10.3, 330, 470, "jump"), (10.3, 11.0, 470, 280, "jump"),
-           (11.0, 11.7, 280, 360, "run"), (13.5, 13.95, 360, 230, "fly"),
+L_MOVES = [(1.6, 1.9, 300, 430, "run"), (2.4, 2.7, 430, 400, "still"), (4.0, 4.5, 400, 480, "run"),
+           (5.9, 6.2, 480, 360, "back"), (10.3, 11.0, 360, 470, "jump"), (11.0, 11.7, 470, 330, "jump"),
+           (13.5, 13.95, 330, 230, "fly"),
            (31.6, 32.0, 260, 330, "run"), (33.0, 33.6, 330, 420, "jump"), (36.0, 36.4, 420, 330, "jump"),
            (39.4, 40.2, 330, 380, "run"), (42.2, 42.9, 380, 300, "jump")]
 # coups reçus : (t, force)
-HITS_K = [(2.06, 1.0)] + [(4.62 + i * 0.08, 0.35) for i in range(16)] + [(8.85, 2.2), (31.7, 1.8), (35.3, 1.6),
+HITS_K = [(2.06, 1.0)] + [(4.62 + i * 0.08, 0.35) for i in range(16)] + [(9.5, 2.2), (31.7, 1.8), (35.3, 1.6),
                                                                         (38.4, 2.0), (40.8, 1.4), (41.3, 1.6), (44.3, 3.0)]
 HITS_L = [(3.1, 1.0), (6.4, 1.0), (12.3, 1.3), (13.5, 1.8), (34.2, 0.8)]
-DMG_K = {2.06: "-5%", 8.85: "-9%", 31.7: "-14%", 35.3: "-10%", 38.4: "-12%", 40.8: "-8%", 41.3: "-10%", 44.3: "-45%"}
+DMG_K = {2.06: "-5%", 9.5: "-9%", 31.7: "-14%", 35.3: "-10%", 38.4: "-12%", 40.8: "-8%", 41.3: "-10%", 44.3: "-45%"}
 DMG_L = {3.1: "-10%", 6.4: "-11%", 12.3: "-8%", 13.5: "-22%"}
 
 
@@ -406,7 +420,7 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
     # ---------- arène
     LX, mode, mq = luffy_pos(t)
     hk = recent(HITS_K, t)
-    KX = 790 + (int(70 * hk[1] * (1 - hk[0] / 0.45)) if hk else 0) + math.sin(t * 0.9) * 25
+    KX = 790 + (45 * hk[1] * math.exp(-hk[0] * 7) * (1 - math.exp(-hk[0] * 40)) if hk else 0) + math.sin(t * 0.9) * 25
     dark = 0.0
     if 14.6 <= t < 25.0:
         dark = min(0.78, (t - 14.6) / 1.2 * 0.78)
@@ -416,45 +430,32 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
     lpose, lx_off = None, 0
     kpose, kx, ky = S["k_idle"][int(t * 8) % len(S["k_idle"])], KX, KY + math.sin(t * 3) * 22
     hide_luffy = False
+    mact = None
     lab = None
 
-    if t < 14.6:                                                     # ---- phase 1
-        # Jet Pistol
-        e = ease_punch(t - 1.9)
-        if e:
-            lpose = S["l_punch"]
-            q, hit = e
-            F.arm(img, LX + 70, LY - 140, LX + 70 + (KX - 120 - LX - 70) * q, LY - 140 + (KY - (LY - 140)) * q * 0.3, t)
-            if hit:
-                paste_c(energy, F.hit[int((t - 2.0) * 30) % 10], KX - 110, KY - 30)
+    if t < 14.6:                                                     # ---- phase 1 (Luffy MUGEN)
+        if 1.9 <= t < 2.4:                                           # Jet Pistol
+            mact = (491, t - 1.9, False)
+            if 2.02 < t < 2.2:
+                paste_c(energy, F.hit[int((t - 2.0) * 30) % 10], KX - 150, KY - 30)
                 shake = 12
             lab = ("LUFFY", "JET PISTOL", (255, 150, 150))
-        # Kaido Boro Breath 1 (2,7 → 4,0)
-        if 2.7 <= t < 4.0:
+        if 2.7 <= t < 4.0:                                           # Boro Breath 1
             a = t - 2.7
             kpose = S["k_breath"][min(4, int(a / 0.4 * 5))] if a < 0.4 else S["k_breath"][5 + int(a * 12) % 4]
             if 0.4 < a:
                 paste_c(energy, F.expl[int(a * 24) % 10], LX, LY - 110, 0.8)
                 shake = 8
             lab = ("KAIDO", "BORO BREATH", (200, 170, 255))
-        # Jet Gatling (4,5 → 5,9)
-        if 4.5 <= t < 5.9:
-            lpose = S["l_gat"]
-            r2 = random.Random(7)
-            for i in range(16):
-                t0 = 4.55 + i * 0.08
-                e = ease_punch(t - t0, 0.07, 0.04, 0.09)
-                ty = KY - 30 + r2.uniform(-110, 110)
-                if e:
-                    q, hit = e
-                    F.arm(img, LX + 70, LY - 150 + r2.uniform(-15, 15), LX + 70 + (KX - 140 - LX - 70) * q, LY - 150 +
-                          (ty - (LY - 150)) * q, t + i, thick=0.85, wob=0.4)
-                    if hit:
-                        paste_c(energy, F.hit[i % 10].resize((110, 110)), KX - 120, ty)
-                        shake = 6
+        if 4.5 <= t < 5.9:                                           # Jet Gatling
+            a = t - 4.5
+            mact = (400, a, False) if a < 0.5 else ((402, a - 0.5, True) if a < 1.15 else (401, a - 1.15, False))
+            if 0.1 < a < 1.3 and int(a * 25) % 2 == 0:
+                r2 = random.Random(int(a * 25))
+                paste_c(energy, F.hit[int(a * 30) % 10].resize((120, 120)), KX - 170 + r2.uniform(-30, 30), KY - 30 + r2.uniform(-90, 90))
+                shake = 6
             lab = ("LUFFY", "JET GATLING", (255, 150, 150))
-        # Thunder Bagua (6,1 → 7,2)
-        if 6.1 <= t < 7.2:
+        if 6.1 <= t < 7.2:                                           # Thunder Bagua
             a = t - 6.1
             for k in range(3):
                 bx = LX - 120 + k * 120 + random.Random(int(a * 6) + k).uniform(-30, 30)
@@ -463,51 +464,38 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
                 paste_c(energy, F.expl[int(a * 24 + k * 3) % 10].resize((170, 170)), bx, 300 + b_.height)
             shake = 10
             lab = ("KAIDO", "THUNDER BAGUA", (200, 170, 255))
-        # King Kong Gun (7,6 → 9,6)
-        if 7.6 <= t < 9.6:
-            a = t - 7.6
+        if 7.2 <= t < 8.87:                                          # Gear 4
+            mact = (3201, t - 7.2, False)
+            lab = ("LUFFY", "GEAR 4 · BOUNDMAN", (255, 150, 150))
+            if int(t * 20) % 3 == 0:
+                paste_c(energy, F.bolt_red[int(t * 24) % 10].resize((300, 300)), LX, LY - 200, 0.6)
+        if 8.87 <= t < 10.3:                                         # King Kong Gun
+            mact = (3202, t - 8.87, False)
             lab = ("LUFFY", "KING KONG GUN", (255, 150, 150))
-            if a < 1.0:
-                lpose = S["l_charge"]
-                g = scale(S["kkg"], 0.4 + 0.6 * a)
-                paste_c(img, g, LX - 80, LY - 170)
-                if int(a * 20) % 2 == 0:
-                    paste_c(energy, F.bolt_red[int(a * 24) % 10].resize((320, 320)), LX - 80, LY - 170, 0.9)
-            elif a < 1.25:
-                lpose = S["l_punch"]
-                q = (a - 1.0) / 0.25
-                x = LX - 80 + (KX - 100 - (LX - 80)) * q ** 1.5
-                F.arm(img, LX + 60, LY - 140, x - 140, LY - 160, t, thick=2.0, wob=0.2)
-                paste_c(img, S["kkg"], x, LY - 170)
-                paste_c(energy, F.bolt_red[int(a * 24) % 10].resize((380, 380)), x, LY - 170, 0.8)
-            else:
-                b = a - 1.25
+            if t >= 9.5:
+                b = t - 9.5
                 paste_c(energy, F.expl[min(9, int(b * 18))].resize((640, 640)), KX - 40, KY)
                 paste_c(energy, F.bolt_red[int(b * 24) % 10].resize((520, 520)), KX - 40, KY, max(0, 1 - b))
-                if b < 0.35:
-                    paste_c(img, S["kkg"], KX - 100, LY - 170, 1 - b / 0.35)
                 shake = int(30 * max(0, 1 - b / 0.7))
-        # Kaido s'envole (9,6 → 11,6) puis Boro Breath final (11,7 → 13,8)
-        if 9.6 <= t < 11.7:
-            a = t - 9.6
+        if 10.3 <= t < 11.7:                                         # Kaido s'envole
+            a = t - 10.3
             kpose = S["k_fly"][int(a * 10) % len(S["k_fly"])]
-            kx = 540 + math.cos(a * 1.6 + 1.0) * 270
-            ky = 980 + math.sin(a * 2.1) * 360
+            ox, oy = 540 + math.cos(a * 1.8 + 1.0) * 270, 980 + math.sin(a * 2.2) * 330
+            w_in = smooth(a / 0.45) * smooth((11.7 - t) / 0.45)
+            kx, ky = lerp(KX, ox, w_in), lerp(KY, oy, w_in)
             lab = ("KAIDO", "DRAGON TWISTER", (200, 170, 255))
-        if 11.7 <= t < 13.9:
+        if 11.7 <= t < 13.9:                                         # Boro Breath final
             a = t - 11.7
             kpose = S["k_breath"][min(4, int(a / 0.5 * 5))] if a < 0.5 else S["k_breath"][5 + int(a * 12) % 4]
             if a > 0.5:
                 paste_c(energy, F.expl[int(a * 24) % 10].resize((420, 420)), LX, LY - 110, 0.9)
                 shake = 14
             lab = ("KAIDO", "BORO BREATH", (200, 170, 255))
-        if 13.9 <= t:
-            lpose = S["l_dead"]
-            if t < 14.3:
-                paste_c(energy, F.expl[min(9, int((t - 13.9) * 24))].resize((600, 600)), LX, LY - 60)
-                shake = 20
+        if 13.9 <= t and t < 14.3:
+            paste_c(energy, F.expl[min(9, int((t - 13.9) * 24))].resize((600, 600)), LX, LY - 60)
+            shake = 20
     elif t < 25.0:                                                   # ---- Luffy à terre, tambours
-        lpose = S["l_dead"]
+        mact = (5110, 0, False)
         d = ImageDraw.Draw(img)
         if t < 16.3:
             d.text((W / 2, 760), "LUFFY IS DOWN...", font=F.mid, anchor="mm", fill=(255, 255, 255), stroke_width=7,
@@ -548,30 +536,25 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
             else:
                 lpose = S["g_rayo"][min(2, int((a - 1.0) * 4))]
                 lab = ("LUFFY", "GRABS THE LIGHTNING!", (255, 255, 255))
-        # Zoro perdu (36,2 → 37,9), puis Asura (38,0 → 39,2)
+        # Zoro perdu (36,2 → 38,0) : il marche sous l'arène dans le mauvais sens, puis Sanzen Sekai (38,0 → 39,4)
         if 36.2 <= t < 39.4:
             a = t - 36.2
-            z = S["zoro"]
-            zi = z.resize((150, 150))
-            m = Image.new("L", (150, 150), 0)
-            ImageDraw.Draw(m).ellipse((0, 0, 149, 149), fill=255)
-            zi = zi.convert("RGBA")
-            zi.putalpha(m)
+            Z = S["mZ"]
             if a < 1.8:
-                x = W + 80 - a * 420
-                paste_c(img, zi, x, GY0 + NY * CELL + 200)
-                d = ImageDraw.Draw(img)
-                render.draw_rich(img, (x - 230, GY0 + NY * CELL + 140), "Where am I? 🗺️", render.font(46), (255, 255, 255),
+                x = W + 60 - a * 380
+                yb = GY0 + NY * CELL + 330
+                Z.draw(img, 20, a, x, yb, scale=1.5, facing=-1, loop=True)
+                render.draw_rich(img, (x - 60, yb - 330), "Where am I? 🗺️", render.font(46), (255, 255, 255),
                                  anchor="ma", stroke_width=4, stroke_fill=(0, 0, 0))
             else:
                 b = a - 1.8
-                x = 480 + b * 600
-                paste_c(img, zi, min(KX - 60, x), KY + 40)
-                if b > 0.2:
+                act, tb = (3200, b) if b < 0.57 else (3201, b - 0.57)
+                Z.draw(img, act, tb, KX - 230, LY, scale=1.7, facing=1, loop=False)
+                if b > 0.35:
                     for k, sp in enumerate(S["slash"][:3]):
-                        paste_c(energy, scale(sp, 0.9), KX - 40 + k * 30, KY - 40 + k * 40, max(0, 1 - (b - 0.2) * 0.9))
+                        paste_c(energy, scale(sp, 0.9), KX - 40 + k * 30, KY - 40 + k * 40, max(0, 1 - (b - 0.35) * 0.9))
                     shake = 12
-                lab = ("ZORO", "ASURA", (130, 230, 130))
+                lab = ("ZORO", "SANTORYU · SANZEN SEKAI", (130, 230, 130))
         # poings géants (40,4 → 42,2)
         if 40.4 <= t < 42.2:
             a = t - 40.4
@@ -613,26 +596,43 @@ def render_frame(F: Fight, t: float, cine_frames) -> Image.Image:
 
     # dessin des persos : Kaido encaisse (flash blanc, recul, il se tord), Luffy bouge en permanence
     if kpose is not None:
-        if hk and hk[1] >= 1.0 and hk[0] < 0.32 and t < 44.0:
-            kpose = S["k_fly"][(2 + int(hk[0] * 20)) % len(S["k_fly"])]          # il se tord sous le coup
+        if hk and t < 44.0:                                            # il se tord sous le coup (inclinaison)
+            ang = 9 * hk[1] * math.exp(-hk[0] * 6) * math.sin(hk[0] * 25)
+            kpose = kpose.rotate(ang, expand=True, resample=Image.NEAREST)
         if hk and hk[0] < 0.09:
             kpose = whiten(kpose)
         paste_c(img, kpose, kx, ky + (12 * math.sin(hk[0] * 40) * (1 - hk[0] / 0.45) if hk else 0))
     hl = recent(HITS_L, t, 0.5)
-    if lpose is None and not hide_luffy:
-        if 13.95 <= t < 25.0:
-            lpose = S["l_dead"]
-        elif hl and hl[0] < 0.5:
-            lpose = (S["g_hurt"] if gear5 else S["l_hurt"])[min(2, int(hl[0] * 6))]
+    if not gear5 and not hide_luffy and lpose is None:                # Luffy MUGEN (vraies animations du jeu)
+        if mact is None:
+            if 13.95 <= t:
+                mact = (5110, 0, False)
+            elif hl and hl[0] < 0.45:
+                mact = (5002, hl[0], False)
+            elif mode == "run":
+                mact = (100, t, True)
+            elif mode == "back":
+                mact = (105, t, True)
+            elif mode == "jump":
+                mact = (50, mq * 0.67, False)
+            elif mode == "fly":
+                mact = (5050, mq * 0.3, False)
+            else:
+                mact = (0, t, True)
+        kx_ = -int(40 * hl[1] * (1 - hl[0] / 0.5)) if hl else 0
+        tint = (255, 255, 255) if hl and hl[0] < 0.08 else None
+        S["mL"].draw(img, mact[0], mact[1], LX + kx_, LY, scale=1.7, facing=1, loop=mact[2], tint=tint)
+        lpose = "mugen"
+    elif lpose is None and not hide_luffy:
+        if hl and hl[0] < 0.5:
+            lpose = S["g_hurt"][min(2, int(hl[0] * 6))]
         elif mode == "run":
-            lpose = (S["g_run"] if gear5 else S["l_run"])[int(t * 16) % (4 if gear5 else 8)]
+            lpose = S["g_run"][int(t * 16) % 4]
         elif mode == "jump":
-            lpose = (S["g_jump"] if gear5 else S["l_jump"])[min(5 if gear5 else 3, int(mq * (6 if gear5 else 4)))]
-        elif mode == "fly":
-            lpose = S["l_fly"][int(t * 10) % 2]
+            lpose = S["g_jump"][min(5, int(mq * 6))]
         else:
-            lpose = (S["g_idle"][int(t * 8) % 6] if gear5 else S["l_idle"][int(t * 8) % 4])
-    if lpose is not None and not hide_luffy:
+            lpose = S["g_idle"][int(t * 8) % 6]
+    if lpose is not None and lpose != "mugen" and not hide_luffy:
         jy = -math.sin(mq * math.pi) * 160 if mode == "jump" else 0
         kx_ = -int(40 * hl[1] * (1 - hl[0] / 0.5)) if hl else 0
         if hl and hl[0] < 0.09:
@@ -717,7 +717,7 @@ def main(out: Path):
     filt = []
     n = 0
     for t, name, v in F.sounds:
-        path = SFX / name
+        path = Path(name) if name.startswith("/") else SFX / name
         if not path.is_file():
             path = LIB / "_sounds/domain" / name
         if not path.is_file():
