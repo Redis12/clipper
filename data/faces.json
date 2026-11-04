@@ -514,5 +514,29 @@
   0.0,
   0.58,
   0.22
+ ],
+ "tail:TenTen/TenTen.jpg": [
+  0.3,
+  0.1,
+  0.68,
+  0.8
+ ],
+ "tail:Raikage/Raikage.jpg": [
+  0.28,
+  0.08,
+  0.72,
+  0.85
+ ],
+ "tail:Minato/Minato.jpg": [
+  0.3,
+  0.08,
+  0.66,
+  0.75
+ ],
+ "tail:Teuchi/Teuchi.jpg": [
+  0.25,
+  0.12,
+  0.72,
+  0.85
  ]
 }

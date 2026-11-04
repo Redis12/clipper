@@ -185,6 +185,8 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                 hp = 1 - dealt[foe] / hits_for(foe)
                 bw = RB * 1.6
                 x0, y0 = ox + bx - bw / 2, oy + by - RB - 26 * k
+                if y0 < oy + 50 * k:                              # trop haut (sous « KILLS ») : sous la balle
+                    y0 = oy + by + RB + 46 * k
                 d.rectangle((x0 - 3, y0 - 3, x0 + bw + 3, y0 + 16 * k + 3), fill=(0, 0, 0))
                 d.rectangle((x0, y0, x0 + bw * hp, y0 + 16 * k), fill=(235, 60, 70))
                 d.text((ox + bx, y0 - 8 * k), foes[foe]["name"].upper(), font=render.font(int(30 * k)), anchor="md",
