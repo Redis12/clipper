@@ -252,7 +252,7 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
 
 ## Luffy vs Kaido — décisions (04/11, 1h26)
 - Pixel-art « pas ouf pour ce format » : Luffy ET Kaido en ICÔNES (Domain War normal). L'utilisateur fournira les formes de Kaido (images, une tête visible : humain → hybride → dragon) dans `library/_fusion/Kaido/`.
-- On GARDE : les attaques (bras élastiques de Luffy qui passent devant Kaido, King Kong Gun, Dawn Whip, poings géants, Bajrang Gun ; Boro Breath / Thunder Bagua / dragon qui vole de Kaido), le scénario (mort → tambours Gear 5 → cinématique → retour), les dégâts affichés.
+- On GARDE : les attaques (bras élastiques de Luffy qui passent devant Kaido, King Kong Gun, Dawn Whip, poings géants, Bajrang Gun ; Boro Breath / Thunder Bagua / dragon qui vole de Kaido), le scénario (mort → tambours Gear 5 → cinématique → retour). PAS de chiffres de dégâts « -% » (l'utilisateur n'aime pas). 3 icônes par camp comme d'habitude (moteur Domain War).
 - Voix MUGEN : seulement Zoro (Sanzen Sekai, groupe 0 n°3) + les « Gomu Gomu no… » de Luffy (MUGEN Luffy groupe 0 : 9 Jet Pistol, 3 Gatling, 11 Elephant/KKG, 12 Red Hawk, 13 Elephant Gatling, 17 Jet Bazooka) — les autres voix ne collent pas.
 - Zoro reste en sprite MUGEN (marche perdu sous l'arène puis Sanzen Sekai).
 - Outils : `clipper/slides/mugen.py` (lecteur SFF v1/AIR/SND), `tools/pixel/luffy_vs_kaido_v4.py`. Jump Force MUGEN (56 persos, SFF v2 non géré) : Goku UI, Naruto Asura, Ichigo final, Saitama… pour plus tard.
