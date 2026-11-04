@@ -191,7 +191,7 @@ def _rich_line(d: ImageDraw.ImageDraw, cx: float, y: float, parts: list, f, stro
 
 def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str | None = None,
              seconds: float = 60, out: Path | None = None, seed: int | None = None, sound: str | None = None,
-             target: float | None = None) -> Path:
+             target: float | None = None, fail: bool = False, max_form: str | None = None) -> Path:
     """`chain` = dossier library/_fusion/<chain> (formes du héros, de la plus faible à la plus forte) ;
     `boss` = nom d'une forme de ce dossier (retirée des formes du héros) ou chemin d'une image."""
     from . import faces, fxengine, vfxgen, vfxpack  # noqa: F401
@@ -207,6 +207,10 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
     if boss_t is None:
         raise ValueError(f"Forme « {boss} » introuvable dans _fusion/{chain}")
     forms = [t for t in tiers if t is not boss_t]
+    if max_form:                                         # forme max du héros (logique : pas de Rinnegan)
+        cut = next((i for i, t in enumerate(forms) if norm(t["name"]) == norm(max_form)), None)
+        if cut is not None:
+            forms = forms[:cut + 1]
     if len(forms) < 2:
         raise ValueError("Il faut au moins 2 formes pour le héros")
     hero_name = hero_name or f"{forms[0]['name']}"
@@ -216,8 +220,14 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
     sim = simulate(seed, seconds, S, len(forms))
     hits = sim["hits"]
     target = float(target or c.get("target", 9.0e12))
+    if fail:                                             # défaite : pas de coup après le chrono
+        hits = [h for h in hits if h[0] <= seconds - 0.05]
     ds, mults, HP = damages([h[0] for h in hits], sim["tf"], target)
-    kill_t = hits[-1][0]
+    left_pct = 0.0
+    if fail:                                             # le boss survit avec ~4 % de vie
+        left_pct = float(pcfg().get("fail_left", 0.04))
+        HP = sum(ds) / (1 - left_pct)
+    kill_t = hits[-1][0] if not fail else seconds
     ox, oy = (W - S) / 2, H * 0.215
 
     # images
@@ -277,6 +287,9 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
     hit_audio, form_audio = [], []
     end_frames = int(fps * 1.5)                 # vidIQ : un Short « se termine », pas d'écran qui traîne
     n_sim = len(sim["frames"])
+    if fail:                                    # chrono à 0 : figé, « TIME'S UP! » puis « FAILED »
+        n_sim = min(n_sim, int(seconds * fps) + 1)
+        end_frames = int(fps * (1.3 + 1.8))
     try:
         for fi in range(n_sim + end_frames):
             t = fi / fps
@@ -293,7 +306,7 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
                            size=(2 * k, 4 * k))
                 tex.spawn("circle_05", X, Y, RB * 0.25, 0.3, (200, 255, 220), size1=RB * 0.8, hot=0.7)
                 hit_audio.append(ht)
-                if hi == len(hits) - 1:                           # dernier coup : le boss explose
+                if hi == len(hits) - 1 and not fail:              # dernier coup : le boss explose
                     kill_done = True
                     stop_frames = 5
                     cam.punch(t, ox + bx, oy + by, 0.1, 0.6)
@@ -425,6 +438,28 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
                     kf = render.font(int(180 * k * (1 + 0.4 * (1 - a))))
                     d.text((W / 2, oy + S / 2), "K.O.!", font=kf, anchor="mm", fill=(255, 214, 10),
                            stroke_width=int(8 * k), stroke_fill=(0, 0, 0))
+            if fail and ended:                                    # défaite : TIME'S UP! puis FAILED
+                e_ = t - seconds
+                if e_ < 1.3:
+                    a = min(1.0, e_ / 0.25)
+                    kf = render.font(int(150 * k * (1 + 0.4 * (1 - a))))
+                    d.text((W / 2, oy + S / 2), "TIME'S UP!", font=kf, anchor="mm", fill=(255, 70, 70),
+                           stroke_width=int(8 * k), stroke_fill=(0, 0, 0))
+                else:
+                    dim = Image.new("RGBA", (W, H), (0, 0, 0, int(210 * min(1.0, (e_ - 1.3) / 0.3))))
+                    img.alpha_composite(dim)
+                    d = ImageDraw.Draw(img)
+                    big = int(W * 0.46)
+                    img.alpha_composite(fusion.icon(boss_t.get("image_path"), big, BOSS_COL),
+                                        (int(W / 2 - big / 2), int(H * 0.36)))
+                    d = ImageDraw.Draw(img)
+                    d.text((W / 2, H * 0.24), "FAILED", font=render.font(int(120 * k)), anchor="mm",
+                           fill=(255, 60, 60), stroke_width=int(6 * k), stroke_fill=(0, 0, 0))
+                    d.text((W / 2, H * 0.31), f"{boss_name.upper()} SURVIVED · {round(left_pct * 100)}% LEFT",
+                           font=render.font(int(54 * k)), anchor="mm", fill=(255, 255, 255),
+                           stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
+                    render.draw_rich(img, (W / 2, H * 0.36 + big + 40 * k), "Who could beat him? Comment 👇",
+                                     render.font(int(46 * k)), (255, 255, 255), "ma", int(3 * k), (0, 0, 0))
             keep_r = []
             for t0, rx, ry in ripples:
                 a = t - t0
@@ -478,16 +513,17 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
             return None
     hit_sounds = [S_("hit", i) for i in range(4)]
     custom = fusion.load_sound(sound) if sound else None
-    for i, ht in enumerate(hit_audio[:-1]):
+    for i, ht in enumerate(hit_audio if fail else hit_audio[:-1]):
         put(ht, custom if custom is not None else hit_sounds[i % 4], 0.45)
-    put(kill_t, S_("ko"), 1.0)
-    put(kill_t + 0.05, S_("bomb", 3), 1.0)
+    if not fail:
+        put(kill_t, S_("ko"), 1.0)
+        put(kill_t + 0.05, S_("bomb", 3), 1.0)
     for ft in form_audio:
         put(ft, S_("powerup", 1), 0.8)
     tick = S_("tick")
     for s_ in range(10, 0, -1):                                    # tic-tac des 10 dernières secondes
         put(seconds - s_, tick, 0.5)
-    put(kill_t + stop_shift + 1.4, S_("win"), 0.8)
+    put(kill_t + (0 if fail else stop_shift + 1.4), S_("win"), 0.8)
     lvl = float(np.percentile(np.abs(audio), 99.7)) or 1.0
     audio = audio * min(1.0, 0.75 / lvl)
     wav = out.with_suffix(".wav")
@@ -498,7 +534,7 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
     wav.unlink(missing_ok=True)
     meta = {"kind": "powerup", "title": f"Can {hero_name} beat {boss_name} in under {int(seconds)} seconds?",
             "hero": hero_name, "boss": boss_name, "names": [hero_name, boss_name], "seed": seed, "hits": len(hits),
-            "forms": [f["name"] for f in forms], "seconds": round(duration, 1), "created_at": db.now()}
+            "forms": [f["name"] for f in forms], "result": "fail" if fail else "win", "seconds": round(duration, 1), "created_at": db.now()}
     out.with_suffix(".json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
     _brand_video(out)
     log.info("power up : %s vs %s, %d coups, %.0f s → %s", hero_name, boss_name, len(hits), duration, out.name)
