@@ -1,0 +1,13 @@
+name: Kaido
+match: kaido
+color: #a855f7
+about: L'empereur des pirates, le « plus fort des êtres vivants ». Fruit du Dragon Azur : se change en dragon, forme hybride (la plus forte), Boro Breath, Thunder Bagua, Ragnaraku.
+zone: Thunder Bagua | bomb
+front: Boro Breath
+shots: Kaifu
+secret: Ragnaraku | meteor
+passive: Dragon Scales | none
+form: _domain/forms/Kaido
+stages: 1
+stage_at: 0.17
+aura: #a855f7

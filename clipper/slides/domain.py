@@ -180,7 +180,7 @@ class War:
         self.hits.append((self.t, b["team"]))
         b["frozen_until"] = max(b["frozen_until"], self.t + 0.8)
         if b["hp"] <= 0:
-            if not self.final and len(self.mains(b["team"])) <= 1:
+            if not self.final and (len(self.mains(b["team"])) <= 1 or STORY):   # chute : personne ne meurt avant la fin
                 b["hp"] = 1
                 return
             b["dies"] = self.t
@@ -238,6 +238,9 @@ class War:
     # --- attaques
     def launch(self, team: int, slot: str) -> dict:
         mv = self.sheets[team].get(slot) or {"name": slot, "fam": movesets.DEFAULT_SLOTS[slot]}
+        alt = self.sheets[team].get(f"{slot}_form")              # fiche « front_form: Dawn Whip » : après transfo
+        if alt and self.transformed[team] is not None and slot != "secret":
+            mv = movesets.parse(f"{slot}: {alt}").get(slot) or mv
         fam = mv["fam"]
         pool = self.mains(team) or [x for x in self.balls if x["team"] == team]
         if not pool:                                            # plus personne : rien ne part
@@ -266,6 +269,8 @@ class War:
         elif fam == "beam":
             ang = (0 if team == 0 else math.pi) + self.rnd.uniform(-0.5, 0.5)
             fx.update(ang=ang, length=math.hypot(self.Wd, self.Hd), half=1)
+            if style_of(mv["name"]) == "rubber":               # bras de Luffy : portée d'un bras, pas tout l'écran
+                fx["length"] = c * 15
         elif fam == "sword":                                    # Spirit Sword : la lame balaie de haut en bas
             base = 0 if team == 0 else math.pi
             sg = 1 if team == 0 else -1
@@ -507,6 +512,14 @@ class Director:
         self.wipe_at = self.wipe_last = None
         self.finish = None                                        # (t, x, y, équipe) : le dernier perso tombe
         self.split_at = 1e9
+        self.story = dict(STORY) if STORY and winner is not None and winner >= 0 else None
+        self.down = None                                          # (début, fin) : le héros est à terre
+        self.revive = None                                        # instant du secret du héros (retour)
+        self.zoro = None                                          # (début, impact) : l'aide qui arrive
+        if self.story:
+            self.s1_open = self.s1_late = seconds * 0.28
+            self.clash = seconds * 0.55
+            self.final_from = 1e9
 
     def _split(self, t) -> None:
         """Égalité : le terrain se partage pile en deux (gauche / droite) en 0,9 s, depuis le centre."""
@@ -572,14 +585,43 @@ class Director:
             self.combos.remove(cb)
             self._fire(cb[1], cb[2])
         s = war.share()
+        if self.story:
+            hero = self.winner
+            vil = 1 - hero
+            if self.down and self.down[0] <= t < self.down[1]:       # le héros est à terre : figé, gris
+                for b in war.mains(hero):
+                    b["frozen_until"] = max(b["frozen_until"], self.down[1])
+            if self.down and t >= self.down[1] and "s2" not in self.done:   # il se relève : son secret
+                for b in war.mains(hero):
+                    b["hp"] = 3
+                    b["frozen_until"] = t
+                self.revive = t
+                self._fire(hero, "secret")
+                self.done.add("s2")
+                self.final_from = t + 7.4
+                self.zoro = (t + 1.6, t + 5.4)                    # Zoro perdu (gag), puis il frappe
+                self.next_t = t + 1.2
+                self.team = hero
+            if self.zoro and "zoro" not in self.done and t >= self.zoro[1]:   # l'aide frappe le méchant
+                self.done.add("zoro")
+                vs = war.mains(vil)
+                if vs:
+                    b = vs[0]
+                    war.paint_disc(hero, b["x"], b["y"], war.cell * 7)
+                    war.hits.append((t, vil))
+                    b["hurt"] = t
+                    b["frozen_until"] = max(b["frozen_until"], t + 0.8)
+                    b["hp"] = max(1, b.get("hp", 3) - 1)
         if "s1" not in self.done and t >= self.s1_open:           # le perso en danger se transforme
             behind = 0 if s < 0.5 else 1
+            if self.story:
+                behind = 1 - self.winner
             mine = s if behind == 0 else 1 - s
             if mine <= 0.40 or t >= self.s1_late:
                 self.s1, self.first_secret, self.secret_share = t, behind, mine
                 self._fire(behind, "secret")
                 self.done.add("s1")
-                self.s2 = t + max(4.0, self.S * 0.2)
+                self.s2 = t + max(4.0, self.S * 0.2) if not self.story else 1e9
                 self.next_t = t + 2.4
         if "s2" not in self.done and self.s2 is not None and t >= self.s2:
             self._fire(1 - self.first_secret, "secret")
@@ -594,6 +636,9 @@ class Director:
                 w = self.winner
                 if self.draw:
                     w = -1                                        # égalité : la jauge reste au milieu
+                elif self.story:
+                    w = 1 - self.winner                           # chute : le méchant gagne le choc
+                    self.down = (t + 3.7, t + 6.2)
                 elif w is None:
                     w = 0 if s < 0.5 else 1                       # le mené gagne le clash (retournement)
                     if self.rnd.random() < 0.35:
@@ -604,7 +649,7 @@ class Director:
                           "name": clash_move(war.sheets[team]), "x": 0, "y": 0}
                     self.events.append((t, team, "clash", fx))
             self.done.add("clash")
-            self.next_t = self.final_from
+            self.next_t = self.final_from if not self.story else t + 3.6
         if self.draw and t >= self.clash + (2.5 if self.domain_clash else 3.95):     # égalité : après le choc
             war.final = True
             if self.finish is None:                               # double K.O. au même instant
@@ -631,6 +676,8 @@ class Director:
             if (len(alive) == 1 and fin is None and not self.draw
                     and (war.sheets[lead].get("secret") or {}).get("fam") in ("meteor", "mega_beam")):
                 fx_ = self._fire(lead, "secret")                  # coup de grâce = l'ultime du gagnant
+                if war.sheets[lead].get("finisher"):              # fiche « finisher: Bajrang Gun »
+                    fx_["name"] = war.sheets[lead]["finisher"]
                 if fx_.get("fam") == "bomb":                      # (Stardust Breaker) droit sur le dernier perso
                     fx_["tx"], fx_["ty"] = alive[0]["x"], alive[0]["y"]
                 self.finisher = fin = t + fx_.get("delay", 0) + 0.35
@@ -669,6 +716,14 @@ class Director:
                 war.sparking[team] = t + 3.0
                 self.sparks.append((t, team))
                 self.ult_at[team] = t + 0.9
+        if self.story and self.down and self.down[0] - 0.5 <= t < self.down[1] + 0.3:
+            if t >= self.next_t:                                  # héros à terre : seul le méchant attaque
+                vil = 1 - self.winner
+                slot = ("shots", "front")[self.cycle[vil] % 2]
+                self.cycle[vil] += 1
+                self._fire(vil, slot)
+                self.next_t = t + 1.1
+            return
         if t >= self.next_t and not self.busy(t):
             slot = ("shots", "front")[self.cycle[self.team] % 2]
             self.cycle[self.team] += 1
@@ -678,6 +733,11 @@ class Director:
 
 
 GEOM = {"top": 0.135, "bottom": 0.78, "margin": 0.04}
+
+# Scénario « chute » (Luffy vs Kaido, 04/11) : {"hero": 0|1} → le méchant sort son secret d'abord, gagne le
+# choc final, les icônes du héros tombent (grises, figées) ; puis le héros se relève avec SON secret
+# (cinématique) et gagne. Réglé par generate(story="downfall") ; None = scénario normal.
+STORY: dict | None = None
 
 
 def geometry(W: int, H: int, cells_x: int = 26):
@@ -957,9 +1017,10 @@ def ulti_for(name: str, move: str | None) -> Path | None:
     """Cinématique d'ulti déjà rendue (ulti.py, ex. GIF de l'attaque calé) : library/_domain/ulti/
     « <Perso> <Attaque>.mp4 » sinon « <Perso>.mp4 ». Jouée plein écran, combat en pause, sans son."""
     d = library.root() / "_domain" / "ulti"
-    for st in (f"{name} {move}" if move else None, name):
-        if st and (d / f"{st}.mp4").is_file():
-            return d / f"{st}.mp4"
+    files = {p.stem.lower(): p for p in d.glob("*.mp4")} if d.is_dir() else {}
+    for st in (f"{name} {move}" if move else None, name if not (move or "").startswith(("stage ", "clash")) else None):
+        if st and st.lower() in files:
+            return files[st.lower()]
     return None
 
 
@@ -1099,6 +1160,10 @@ STYLES = [   # mot dans le nom de l'attaque → style d'effets (particules textu
     (r"spirit sword|ki blade|energy sword", "sword"),          # Vegito : lame d'énergie jaune
     (r"kamehameha|big bang", "kame"),                          # rayons bleus (Big Bang Attack de Vegeta : bleu-blanc)
     (r"ki blast|scatter finger|finger beam|volley", "ki"),     # tirs de ki jaunes
+    (r"jet pistol|gatling|king kong|bajrang|dawn whip|giant fist|gomu gomu|red hawk|elephant|gear 5",
+     "rubber"),                                                 # Luffy : bras élastiques (poings, pas de rayon)
+    (r"bagua|ragnaraku|thunder", "lightning"),                 # Kaido : foudre violette
+    (r"boro breath|breath", "fire"),                           # Kaido : souffle de feu
 ]
 
 
@@ -1140,6 +1205,73 @@ def style_of(name: str | None) -> str | None:
         if re.search(pat, n):
             return st
     return None
+
+
+_RUBBER: dict = {}
+
+
+def _rubber_parts():
+    """Bras de Luffy (pixel-art du jeu, library/_domain/fx/_luffy_sheet/arms/) : morceau de bras, poing, poing géant."""
+    if not _RUBBER:
+        d = library.root() / "_domain" / "fx" / "_luffy_sheet" / "arms"
+        try:
+            arm = Image.open(d / "1476.png").convert("RGBA")
+            giant = Image.open(d / "1573.png").convert("RGBA")
+        except OSError:
+            _RUBBER["none"] = True
+            return None
+        _RUBBER["seg"] = arm.crop((20, 0, 50, arm.height))
+        _RUBBER["fist"] = arm.crop((arm.width - 16, 0, arm.width, arm.height))
+        _RUBBER["giant"] = giant                                  # couleurs d'origine (le noir « Haki » faisait une tache)
+    return None if _RUBBER.get("none") else _RUBBER
+
+
+def _whiten(im: Image.Image, k: float = 0.65) -> Image.Image:
+    w = Image.new("RGBA", im.size, (255, 255, 255, 255))
+    w.putalpha(im.getchannel("A"))
+    return Image.blend(im, w, k)
+
+
+def draw_rubber(img: Image.Image, x1, y1, x2, y2, t: float, thick: float, giant: float = 0.0,
+                white: bool = False) -> None:
+    """Bras élastique de (x1, y1) à (x2, y2) : bras étiré qui ondule + poing net au bout (poing géant si giant > 0).
+    Dessiné APRÈS les persos : le poing passe devant la cible."""
+    P = _rubber_parts()
+    if P is None:
+        return
+    L = math.hypot(x2 - x1, y2 - y1)
+    if L < 8:
+        return
+    ang = math.atan2(y2 - y1, x2 - x1)
+    h = max(4, int(P["seg"].height * thick))
+    if giant > 0:
+        f = P["giant"]
+        f = f.resize((max(4, int(giant * f.width / f.height)), max(4, int(giant))), Image.NEAREST)
+    else:
+        f = P["fist"].resize((max(4, int(P["fist"].width * thick)), max(4, int(P["fist"].height * thick))),
+                             Image.NEAREST)
+    if white:
+        f = _whiten(f, 0.5)
+    body_w = max(4, int(L - f.width * 0.5))
+    body = P["seg"].resize((body_w, h), Image.NEAREST)
+    if white:
+        body = _whiten(body, 0.5)
+    pad = int(h * 1.2)
+    strip = Image.new("RGBA", (body_w + f.width, max(h + 2 * pad, f.height)), (0, 0, 0, 0))
+    yy = (strip.height - h) // 2
+    step = max(2, h // 2)
+    for cx in range(0, body_w, step):                          # ondulation du caoutchouc
+        off = int(math.sin(cx / (h * 3.0) + t * 30) * h * 0.55 * (1 - cx / body_w))
+        strip.alpha_composite(body.crop((cx, 0, min(body_w, cx + step), h)), (cx, yy + off))
+    if math.cos(ang) < 0 and giant > 0:                        # vers la gauche : le poing géant reste à l'endroit
+        f = f.transpose(Image.FLIP_TOP_BOTTOM)
+    strip.alpha_composite(f, (body_w, (strip.height - f.height) // 2))
+    rs = strip.rotate(-math.degrees(ang), expand=True, resample=Image.NEAREST)
+    # le point (0, mi-hauteur) du ruban doit tomber sur (x1, y1) : centre du ruban = milieu du segment + décalage
+    sw = strip.width
+    mx = x1 + math.cos(ang) * sw / 2
+    my = y1 + math.sin(ang) * sw / 2
+    img.alpha_composite(rs, (int(mx - rs.width / 2), int(my - rs.height / 2)))
 
 
 def voice_file(name: str) -> Path | None:
@@ -1413,7 +1545,7 @@ def _credits() -> list[str]:
 def generate(fighters: list[dict], seconds: float = 35, title: str | None = None, seed: int | None = None,
              tries: int = 10, out: Path | None = None, fps: int = 30, W: int = 1080, H: int = 1920,
              winner: int | None = None, comeback: bool = False, cine: str = "auto", sounds: str = "anime",
-             underdog: int | None = None) -> Path:
+             underdog: int | None = None, story: dict | None = None) -> Path:
     """`fighters` = 2 persos {name, image_path}. Leur fiche (attaques, secret, passif, forme) vient de movesets.
     Scénario : `winner` = 0 / 1 pour imposer le gagnant, `comeback` = il perd d'abord, sort son secret, puis gagne.
     `cine` : transformation en « auto » (cut-in/carte si library/_domain/cine/<Perso>/, sinon clip), « clip » (extrait de
@@ -1423,8 +1555,13 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
     cols = [hex_rgb(s.get("color"), TEAM[i]) for i, s in enumerate(sheets)]
     if sum((a - b) ** 2 for a, b in zip(*cols)) < 120 ** 2:      # 2 couleurs trop proches → bleu / rouge
         cols = list(TEAM)
+    global STORY
+    STORY = story                                                # scénario « chute » (Luffy vs Kaido) ou normal
+    if story and winner is None:
+        winner = int(story.get("hero", 0))
     if seed is None:
-        seed = pick_seed(seconds, W, H, sheets, tries, winner=winner, comeback=comeback, underdog=underdog)
+        seed = 7 if story else pick_seed(seconds, W, H, sheets, tries, winner=winner, comeback=comeback,
+                                         underdog=underdog)
     war, director = make(seed, seconds, W, H, sheets, winner)
     nx, ny, cell, ox, oy = geometry(W, H)
     m_ep = re.match(r"\s*domain war\s*#\s*(\d+)", title or "", re.I)
@@ -1442,7 +1579,10 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
     stages = [[(nm, fusion.icon(str(pth), 256, cols[i])) for nm, pth in
                form_stages(sh.get("form"), int(sh.get("stages") or 3))] for i, sh in enumerate(sheets)]
     stage = [-1, -1]                                             # forme intermédiaire actuelle (-1 = base)
-    stage_t = [[seconds * (0.07 + 0.075 * j) + 1.3 * i for j in range(len(stages[i]))] for i in (0, 1)]
+    stage_t = [[seconds * (float(sheets[i]["stage_at"]) + 0.075 * j if sheets[i].get("stage_at") else
+                           0.07 + 0.075 * j) + (0 if sheets[i].get("stage_at") else 1.3 * i)
+                for j in range(len(stages[i]))] for i in (0, 1)]
+    stage_src = [form_stages(sh.get("form"), int(sh.get("stages") or 3)) for sh in sheets]
     stage_ev = []                                                # (t, équipe) pour le son
     fdir = []                                                    # effets propres à la forme secrète (UI…)
     for sh in sheets:
@@ -1497,6 +1637,75 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
     intro_hit = []                                               # instant du choc de l'accroche (vidéo)
     cine_done = [False, False]
     ulti_done = [False, False]
+    ulti_log = []                                                # (temps simu, durée, attaque, équipe) des ultis
+    frames_dur = [0.0]
+    story_zoro = None                                            # aide surprise (sprite MUGEN), scénario « chute »
+    helper = (director.story or {}).get("helper")
+    if helper:
+        try:
+            from . import mugen
+            story_zoro = mugen.Char(library.root() / helper["dir"], helper["char"])
+        except Exception as e:
+            log.info("aide MUGEN indisponible : %s", e)
+    zoro_banner = [False, False]
+
+    def draw_zoro(img):
+        """Zoro arrive par la droite sous l'arène, perdu (regarde à gauche / droite, « Where am I? »), voit Kaido,
+        fonce sur lui et lance son attaque (Sanzen Sekai). Sprites du jeu MUGEN, devant tout le reste."""
+        if not director.zoro:
+            return
+        z0, z1 = director.zoro
+        t = war.t
+        if not (z0 <= t < z1 + 1.1):
+            return
+        vil = 1 - director.winner
+        vs = war.mains(vil) or [b_ for b_ in war.balls if b_["team"] == vil]
+        tx_, ty_ = (ox + vs[0]["x"], oy + vs[0]["y"]) if vs else (W * 0.7, H * 0.45)
+        sc = 1.7 * k
+        yb = oy + gh - cell * 1.5                                # au sol, en bas de l'arène
+        mid = W * 0.62
+        lost_end = z1 - 1.0
+        fnt_ = render.font(int(44 * k))
+        if t < z0 + 1.0:                                         # arrive en marchant
+            a = (t - z0) / 1.0
+            x = W + 80 * k + (mid - W - 80 * k) * a
+            story_zoro.draw(img, 20, t - z0, x, yb, scale=sc, facing=-1)
+        elif t < lost_end:                                       # perdu : regarde à gauche, à droite
+            fc = -1 if int((t - z0 - 1.0) / 0.55) % 2 == 0 else 1
+            story_zoro.draw(img, 0, t - z0, mid, yb, scale=sc, facing=fc)
+            render.draw_rich(img, (mid, yb - 300 * k), "Where am I? 🗺️", fnt_, (255, 255, 255), "ma",
+                             int(4 * k), (0, 0, 0))
+            for j in range(2):
+                ph = (t * 1.6 + j * 0.5) % 1.0
+                ImageDraw.Draw(img).text((mid + (-70 + 140 * j) * k, yb - (260 + 60 * ph) * k), "?",
+                                         font=render.font(int(60 * k)), anchor="mm",
+                                         fill=(255, 230, 90, int(255 * (1 - ph))), stroke_width=int(4 * k),
+                                         stroke_fill=(0, 0, 0))
+        elif t < z1 - 0.3:                                       # il voit Kaido : « ! » puis fonce
+            a = (t - lost_end) / 0.7
+            ImageDraw.Draw(img).text((mid, yb - 280 * k), "!", font=render.font(int(90 * k)), anchor="mm",
+                                     fill=(255, 80, 80), stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
+            x = mid + (tx_ - 120 * k - mid) * max(0.0, a * 1.6 - 0.6)
+            y = yb + (ty_ + 90 * k - yb) * max(0.0, a * 1.6 - 0.6)
+            story_zoro.draw(img, 100, t, x, y, scale=sc, facing=1 if tx_ > x else -1)
+        else:                                                    # SANZEN SEKAI sur Kaido
+            b_ = t - (z1 - 0.3)
+            act, tb = (3200, b_) if b_ < 0.57 else (3201, b_ - 0.57)
+            story_zoro.draw(img, act, tb, tx_ - 120 * k, ty_ + 90 * k, scale=sc, facing=1, loop=False)
+            if not zoro_banner[0]:
+                zoro_banner[0] = True
+                banners.append({"t0": t, "team": director.winner, "who": helper.get("name", "ZORO"),
+                                "move": helper.get("move", "SANZEN SEKAI"), "big": True, "dur": 1.4})
+            if 0.25 < b_ < 0.9:                                  # 3 entailles blanches sur Kaido
+                dz = ImageDraw.Draw(img)
+                for j in range(3):
+                    q = min(1.0, (b_ - 0.25) / 0.15)
+                    al = int(255 * max(0.0, 1 - (b_ - 0.4) / 0.5))
+                    sx, sy = tx_ - 110 * k + j * 40 * k, ty_ - 110 * k + j * 25 * k
+                    dz.line((sx, sy, sx + 220 * k * q, sy + 200 * k * q), fill=(255, 255, 255, al),
+                            width=int(9 * k))
+                    dz.line((sx, sy, sx + 220 * k * q, sy + 200 * k * q), fill=(140, 255, 160, al // 2),
+                            width=int(20 * k))
     eyes_at = []                                                 # instants des cut-in des yeux (Amaterasu…)
     eyes_count: dict = {}
     eye_moves = [{m.strip().lower() for m in (sheets[i].get("eyes") or "").split(",") if m.strip()} for i in (0, 1)]
@@ -1766,6 +1975,7 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                             f"fps={fps},scale={W}:{H}:force_original_aspect_ratio=decrease,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2",
                             "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True, timeout=300)
         n = len(r.stdout) // (W * H * 3)
+        frames_dur[0] = n / fps
         if n:
             proc.stdin.write(r.stdout[:n * W * H * 3])
             pauses.append((war.t, n / fps))
@@ -2676,6 +2886,13 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
         finish_done = False
         while not finished(war, seconds):
             director.tick()
+            if director.down and not zoro_banner[1] and war.t >= director.down[0]:   # le héros tombe
+                zoro_banner[1] = True
+                hn = _seo.short(names[director.winner]).upper()
+                banners.append({"t0": war.t, "team": -1, "who": "", "move": f"{hn} IS DOWN...", "big": True,
+                                "dur": 1.3, "cy": 0.45})
+                banners.append({"t0": director.down[0] + 1.35, "team": -1, "who": "", "move": "DON! DON! DON!",
+                                "big": True, "dur": director.down[1] - director.down[0] - 1.35, "cy": 0.45})
             if director.finish is not None and not finish_done:   # le dernier perso tombe → FINISH!
                 finish_done = True
                 frames += finish_cut(ox + director.finish[1], oy + director.finish[2], director.finish[3])
@@ -2684,6 +2901,9 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
             for team in (0, 1):                                  # vient de se transformer → cinématique
                 if war.transformed[team] is not None and not cine_done[team]:
                     cine_done[team] = True
+                    if ulti_for(names[team], (sheets[team].get("secret") or {}).get("name")) is not None and \
+                            str(sheets[team].get("ulti_at") or "first").strip().lower() != "finish":
+                        continue                                  # la vidéo d'ulti (GIF) remplace la carte
                     frames += cinematic(team, last_img)
                     post_fx[0] = war.t                            # retour : flash + dézoom sur l'arène
             for team in (0, 1):                                  # formes intermédiaires : l'icône change + impact
@@ -2692,6 +2912,12 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                         and director.s1 is None):
                     stage[team] = nxt
                     stage_ev.append((war.t, team))
+                    stem_ = re.sub(r"^\d+[\s._-]*", "", stage_src[team][nxt][1].stem).strip()
+                    up_ = ulti_for(names[team], f"stage {stem_}")      # « Kaido stage Dragon.mp4 » : le GIF
+                    if up_ is not None:
+                        frames += play_ulti(up_)
+                        ulti_log.append((war.t, frames_dur[0], f"stage {stem_}", team))
+                        post_fx[0] = war.t
                     banners.append({"t0": war.t, "team": team, "who": names[team], "move": stages[team][nxt][0],
                                     "big": False})
                     for b in war.mains(team):
@@ -2713,6 +2939,13 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                     continue
                 if slot == "clash":                              # Beam Clash : une seule bannière, en haut
                     if team == 0:
+                        for tm_ in ((1 - director.winner,) if director.story else (0, 1)):
+                            up_ = ulti_for(names[tm_], "clash")       # image du choc (« Kaido clash.mp4 »)
+                            if up_ is not None:
+                                frames += play_ulti(up_)
+                                ulti_log.append((war.t, frames_dur[0], "clash", tm_))
+                                post_fx[0] = war.t
+                                break
                         n1 = clash_move(sheets[1])
                         banners = [b for b in banners if b["t0"] < t0 - 0.01]
                         banners.append({"t0": t0, "team": -1, "who": "BEAM CLASH!", "move": f"{fx['name']} vs {n1}",
@@ -2734,6 +2967,7 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                     if up is not None and (when != "finish" or war.final):
                         ulti_done[team] = True
                         frames += play_ulti(up)
+                        ulti_log.append((war.t, frames_dur[0], fx.get("name"), team))
                         post_fx[0] = war.t
                 mvl = (fx.get("name") or "").lower()
                 if mvl in eye_moves[team] and eyes_count.get((team, mvl), 0) < 2 and not war.final:
@@ -2824,9 +3058,14 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                     if nxt_row is not None and nxt_row[gx] != row[gx]:
                         fd.line((x0, y0 + cell, x0 + cell, y0 + cell), fill=(255, 255, 255, 150), width=fw_)
             sprites = []                                         # images d'attaques (library/_domain/fx/) par-dessus
+            rubber = []                                          # bras de Luffy : dessinés après les persos
             for fx in war.fx:
                 age = war.t - fx["t0"]
                 fam, c = fx["fam"], mix(cols[fx["team"]], 0.45)
+                if fam in ("beam", "mega_beam", "shots", "bomb") and style_of(fx.get("name")) == "rubber" \
+                        and _rubber_parts() is not None:
+                    rubber.append(fx)
+                    continue
                 spr = atk_at(fx.get("name"), fx["team"], fx.get("slot"), war.t - fx["t0"]) if fx.get("name") else None
                 if fam == "bomb":
                     if age < fx["delay"]:                      # la sphère tombe du haut
@@ -2933,6 +3172,9 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                 grow = min(1.0, age / 0.35)
                 xl, xr = ox + (xm - ox) * grow, ox + gw - (ox + gw - xm) * grow
                 for x1, x2, tm in ((ox, xl, 0), (xr, ox + gw, 1)):
+                    if style_of(clash_move(sheets[tm])) == "rubber" and _rubber_parts() is not None:
+                        rubber.append({"clash": True, "team": tm, "x1": x1, "x2": x2, "y": y, "th": th, "age": age})
+                        continue
                     spr = atk_at(clash_move(sheets[tm]), tm, "front", age)
                     if spr is None:
                         spr = pack_beam(tm, abs(x2 - x1), th * 3.2, age, clash_move(sheets[tm]))
@@ -3076,6 +3318,54 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
                     for j in range(3):
                         d.rectangle((bx + j * seg + 1, byy, bx + (j + 1) * seg - 1, byy + bh_),
                                     fill=hc if j < hp else (60, 60, 70))
+            for rf in rubber:                                    # bras élastiques de Luffy, devant les persos
+                tm = rf["team"]
+                white = war.transformed[tm] is not None          # Gear 5 : bras et poings blancs
+                thk = cell * 0.85 / 11
+                if rf.get("clash"):
+                    a_ = rf["age"]
+                    gx1, gx2 = (rf["x1"], rf["x2"]) if tm == 0 else (rf["x2"], rf["x1"])
+                    draw_rubber(img, gx1, rf["y"], gx2, rf["y"], war.t, thk * 1.6, giant=min(rf["th"] * 1.6, cell * 4),
+                                white=white)
+                    continue
+                b = rf["ball"]
+                x1, y1 = ox + b["x"], oy + b["y"]
+                age = war.t - rf["t0"]
+                if rf["fam"] in ("beam", "mega_beam"):
+                    out_, hold_, back_ = 0.2, 0.18, 0.3
+                    if age < out_:
+                        q = 1 - (1 - age / out_) ** 3
+                    elif age < out_ + hold_:
+                        q = 1.0
+                    else:
+                        q = max(0.0, 1 - ((age - out_ - hold_) / back_) ** 2)
+                    if q > 0:
+                        L = rf["length"] * q
+                        tx_, ty_ = rf["x"] + math.cos(rf["ang"]) * L, rf["y"] + math.sin(rf["ang"]) * L
+                        draw_rubber(img, x1, y1, ox + tx_, oy + ty_, war.t, thk * (1.4 if white else 1.0),
+                                    giant=cell * 3.2 if white else 0, white=white)
+                elif rf["fam"] == "shots":
+                    for i, (tx_, ty_) in enumerate(rf["shots"]):
+                        a = (age - i * 0.05) / 0.3
+                        q = a if 0 <= a < 1 else (1 - (a - 1) / 0.4 if 1 <= a < 1.4 else 0)
+                        if q > 0:
+                            draw_rubber(img, x1, y1, x1 + (ox + tx_ - x1) * q, y1 + (oy + ty_ - y1) * q,
+                                        war.t + i, thk * 0.8, white=white)
+                elif rf["fam"] == "bomb":
+                    dl = rf.get("delay", 0.5)
+                    if age < dl:
+                        q = (age / dl) ** 1.5
+                    elif age < dl + 0.3:
+                        q = 1.0
+                    else:
+                        q = max(0.0, 1 - (age - dl - 0.3) / 0.4)
+                    if q > 0:
+                        gs = min(rf["radius"] * 0.75, cell * (5.5 if white else 4.2)) * (
+                            1 if age < dl else 1 + 0.12 * math.sin(age * 40))
+                        draw_rubber(img, x1, y1, x1 + (ox + rf["tx"] - x1) * q, y1 + (oy + rf["ty"] - y1) * q,
+                                    war.t, thk * 2.2, giant=gs, white=white)
+            if story_zoro is not None:                           # Zoro (sprite MUGEN) : perdu, puis il frappe
+                draw_zoro(img)
             spawn_anims()
             energy = Image.new("RGBA", (W, H), (0, 0, 0, 0))     # effets + particules : additif + halo
             draw_anims(energy)
@@ -3464,6 +3754,36 @@ def generate(fighters: list[dict], seconds: float = 35, title: str | None = None
         put(t, S("powerup"), 0.7)
     for t, _ in director.sparks:
         put(t, S("teleport"), 0.5)
+    if director.story:                                           # scénario « chute » : sons de l'histoire
+        st_snd = director.story.get("sounds") or {}
+
+        def lsnd(rel):
+            p_ = library.root() / rel
+            return fusion.load_sound(p_) if p_.is_file() else None
+
+        def put_rel(t, rel, gain):
+            s_ = lsnd(rel)
+            if s_ is not None:
+                put(t, s_, gain, video=True)
+        for t0, dd, mv, tm in ulti_log:                          # ultis (vidéos muettes) : bruitages calés
+            start = vt(t0) - dd
+            for off, rel, g in st_snd.get(str(mv).lower(), []):
+                put_rel(start + (dd + off if off < 0 else off), rel, g)
+        if director.down:
+            for off, rel, g in st_snd.get("down", []):
+                put_rel(vt(director.down[0]) + off, rel, g)
+        if director.zoro:
+            for off, rel, g in st_snd.get("helper", []):         # bruitages de l'aide (pas)
+                put_rel(vt(director.zoro[0]) + off, rel, g)
+            if helper and helper.get("voice") and story_zoro is not None:   # réplique MUGEN (Sanzen Sekai)
+                w_ = story_zoro.sounds.get(tuple(helper["voice"]))
+                if w_:
+                    tmpw = out.with_suffix(".voice.wav")
+                    tmpw.write_bytes(w_)
+                    voices.append((vt(director.zoro[1]) - 0.7, fusion.load_sound(tmpw)))
+                    tmpw.unlink(missing_ok=True)
+            for off, rel, g in st_snd.get("helper_hit", []):
+                put_rel(vt(director.zoro[1]) + off, rel, g)
     put(win_at, sfx("win"), 0.9, video=True)                                 # gong de l'écran WINNER
     wav = out.with_suffix(".wav")
     from . import sfxdesign as _sd                               # mixage : aigus adoucis, niveau raisonnable
