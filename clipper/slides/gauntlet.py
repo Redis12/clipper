@@ -442,7 +442,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
         franchise = None
     hs_ = [domain.sfx("hit", mode="anime", seed=i, franchise=franchise) for i in range(4)]
     for i, tt in enumerate(hit_t):
-        put(tt, hs_[i % 4], 0.45)
+        put(tt, hs_[i % 4], 0.3)
     for tt in ko_t:
         put(tt, domain.sfx("ko", mode="anime", franchise=franchise), 0.9)
         put(tt + 0.05, domain.sfx("bomb", mode="anime", seed=3, franchise=franchise), 0.8)
@@ -453,7 +453,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
     lvl = float(np.percentile(np.abs(audio), 99.7)) or 1.0
     audio = audio * min(1.0, 0.75 / lvl)
     wav = out.with_suffix(".wav")
-    fusion.write_wav(wav, np.tanh(audio * 1.1) / math.tanh(1.1))
+    fusion.write_wav(wav, np.tanh(audio * 1.1) / math.tanh(1.1) * 0.24)   # ≈ −24 LUFS comme les autres formats
     subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(tmp), "-i", str(wav), "-c:v", "copy", "-c:a", "aac",
                     "-b:a", "160k", "-shortest", str(out)], check=True)
     tmp.unlink(missing_ok=True)
