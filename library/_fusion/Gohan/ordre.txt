@@ -1,0 +1,5 @@
+1 KID GOHAN.webp = Kid Gohan
+2 GOHAN SSJ1.jpg = SSJ1
+3 Gohan SSJ2.jpg = SSJ2
+4 GOHAN ULTIME.jpg = Ultimate
+5 Gohan Beast.jpg = Beast

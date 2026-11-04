@@ -1,0 +1,7 @@
+1 BASE FRIEZA.jpg = First Form
+2 FORM FRIEZA.jpg = Second Form
+3 FORM .jpg = Third Form
+4 FINAL FORM.jpg = Final Form
+5 mecha freezer.jpg = Mecha Frieza
+6 GOLDEN.jpg = Golden Frieza
+7 BLACCK.jpg = Black Frieza
