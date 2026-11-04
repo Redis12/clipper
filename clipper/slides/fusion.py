@@ -434,27 +434,31 @@ def merge(sim: Sim, a: Ball, b: Ball) -> None:
 
 def icon(path: str | None, size: int, color: tuple) -> Image.Image:
     """Icône ronde centrée sur la tête du perso (quel que soit le format de l'image). PNG sans fond : posé sur
-    un disque coloré."""
+    un disque coloré. Image coupée à l'intérieur de l'anneau, anneau par-dessus, bords lissés (04/11 : l'image
+    dépassait du cercle)."""
     from . import faces
-    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    mask = Image.new("L", (size, size), 0)
-    ImageDraw.Draw(mask).ellipse((0, 0, size - 1, size - 1), fill=255)
+    ss = 3                                                     # suréchantillonnage : bords nets et lissés
+    S = size * ss
+    ring = max(3, size // 16) * ss
+    out = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    mask = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(mask).ellipse((ring // 2, ring // 2, S - 1 - ring // 2, S - 1 - ring // 2), fill=255)
     if path and Path(path).exists():
         with Image.open(path) as src:
             src.load()
             transparent = src.mode in ("RGBA", "LA", "P") and src.convert("RGBA").getextrema()[3][0] < 250
             im = src.convert("RGBA") if transparent else src.convert("RGB")
         sq = faces.head_square(im, path, vision=bool(fcfg().get("vision_faces", True)))
-        sq = sq.resize((size, size), Image.LANCZOS)
+        sq = sq.resize((S, S), Image.LANCZOS).convert("RGBA")
         if transparent:
-            disk = Image.new("RGBA", (size, size), tuple(int(c * 0.35) for c in color) + (255,))
+            disk = Image.new("RGBA", (S, S), tuple(int(c * 0.35) for c in color) + (255,))
             disk.alpha_composite(sq)
             sq = disk
         out.paste(sq, (0, 0), mask)
     else:
-        ImageDraw.Draw(out).ellipse((0, 0, size - 1, size - 1), fill=color + (255,))
-    ImageDraw.Draw(out).ellipse((1, 1, size - 2, size - 2), outline=color + (255,), width=max(3, size // 16))
-    return out
+        ImageDraw.Draw(out).ellipse((0, 0, S - 1, S - 1), fill=color + (255,))
+    ImageDraw.Draw(out).ellipse((1, 1, S - 2, S - 2), outline=color + (255,), width=ring)
+    return out.resize((size, size), Image.LANCZOS)
 
 
 def hex_rgb(h: str) -> tuple:

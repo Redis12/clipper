@@ -23,17 +23,24 @@ W, H, FPS = 1080, 1920, 30
 HERO_COL, BOSS_COL, YELLOW = (255, 150, 40), (235, 60, 70), (255, 214, 10)
 
 
-def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240):
+def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, specials: list | None = None):
     """Rend les positions image par image et les chocs. Le boss change après `hits_for(i)` coups (+ pause K.O.)."""
     rnd = random.Random(seed)
     rh = S * 0.075
-    frames, hits, kos = [], [], []
+    frames, hits, kos, events = [], [], [], []
+    specials = specials or [None] * n_foes
+    used = set()
+    gag_until = 0.0
+    phase_until = 0.0
     foe, got, t, next_frame, cool, pause = 0, 0, 0.0, 0.0, 0.0, 0.0
 
     def new_boss(i):
         RB = S * (0.15 + 0.07 * i / max(1, n_foes - 1))
         return RB, rnd.uniform(RB, S - RB), rnd.uniform(RB, S * 0.45), rnd.uniform(-1, 1) * S * 0.12, S * 0.05
     RB, bx, by, bvx, bvy = new_boss(0)
+    if (specials[0] or {}).get("gag"):
+        gag_until = float(specials[0].get("gag_s", 1.3))
+        events.append(("gag", 0, 0.0, gag_until))
     hx, hy = S * 0.5, S * 0.85
     a = rnd.uniform(-2.4, -0.7)
     hv = S * 1.05
@@ -47,8 +54,14 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240):
                     break
                 RB, bx, by, bvx, bvy = new_boss(foe)
                 got = 0
+                sp = specials[foe] or {}
+                if sp.get("gag"):                         # gag au début (Sanji cuisine, Talk no Jutsu…)
+                    gag_until = t + float(sp.get("gag_s", 1.3))
+                    events.append(("gag", foe, t, gag_until))
                 if math.hypot(hx - bx, hy - by) < RB + rh + 4:
                     hy = min(S - rh, by + RB + rh + 10)
+        elif t < gag_until:
+            pass                                          # tout le monde attend la fin du gag
         else:
             hx += hvx * dt
             hy += hvy * dt
@@ -71,7 +84,22 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240):
             dx, dy = hx - bx, hy - by
             dist = math.hypot(dx, dy) or 1
             cool -= dt
-            if dist < RB + rh:
+            sp = specials[foe] or {}
+            if dist < RB + rh and t >= phase_until and sp.get("tp") and ("tp", foe) not in used:
+                used.add(("tp", foe))                     # Minato : Hiraishin, il disparaît et réapparaît plus loin
+                ox_, oy_ = bx, by
+                bx = S - bx if abs(S - 2 * bx) > RB * 2 else rnd.uniform(RB, S - RB)
+                by = min(max(S - by, RB), S - RB)
+                events.append(("tp", foe, t, ox_, oy_, bx, by))
+                dx, dy = hx - bx, hy - by
+                dist = math.hypot(dx, dy) or 1
+            elif dist < RB + rh and sp.get("kamui") and ("kamui", foe) not in used:
+                used.add(("kamui", foe))                  # Obito : Kamui, Goku passe à travers
+                phase_until = t + 0.6
+                events.append(("kamui", foe, t, phase_until))
+            if dist < RB + rh and t < phase_until:
+                pass
+            elif dist < RB + rh:
                 nx, ny = dx / dist, dy / dist
                 hx, hy = bx + nx * (RB + rh + 0.5), by + ny * (RB + rh + 0.5)
                 dot = hvx * nx + hvy * ny
@@ -99,7 +127,7 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240):
             next_frame += 1 / FPS
         if t > 300:
             break
-    return {"frames": frames, "hits": hits, "kos": kos}
+    return {"frames": frames, "hits": hits, "kos": kos, "events": events}
 
 
 def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Path | None = None,
@@ -111,7 +139,9 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
     ox, oy = (W - S) / 2, H * 0.215
     hits_for = lambda i: base_hits + step_hits * i                                      # noqa: E731
     seed = seed if seed is not None else random.randrange(1_000_000)
-    sim = simulate(seed, S, n, hits_for)
+    specials = [{k_: v for k_, v in f.items() if k_ in ("gag", "gag_s", "tp", "kamui", "say")} or None for f in foes]
+    sim = simulate(seed, S, n, hits_for, specials=specials)
+    evs = sim["events"]
     frames = sim["frames"]
     hit_by_frame: dict = {}
     for h in sim["hits"]:
@@ -142,6 +172,31 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                              "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-preset", "veryfast",
                              "-crf", "20", "-pix_fmt", "yuv420p", str(tmp)], stdin=subprocess.PIPE)
     floats, ko_at, dealt = [], [], [0] * n
+    by_ = [0.0]
+
+    def banner(img_, text, age, col):
+        if age > 1.0:
+            return
+        s_ = 1 + 0.35 * max(0.0, 1 - age / 0.15)
+        yb_ = oy + 70 * k if by_[0] > S * 0.4 else oy + S - 70 * k      # loin du perso (pas sur son nom)
+        ImageDraw.Draw(img_).text((W / 2, yb_), text, font=render.font(int(64 * k * s_)), anchor="mm",
+                                  fill=col, stroke_width=int(6 * k), stroke_fill=(0, 0, 0))
+
+    def bubble(img_, x, y, text):
+        f_ = render.font(int(40 * k))
+        dd = ImageDraw.Draw(img_)
+        lines = render.wrap(text, f_, int(W * 0.6), dd) or [text]
+        lh = int(48 * k)
+        bw = max(render.text_width(dd, ln, f_) for ln in lines) + 50 * k
+        bh = lh * len(lines) + 30 * k
+        x0 = min(max(ox + 10 * k, x - bw / 2), ox + S - bw - 10 * k)
+        y0 = max(oy + 120 * k, y - bh)
+        dd.rounded_rectangle((x0, y0, x0 + bw, y0 + bh), radius=int(24 * k), fill=(255, 255, 255),
+                             outline=(0, 0, 0), width=int(5 * k))
+        tx = min(max(x, x0 + 30 * k), x0 + bw - 30 * k)
+        dd.polygon([(tx - 18 * k, y0 + bh - 3), (tx + 18 * k, y0 + bh - 3), (tx, y0 + bh + 26 * k)], fill=(255, 255, 255))
+        for i_, ln in enumerate(lines):
+            render.draw_rich(img_, (x0 + bw / 2, y0 + 15 * k + i_ * lh), ln, f_, (20, 20, 20), "ma", 0, (0, 0, 0))
     hit_t, ko_t = [], []
     end_frames = int(FPS * 2.0)
     try:
@@ -176,6 +231,8 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
             # adversaire du moment (pas pendant le K.O.)
             if not ended and not paused:
                 ic = foe_icons[foe].resize((int(RB * 2), int(RB * 2)), Image.LANCZOS)
+                if any(e[0] == "kamui" and e[1] == foe and e[2] <= t < e[3] for e in evs):
+                    ic.putalpha(ic.getchannel("A").point(lambda v: v * 35 // 100))   # intangible
                 if hit_by_frame.get(fi) or hit_by_frame.get(fi - 1):
                     red = Image.new("RGBA", ic.size, (255, 40, 40, 255))
                     red.putalpha(ic.getchannel("A").point(lambda v: v // 2))
@@ -198,6 +255,39 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
             au = au.filter(ImageFilter.GaussianBlur(hs * 0.25))
             img.alpha_composite(au, (int(ox + hx - au.width / 2), int(oy + hy - au.height / 2)))
             img.alpha_composite(hero_icon.resize((hs, hs), Image.LANCZOS), (int(ox + hx - hs / 2), int(oy + hy - hs / 2)))
+            by_[0] = by
+            for ev in evs:                                       # gags et pouvoirs (Hiraishin, Kamui, Talk no Jutsu…)
+                kind, ef, t0 = ev[0], ev[1], ev[2]
+                age = t - t0
+                if kind == "tp" and 0 <= age < 0.9:              # image rémanente + éclair jaune
+                    _, _, _, x0_, y0_, x1_, y1_ = ev
+                    gh = foe_icons[ef].resize((int(RB * 2), int(RB * 2)))
+                    gh.putalpha(gh.getchannel("A").point(lambda v: int(v * 0.5 * (1 - age / 0.9))))
+                    img.alpha_composite(gh, (int(ox + x0_ - RB), int(oy + y0_ - RB)))
+                    dl = ImageDraw.Draw(img)
+                    if age < 0.25:
+                        dl.line((ox + x0_, oy + y0_, ox + x1_, oy + y1_), fill=(255, 230, 90), width=int(14 * k))
+                    banner(img, foes[ef].get("tp_name", "FLYING RAIJIN!"), age, (255, 225, 80))
+                    if age < 0.6:
+                        dl.text((ox + hx, oy + hy - 70 * k), "MISS!", font=render.font(int(44 * k)), anchor="mm",
+                                fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
+                elif kind == "kamui" and 0 <= age < 1.1:
+                    dl = ImageDraw.Draw(img)
+                    for j in range(5):                           # tourbillon violet autour d'Obito
+                        rr = RB * (1.05 + 0.12 * j)
+                        a0 = (age * 520 + j * 70) % 360
+                        dl.arc((ox + bx - rr, oy + by - rr, ox + bx + rr, oy + by + rr), a0, a0 + 200,
+                               fill=(150, 80, 230), width=int(6 * k))
+                    banner(img, foes[ef].get("kamui_name", "KAMUI!"), age, (175, 110, 255))
+                    if age < 0.7:
+                        dl.text((ox + hx, oy + hy - 70 * k), "MISS!", font=render.font(int(44 * k)), anchor="mm",
+                                fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
+                elif kind == "gag" and t0 <= t < ev[3]:          # bulle de dialogue, texte qui s'écrit
+                    say = foes[ef].get("say", "...")
+                    nch = max(1, int(len(say) * min(1.0, age / max(0.3, (ev[3] - t0) * 0.7))))
+                    bubble(img, ox + bx, oy + by - RB - 40 * k, say[:nch])
+                    if foes[ef].get("gag_label"):
+                        banner(img, foes[ef]["gag_label"], age, (255, 255, 255))
             # « -9,001 »
             keep = []
             for (ft, fx_, fy_) in floats:
@@ -294,6 +384,9 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
     for tt in ko_t:
         put(tt, domain.sfx("ko", mode="anime", franchise=franchise), 0.9)
         put(tt + 0.05, domain.sfx("bomb", mode="anime", seed=3, franchise=franchise), 0.8)
+    for ev in evs:
+        if ev[0] in ("tp", "kamui"):
+            put(ev[2], domain.sfx("vanish", mode="anime", franchise=franchise), 0.7)
     put(len(frames) / FPS, domain.sfx("win"), 0.8)
     lvl = float(np.percentile(np.abs(audio), 99.7)) or 1.0
     audio = audio * min(1.0, 0.75 / lvl)
