@@ -460,5 +460,59 @@
   0.2,
   0.6,
   0.31
+ ],
+ "tail:Sanji/Sanji.jpg": [
+  0.33,
+  0.03,
+  0.66,
+  0.2
+ ],
+ "tail:Nami/Nami.jpg": [
+  0.28,
+  0.15,
+  0.78,
+  0.8
+ ],
+ "tail:Pain/Pain.jpg": [
+  0.42,
+  0.15,
+  0.62,
+  0.75
+ ],
+ "tail:Hody Jones/Hody Jones.jpg": [
+  0.4,
+  0.05,
+  0.62,
+  0.24
+ ],
+ "tail:Akainu/Akainu.jpg": [
+  0.27,
+  0.06,
+  0.7,
+  0.27
+ ],
+ "tail:Kizaru/Kizaru.jpg": [
+  0.32,
+  0.1,
+  0.66,
+  0.72
+ ],
+ "tail:Jack/Jack.jpg": [
+  0.38,
+  0.01,
+  0.62,
+  0.14
+ ],
+ "tail:Doflamingo/Doflamingo.jpg": [
+  0.42,
+  0.04,
+  0.62,
+  0.23
+ ],
+ "tail:Crocodile/Crocodile.jpg": [
+  0.35,
+  0.0,
+  0.58,
+  0.22
  ]
 }
