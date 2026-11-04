@@ -1,0 +1,6 @@
+1 Base.jpg = Base
+2 SSJ1.jpg = SSJ1
+3 SSJ2.jpg = SSJ2
+4 SSJGOD.jpg = SSJ God
+5 SSJBLUE.jpg = SSJ Blue
+6 ultra ego.jpg = Ultra Ego
