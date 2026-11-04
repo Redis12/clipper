@@ -1,0 +1,6 @@
+1 BASE.jpg = Base
+2 Shinigami.jpg = Shinigami
+3 Hollow Mask.jpg = Hollow Mask
+4 Vasto Lorde.jpg = Vasto Lorde
+5 Mugetsu.jpg = Mugetsu
+6 True Bankai.jpg = True Bankai
