@@ -257,3 +257,8 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
 - Voix MUGEN : seulement Zoro (Sanzen Sekai, groupe 0 n°3) + les « Gomu Gomu no… » de Luffy (MUGEN Luffy groupe 0 : 9 Jet Pistol, 3 Gatling, 11 Elephant/KKG, 12 Red Hawk, 13 Elephant Gatling, 17 Jet Bazooka) — les autres voix ne collent pas.
 - Zoro reste en sprite MUGEN (marche perdu sous l'arène puis Sanzen Sekai).
 - Outils : `clipper/slides/mugen.py` (lecteur SFF v1/AIR/SND), `tools/pixel/luffy_vs_kaido_v4.py`. Jump Force MUGEN (56 persos, SFF v2 non géré) : Goku UI, Naruto Asura, Ichigo final, Saitama… pour plus tard.
+
+## Bilan Power Up « Can Kid Goku beat Beerus? » (04/11, ~22 h après la mise en ligne)
+- 18,9k vues (13,3k engagées), 76 % ont continué à regarder, 0:50 regardées en moyenne sur 1:06, +13 abonnés, 94,8 % depuis le flux Shorts, courbe qui accélère encore.
+- Pourquoi : les gens ont beaucoup réagi parce que « Beerus qui perd contre Kid Goku, c'est pas logique ». Les commentaires de désaccord poussent la vidéo.
+- Règle : un duel « injuste mais crédible » (un petit qui bat un dieu) déclenche les commentaires. À garder pour la série Power Up (Kid Sasuke vs Madara jeudi 18h). Jamais insultant, et le titre reste une question (« Can X beat Y? »).
