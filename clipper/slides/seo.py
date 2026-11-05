@@ -232,7 +232,14 @@ def build(meta: dict, handle: str = "@animelorehq") -> dict:
         easy = "Who wins? One name 👇"
     line1 = title.rstrip(' 🤯⚡😳🏆')
     tiktok = f"{line1}\n{hook}\n{easy}\n{_hashtags(fan_tt, 8)}"
-    insta = f"{line1}\n{hook}\n{easy}\n\nFollow {handle} for daily anime battles 🔥\n\n{_hashtags(fan, 5)}"
+    # Instagram (05/11, 5 reels anime viraux analysés : tous « crossover ») : légende courte (titre + question) et
+    # 5 hashtags = 2 anime (perso + franchise) + 3 pour un 2e public (ce que nos vidéos sont vraiment).
+    other = {"domain": ["simulation", "gaming", "pongwars"], "powerup": ["satisfying", "oddlysatisfying", "simulation"],
+             "race": ["suikagame", "satisfying", "oddlysatisfying"], "fusion": ["suikagame", "satisfying",
+             "oddlysatisfying"], "gauntlet": ["simulation", "gaming", "satisfying"]}.get(kind, ["simulation", "gaming",
+                                                                                            "satisfying"])
+    ig2 = list(dict.fromkeys(t for t in ctags[:1] + ani_tags[:1] if t))[:2]
+    insta = f"{line1}\n{easy}\n\n{_hashtags(ig2 + other, 5)}"
     return {"youtube": {"title": title, "description": description, "tags": tags},
             "tiktok": tiktok, "instagram": insta}
 
