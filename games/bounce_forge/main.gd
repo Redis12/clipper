@@ -1674,85 +1674,181 @@ func draw_drop() -> void:
 func map_nodes() -> Array:
 	var nodes = []
 	for i in range(clampi(LEVELS.size() - (map_world - 1) * 10, 0, 10)):
-		nodes.append(Vector2(360 + sin(i * 0.95 + 0.4) * 190.0, 1095.0 - i * 86.0))
+		nodes.append(Vector2(360 + sin(i * 0.95 + 0.4) * 190.0, 1120.0 - i * 95.0))
 	return nodes
 
 func draw_map() -> void:
 	var base = (map_world - 1) * 10
 	var nodes = map_nodes()
+	var w2 = map_world == 2
+	var road = "#ff7ab8" if not w2 else "#3fcf9f"
+	var road_l = "#ffb3d6" if not w2 else "#a8f5dc"
 	var ext = nodes.duplicate()
 	ext.insert(0, Vector2(300, 1290))
 	ext.append(Vector2(360, 200))
-	var path = catmull(ext, 8.0)
-	cap_line(path, INK(), 54.0)
-	cap_line(path, C("#fff1d6"), 42.0)
+	var path = catmull(ext, 6.0)
+	# decorations behind the road
+	map_decor(w2)
+	# the road: soft shadow, thick outline, candy road with diagonal stripes and a shiny edge
+	cap_line(shifted(path, Vector2(0, 10)), C(INKH, 1.0, 0.25), 74.0)
+	cap_line(path, INK(), 70.0)
+	cap_line(path, C(road), 58.0)
 	var acc = 0.0
 	for i in range(1, path.size()):
 		acc += path[i].distance_to(path[i - 1])
-		if fmod(acc, 36.0) < 18.0:
-			draw_line(path[i - 1], path[i], C("#ffb3d6" if map_world == 1 else "#7df0c8"), 8.0, true)
-	for d in [Vector2(110, 1000), Vector2(620, 760), Vector2(95, 520), Vector2(640, 300)]:
-		draw_line(d, d + Vector2(0, 80), INK(), 12.0)
-		draw_line(d, d + Vector2(0, 80), C("#fff1d6"), 6.0)
-		draw_circle(d, 40, INK())
-		draw_circle(d, 35, C("#ff7ab8"))
-		draw_arc(d, 22, 0, TAU * 0.8, 24, C("#ffffff", 1.0, 0.7), 7.0, true)
-		draw_arc(d, 10, 0, TAU * 0.7, 16, C("#ffffff", 1.0, 0.7), 6.0, true)
-	# world 2 gate (locked) at the top
+		if fmod(acc, 34.0) < 14.0:
+			var tg = (path[i] - path[i - 1]).normalized()
+			var nn = Vector2(-tg.y, tg.x)
+			draw_line(path[i] - nn * 26.0 - tg * 8.0, path[i] + nn * 26.0 + tg * 8.0, C(road_l), 9.0, true)
+	cap_line(shifted(path, Vector2(-3, -8)), Color(1, 1, 1, 0.28), 10.0)
+	# the gate to the next world
 	var gate = Rect2(220, 150, 280, 64)
-	rrect(gate.grow(4), INK(), 30)
-	rrect(gate, C("#c9b3e6"), 26)
 	var next_open = unlocked > base + 10 and base + 10 < LEVELS.size()
-	text_c(gate.get_center() + Vector2(0, 1), ("WORLD %d  >" % (map_world + 1)) if next_open else ("WORLD %d - LOCKED" % (map_world + 1)), 26, Color(1, 1, 1), 6)
+	nine("pill_w" if next_open else "pill", gate.grow(10), 70, 60, 70, 70)
+	text_c(gate.get_center() + Vector2(0, -2), ("WORLD %d  >" % (map_world + 1)) if next_open else ("WORLD %d  LOCKED" % (map_world + 1)), 26, Color(1, 1, 1) if next_open else C("#9b7bff"), 6 if next_open else 0)
 	if map_world > 1:
 		var back = Rect2(40, 1060, 170, 56)
-		rrect(back.grow(4), INK(), 26)
-		rrect(back, C("#ff5fa2"), 22)
-		text_c(back.get_center() + Vector2(0, 1), "< WORLD %d" % (map_world - 1), 24, Color(1, 1, 1), 6)
+		nine("pill_w", back.grow(8), 70, 60, 70, 70)
+		text_c(back.get_center() + Vector2(0, -2), "< WORLD %d" % (map_world - 1), 24, Color(1, 1, 1), 6)
 	var cur = clampi(unlocked - 1 - base, 0, nodes.size() - 1)
 	for i in range(nodes.size()):
 		var p: Vector2 = nodes[i]
-		var boss_n = LEVELS[base + i].has("boss")
-		var r = 46.0 if boss_n else 38.0
-		if i == cur:
-			for k in range(5):
-				draw_circle(p, r + 14 + k * 7 + sin(t * 4.0) * 4.0, C("#ffffff", 1.2, 0.08))
-		draw_circle(p + Vector2(0, 6), r + 5, C(INKH, 1.0, 0.35))
-		var open = base + i < unlocked
-		var fill = "#ff5fa2" if i < cur else ("#ffd36b" if i == cur else "#d6c8f0")
-		if boss_n:
-			fill = "#ff4d6d" if open else "#c9b3e6"
-			rrect(Rect2(p - Vector2(r, r * 0.8), Vector2(r * 2, r * 1.6)), INK(), 18)
-			rrect(Rect2(p - Vector2(r - 5, r * 0.8 - 5), Vector2(r * 2 - 10, r * 1.6 - 10)), C(fill), 14)
-			for sg in [-1, 1]:
-				draw_circle(p + Vector2(sg * 14, -4), 9, Color(1, 1, 1))
-				draw_circle(p + Vector2(sg * 14 - sg * 2, -2), 4.5, INK())
-			text_c(p + Vector2(0, r + 22), "BOSS", 24, Color(1, 1, 1), 7)
+		var idx = base + i
+		var open = idx < unlocked
+		if LEVELS[idx].has("boss"):
+			draw_boss_icon(p, open, i == cur)
 		else:
-			draw_circle(p, r + 5, INK())
-			draw_circle(p, r, C(fill))
-			draw_circle(p + Vector2(-r * 0.3, -r * 0.35), r * 0.28, Color(1, 1, 1, 0.6))
-			text_c(p + Vector2(0, 2), str(i + 1), 34, Color(1, 1, 1) if open else C("#8d7aa8"), 7)
-		var st = best_stars.get(base + i, 0)
+			draw_level_node(p, i + 1, open, i == cur, i < cur)
+		var st = best_stars.get(idx, 0)
 		if st > 0:
+			var yoff = 66.0 if LEVELS[idx].has("boss") else 44.0
 			for s2 in range(3):
-				draw_star(p + Vector2((s2 - 1) * 26, r + (14 if boss_n else 8) + (6 if s2 == 1 else 0)), 12.0, C("#ffd36b") if s2 < st else C("#e6dcf5"))
-	var cp: Vector2 = nodes[cur] + Vector2(0, -80 + sin(t * 3.0) * 6.0)
-	draw_candy(2, cp, 24.0)
-	var bn = Rect2(110, 46, 500, 84)
-	rrect(Rect2(bn.position + Vector2(0, 7), bn.size), C(INKH, 1.0, 0.35), 28)
-	rrect(bn.grow(5), INK(), 30)
-	rrect(bn, C("#ff5fa2"), 26)
-	text_c(bn.get_center() + Vector2(0, -12), "WORLD %d" % map_world, 26, C("#ffe3f0"), 6)
-	text_c(bn.get_center() + Vector2(0, 20), "CANDY TUBES" if map_world == 1 else "SUGAR PLINKO", 38, Color(1, 1, 1), 8)
-	draw_circle(Vector2(560, 240), 15, INK())
-	draw_circle(Vector2(560, 240), 12, C("#ffd36b"))
-	text_l(Vector2(584, 240), str(coins), 26, Color(1, 1, 1), 6)
+				draw_star(p + Vector2((s2 - 1) * 28, yoff + (6 if s2 == 1 else 0)), 12.0, C("#ffd36b") if s2 < st else C("#e6dcf5"))
+	# player marker: the equipped candy hopping on the current level
+	var hop = absf(sin(t * 3.2))
+	var cp: Vector2 = nodes[cur] + Vector2(0, -78 - hop * 18.0)
+	ell(nodes[cur] + Vector2(0, -50), 20.0 - hop * 6.0, 6.0, C(INKH, 1.0, 0.25))
+	draw_candy(2, cp, 26.0, (1.0 - hop) * 0.6)
+	# header
+	var bn = Rect2(110, 40, 500, 92)
+	nine("card", bn.grow(10), 46, 60, 46, 46)
+	text_c(bn.get_center() + Vector2(0, -16), "WORLD %d" % map_world, 24, Color(1, 1, 1), 6)
+	text_c(bn.get_center() + Vector2(0, 22), "CANDY TUBES" if map_world == 1 else "SUGAR PLINKO", 38, C("#ff5fa2"), 0)
+	draw_circle(Vector2(560, 246), 15, INK())
+	draw_circle(Vector2(560, 246), 12, C("#ffd36b"))
+	text_l(Vector2(584, 246), str(coins), 26, Color(1, 1, 1), 6)
 	big_button(Rect2(160, 1170, 360, 86), "PLAY  " + lvl_name(clampi(unlocked - 1, 0, LEVELS.size() - 1)), "#3fcf9f")
 	img("round", Rect2(600, 1180, 90, 90))
 	img("round", Rect2(30, 1180, 90, 90))
 	draw_gear(Vector2(75, 1220), 24.0)
 	draw_candy(lv_icon(), Vector2(645, 1220), 24.0)
+
+func draw_level_node(p: Vector2, n: int, open: bool, cur: bool, done: bool) -> void:
+	# glossy candy button with a thick bottom edge (pressed-button look)
+	var r = 40.0
+	var top = "#ffd36b" if cur else ("#ff5fa2" if done else "#e6dcf5")
+	var side = "#e0a020" if cur else ("#c23a7a" if done else "#b3a7c4")
+	if cur:
+		for k in range(4):
+			draw_circle(p, r + 16 + k * 8 + sin(t * 4.0) * 4.0, C("#ffffff", 1.3, 0.09))
+	draw_circle(p + Vector2(0, 12), r + 6, C(INKH, 1.0, 0.3))
+	draw_circle(p + Vector2(0, 8), r + 5, INK())
+	draw_circle(p, r + 5, INK())
+	draw_circle(p + Vector2(0, 8), r, C(side))
+	draw_circle(p, r, C(top))
+	draw_circle(p + Vector2(0, -4), r * 0.82, C(top).lightened(0.12))
+	ell(p + Vector2(-r * 0.32, -r * 0.42), r * 0.34, r * 0.16, Color(1, 1, 1, 0.75))
+	if open:
+		text_c(p + Vector2(0, 1), str(n), 36, Color(1, 1, 1), 8)
+	else:
+		# small lock
+		rrect(Rect2(p + Vector2(-13, -2), Vector2(26, 20)), C("#9b8cb4"), 5)
+		draw_arc(p + Vector2(0, -4), 9, PI, TAU, 12, C("#9b8cb4"), 5.0, true)
+		draw_circle(p + Vector2(0, 7), 3.5, C("#e6dcf5"))
+
+func draw_boss_icon(p: Vector2, open: bool, cur: bool) -> void:
+	# grumpy jelly boss with a golden crown and a ribbon, gray when locked
+	var body = C("#ff4d6d") if open else C("#c9b3e6")
+	var body_d = C("#c2183f") if open else C("#9b8cb4")
+	var hi = C("#ff9aae", 1.0, 0.7) if open else C("#e6dcf5", 1.0, 0.6)
+	var wob = sin(t * 3.0) * 0.05 if open else 0.0
+	if open:
+		for k in range(4):
+			draw_circle(p, 64 + k * 9 + sin(t * 3.0) * 4.0, C("#ff4d6d", 1.4, 0.07))
+	draw_set_transform(p + Vector2(0, -6), wob, Vector2(0.8, 0.8))
+	var r = Rect2(-50, -40, 100, 80)
+	rrect(Rect2(r.position + Vector2(0, 14), r.size), C(INKH, 1.0, 0.3), 26)
+	rrect(Rect2(r.position + Vector2(-5, 3), r.size + Vector2(10, 14)), INK(), 28)
+	rrect(Rect2(r.position + Vector2(0, 8), r.size), body_d, 24)
+	rrect(r, body, 24)
+	rrect(Rect2(r.position + Vector2(8, 6), Vector2(84, 22)), hi, 12)
+	# crown
+	var cr = PackedVector2Array([Vector2(-30, -38), Vector2(-30, -62), Vector2(-15, -48), Vector2(0, -68), Vector2(15, -48), Vector2(30, -62), Vector2(30, -38)])
+	var cro = PackedVector2Array()
+	for q in cr:
+		cro.append(q + (q - Vector2(0, -50)).normalized() * 4.0)
+	draw_colored_polygon(cro, INK())
+	draw_colored_polygon(cr, C("#ffd36b") if open else C("#d6c8f0"))
+	for q in [Vector2(-30, -62), Vector2(0, -68), Vector2(30, -62)]:
+		draw_circle(q, 5, C("#ff5fa2") if open else C("#e6dcf5"))
+	# angry face
+	for sg in [-1, 1]:
+		var e = Vector2(sg * 20, -4)
+		draw_circle(e, 12, INK())
+		draw_circle(e, 9.5, Color(1, 1, 1))
+		draw_circle(e + Vector2(-sg * 2, 2), 5, INK())
+		draw_line(e + Vector2(-13, -16 + (5 if sg < 0 else -5)), e + Vector2(13, -16 + (-5 if sg < 0 else 5)), INK(), 5.0, true)
+	var mouth = PackedVector2Array([Vector2(-18, 20), Vector2(18, 20), Vector2(12, 30), Vector2(-12, 30)])
+	draw_colored_polygon(mouth, INK())
+	for k in range(3):
+		draw_colored_polygon(PackedVector2Array([Vector2(-12 + k * 9, 20), Vector2(-6 + k * 9, 20), Vector2(-9 + k * 9, 26)]), Color(1, 1, 1))
+	# ribbon
+	var rb = Rect2(Vector2(-46, 40), Vector2(92, 30))
+	draw_colored_polygon(PackedVector2Array([rb.position + Vector2(-14, 4), rb.position + Vector2(4, 4), rb.position + Vector2(4, 28), rb.position + Vector2(-14, 28), rb.position + Vector2(-6, 16)]), INK())
+	draw_colored_polygon(PackedVector2Array([rb.end + Vector2(14, -26), rb.end + Vector2(-4, -26), rb.end + Vector2(-4, -2), rb.end + Vector2(14, -2), rb.end + Vector2(6, -14)]), INK())
+	rrect(rb.grow(4), INK(), 8)
+	rrect(rb, C("#9b7bff") if open else C("#b3a7c4"), 6)
+	text_c(rb.get_center() + Vector2(0, 1), "BOSS", 22, Color(1, 1, 1), 5)
+	draw_set_transform(Vector2.ZERO)
+
+func map_decor(w2: bool) -> void:
+	if not w2:
+		# lollipops and gumdrops
+		for d in [Vector2(105, 1010), Vector2(625, 770), Vector2(90, 530), Vector2(645, 330)]:
+			draw_line(d, d + Vector2(0, 80), INK(), 12.0)
+			draw_line(d, d + Vector2(0, 80), C("#fff1d6"), 6.0)
+			draw_circle(d, 40, INK())
+			draw_circle(d, 35, C("#ff7ab8"))
+			draw_arc(d, 22, 0, TAU * 0.8, 24, C("#ffffff", 1.0, 0.7), 7.0, true)
+			draw_arc(d, 10, 0, TAU * 0.7, 16, C("#ffffff", 1.0, 0.7), 6.0, true)
+		for g in [[Vector2(600, 1060), "#7df0c8"], [Vector2(150, 780), "#ffd36b"], [Vector2(560, 560), "#9b7bff"], [Vector2(170, 330), "#8fd8ff"]]:
+			gumdrop(g[0], g[1])
+	else:
+		# mint pegs and a little plinko board in the background
+		for d in [Vector2(100, 980), Vector2(630, 760), Vector2(95, 520), Vector2(640, 320)]:
+			for k in range(3):
+				for j in range(3 - k):
+					var q = d + Vector2((j - (2 - k) / 2.0) * 26.0, k * 22.0)
+					draw_circle(q, 9, INK())
+					draw_circle(q, 6.5, C("#7df0c8"))
+		for g in [[Vector2(600, 1060), "#ff8fc6"], [Vector2(150, 780), "#ffd36b"], [Vector2(560, 560), "#3fcf9f"], [Vector2(170, 330), "#8fd8ff"]]:
+			gumdrop(g[0], g[1])
+
+func gumdrop(p: Vector2, col: String) -> void:
+	var pts = PackedVector2Array()
+	for k in range(21):
+		var an = PI + k * PI / 20.0
+		pts.append(p + Vector2(cos(an) * 30.0, sin(an) * 34.0))
+	pts.append(p + Vector2(30, 6))
+	pts.append(p + Vector2(-30, 6))
+	var o = PackedVector2Array()
+	for q in pts:
+		o.append(p + (q - p) * 1.0 + (q - p).normalized() * 4.0)
+	draw_colored_polygon(o, INK())
+	draw_colored_polygon(pts, C(col))
+	for k in range(6):
+		draw_circle(p + Vector2(-16 + k * 7, -12 + (k % 2) * 10), 2.2, Color(1, 1, 1, 0.8))
+	ell(p + Vector2(-10, -20), 7, 4, Color(1, 1, 1, 0.7))
 
 
 # ================================================================ UI pack (Cozy UI by dobo_ui, recolored) + skins
