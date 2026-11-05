@@ -214,6 +214,12 @@ def build(meta: dict, handle: str = "@animelorehq") -> dict:
     fmt = {"domain": "animebattle", "powerup": "animebattle", "race": "animetransformation",
            "fusion": "animetransformation"}.get(kind, "animebattle")
     fan = list(dict.fromkeys(t for t in ctags[:2] + ani_tags[:2] if t))[:4] + [fmt]
+    # TikTok : plus de hashtags CIBLÉS (05/11, vu sur les reels anime qui marchent) : noms complets des persos
+    # (#madarauchiha) et « <perso>transformation » ; Instagram reste à 5 (limite d'Instagram).
+    full = [t for n in (names[:2] if names else []) for t in char_tags(n)[1:2]]
+    if kind == "fusion" or meta.get("tiers") and not names:
+        full += [f"{ctags[0]}transformation"] if ctags else []
+    fan_tt = list(dict.fromkeys(t for t in fan[:-1] + full + [fmt] if t))[:8]
     if kind == "domain":
         easy = f"{a} or {b}? One word 👇"
     elif kind == "powerup":
@@ -225,7 +231,7 @@ def build(meta: dict, handle: str = "@animelorehq") -> dict:
     else:
         easy = "Who wins? One name 👇"
     line1 = title.rstrip(' 🤯⚡😳🏆')
-    tiktok = f"{line1}\n{hook}\n{easy}\n{_hashtags(fan, 5)}"
+    tiktok = f"{line1}\n{hook}\n{easy}\n{_hashtags(fan_tt, 8)}"
     insta = f"{line1}\n{hook}\n{easy}\n\nFollow {handle} for daily anime battles 🔥\n\n{_hashtags(fan, 5)}"
     return {"youtube": {"title": title, "description": description, "tags": tags},
             "tiktok": tiktok, "instagram": insta}
