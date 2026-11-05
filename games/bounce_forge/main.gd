@@ -63,6 +63,10 @@ var music_player = null
 var cur_track = ""
 var set_from = "play"
 var want_screen = ""
+var my_song_on = false
+var my_song_ok = false
+var song_player = null
+var song_until = 0.0
 const SETBTN = Rect2(34, 328, 76, 76)
 
 # run
@@ -318,6 +322,9 @@ func _ready() -> void:
 			start = int(a.substr(8)) - 1
 		elif a.begins_with("--screen="):
 			want_screen = a.substr(9)
+		elif a.begins_with("--song="):
+			import_song(a.substr(7))
+			my_song_on = true
 		elif a.begins_with("--skin="):
 			equip = a.substr(7)
 		elif a.begins_with("--seed="):
@@ -369,6 +376,9 @@ func load_save() -> void:
 		mus_on = cf.get_value("p", "music", true)
 		sfx_on = cf.get_value("p", "sfx", true)
 		vib_on = cf.get_value("p", "vib", true)
+		my_song_on = cf.get_value("p", "mysong", false)
+		if FileAccess.file_exists("user://my_song.mp3") or FileAccess.file_exists("user://my_song.ogg"):
+			load_my_song()
 
 func save_game() -> void:
 	if autoplay or demo:
@@ -384,6 +394,7 @@ func save_game() -> void:
 	cf.set_value("p", "music", mus_on)
 	cf.set_value("p", "sfx", sfx_on)
 	cf.set_value("p", "vib", vib_on)
+	cf.set_value("p", "mysong", my_song_on)
 	cf.save("user://save.cfg")
 
 func start_level(i: int) -> void:
@@ -534,6 +545,7 @@ func _process(dt: float) -> void:
 	tick(dt)
 	if not sim:
 		update_music()
+		drive_song()
 		queue_redraw()
 
 func tick(dt: float) -> void:
@@ -1664,6 +1676,10 @@ func obj_col(lv: int) -> String:
 
 # ---------------------------------------------------------------- per-skin sounds
 func snd_bounce(idx: int) -> void:
+	if my_song_on and my_song_ok:
+		# the song only plays while candies keep bouncing: each bounce buys a little more of it
+		song_until = Time.get_ticks_msec() / 1000.0 + 0.3
+		return
 	match equip:
 		"fruits":
 			play("fruit_pop%d" % (1 + rng.randi() % 3), semis(idx) * 0.7, -8.0)
@@ -2009,7 +2025,8 @@ func update_music() -> void:
 			music_player.stream = st
 			music_player.volume_db = -10.0
 			music_player.play()
-	music_player.stream_paused = not mus_on
+	music_player.stream_paused = (not mus_on) or (my_song_on and my_song_ok)
+	drive_song()
 
 func draw_gear(c: Vector2, r: float) -> void:
 	var pts = PackedVector2Array()
@@ -2026,34 +2043,100 @@ func draw_gear(c: Vector2, r: float) -> void:
 	draw_circle(c, r * 0.36, C("#fff0f6"))
 
 func set_rows() -> Array:
-	return [["MUSIC", mus_on], ["SOUNDS", sfx_on], ["VIBRATION", vib_on]]
+	return [["MUSIC", mus_on], ["SOUNDS", sfx_on], ["VIBRATION", vib_on], ["MY SONG", my_song_on]]
 
 func settings_input(pos: Vector2) -> void:
 	if Rect2(560, 330, 80, 80).has_point(pos):
 		state = set_from
 		save_game()
 		return
-	for i in range(3):
+	if Rect2(150, 1022, 420, 80).has_point(pos):
+		pick_song()
+		return
+	for i in range(4):
 		if Rect2(110, 470 + i * 130, 500, 110).has_point(pos):
 			if i == 0:
 				mus_on = not mus_on
 			elif i == 1:
 				sfx_on = not sfx_on
-			else:
+			elif i == 2:
 				vib_on = not vib_on
 				buzz(40)
+			else:
+				if not my_song_ok:
+					pick_song()
+				else:
+					my_song_on = not my_song_on
 			play("pop2", 1.3, -6.0)
 			save_game()
 
 func draw_settings() -> void:
 	draw_rect(Rect2(0, 0, 720, 1280), C(INKH, 1.0, 0.55))
-	nine("card", Rect2(70, 330, 580, 560), 46, 70, 46, 46)
+	nine("card", Rect2(70, 330, 580, 820), 46, 70, 46, 46)
 	text_c(Vector2(360, 372), "SETTINGS", 44, Color(1, 1, 1), 9)
 	img("close", Rect2(560, 330, 80, 80))
 	var rows = set_rows()
-	for i in range(3):
+	for i in range(4):
 		var y = 470 + i * 130
 		nine("bar_white", Rect2(110, y, 500, 104), 40, 40, 40, 40)
 		text_l(Vector2(150, y + 50), rows[i][0], 40, C("#ff5fa2"), 0)
 		img("check" if rows[i][1] else "uncheck", Rect2(500, y + 6, 88, 92))
-	text_c(Vector2(360, 860), "Bounce Forge  v0.1", 22, C("#9b7bff"), 0)
+	text_c(Vector2(360, 990), "Every bounce plays the next bit of your song", 22, C("#9b7bff"), 0)
+	big_button(Rect2(150, 1022, 420, 80), "CHOOSE A SONG" if not my_song_ok else "CHANGE SONG", "#ff5fa2")
+	text_c(Vector2(360, 1118), "Bounce Forge  v0.1", 18, C("#9b7bff"), 0)
+
+
+# ---------------------------------------------------------------- "my song": the player's own music, advanced by bounces
+func pick_song() -> void:
+	if DisplayServer.has_feature(DisplayServer.FEATURE_NATIVE_DIALOG_FILE):
+		DisplayServer.file_dialog_show("Choose a song", "", "", false, DisplayServer.FILE_DIALOG_MODE_OPEN_FILE, PackedStringArray(["*.mp3, *.ogg ; Songs"]), _on_song_picked)
+	else:
+		banner = {"t": 0.0, "txt": "No file picker here", "col": "#ff4d6d", "big": false}
+
+func _on_song_picked(status: bool, paths: PackedStringArray, _filter: int) -> void:
+	if status and paths.size() > 0:
+		import_song(paths[0])
+		my_song_on = my_song_ok
+		save_game()
+
+func import_song(path: String) -> void:
+	var ext = path.get_extension().to_lower()
+	if ext not in ["mp3", "ogg"]:
+		return
+	for old in ["user://my_song.mp3", "user://my_song.ogg"]:
+		if FileAccess.file_exists(old):
+			DirAccess.remove_absolute(old)
+	var src = FileAccess.open(path, FileAccess.READ)
+	if src == null:
+		return
+	var dst = FileAccess.open("user://my_song." + ext, FileAccess.WRITE)
+	dst.store_buffer(src.get_buffer(src.get_length()))
+	dst.close()
+	load_my_song()
+
+func load_my_song() -> void:
+	var st = null
+	if FileAccess.file_exists("user://my_song.mp3"):
+		var f = FileAccess.open("user://my_song.mp3", FileAccess.READ)
+		st = AudioStreamMP3.new()
+		st.data = f.get_buffer(f.get_length())
+	elif FileAccess.file_exists("user://my_song.ogg"):
+		st = AudioStreamOggVorbis.load_from_file(ProjectSettings.globalize_path("user://my_song.ogg"))
+	if st == null:
+		my_song_ok = false
+		return
+	st.loop = true
+	if song_player == null:
+		song_player = AudioStreamPlayer.new()
+		add_child(song_player)
+	song_player.stream = st
+	song_player.volume_db = -4.0
+	song_player.play()
+	song_player.stream_paused = true
+	my_song_ok = true
+
+func drive_song() -> void:
+	if song_player == null or not my_song_ok:
+		return
+	var on = my_song_on and state == "play" and Time.get_ticks_msec() / 1000.0 < song_until
+	song_player.stream_paused = not on
