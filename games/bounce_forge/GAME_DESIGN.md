@@ -69,3 +69,13 @@ Sons des skins Fruits / Gemmes / Musique / Retro : synthétisés par nous.
 
 ## Skins (v0.1)
 Bonbons (base), Fruits (boss niv 5), Espace (boss niv 10), Gemmes (500 pièces), Retro (800), Musique (1 200 : chaque rebond joue la note suivante d'une petite mélodie). Onglet Skins = grille + chaîne de fusion du skin choisi (objets jamais atteints = « ? »). Réglages : musique / sons / vibration.
+
+## Les 5 mondes (v0.2, 06/11) : 60 niveaux
+| Monde | Mécanique | 3e carte | Boss (niv 5 / 10) | Skins des boss |
+|---|---|---|---|---|
+| 1 Candy Tubes | tube + pads, cadeau-bonbon | ADD PAD | Grumpy Gummy / King Cupcake (bouclier) | Fruits / Space |
+| 2 Sugar Plinko | clous + bacs multiplicateurs, on vise en touchant | BOOST | Choco Brick (se fissure) / Lollipop Lord (tourne, téléporte) | Gems / Music |
+| 3 Flipper Fair | flippers tactiles (gauche/droite), slingshots, bumpers, cibles bonus x2, trou = bonbon perdu 1,5 s | BUMPER | Donut Duke (roule) / Sundae Sorcerer (boules qui tournent) | Donuts / Ice Cream |
+| 4 Portal Pops | tubes du monde 1 + portails (x2, doré x4, mobiles, piège) | ADD PAD | Gingerbread Golem (saute) / Jelly Trio | Cookies / Jelly Beans |
+| 5 Cosmic Candy (20 niv) | apesanteur : planètes qui attirent, lunes x2, trou noir, comètes ; niv 11-19 = remix basse gravité des mondes 1-4 | ADD MOON | Marshmallow Moon / Cotton Cloud / Gumball Machine / Sugar Overlord (final : bouclier + téléportation) | Candy Planets / Cotton Clouds / Gumballs / Royal |
+Chaque nouveauté est annoncée par une bulle au début du niveau. Objectifs et PV réglés avec `--tune` (bot). Niveaux 8 / 18 / 28 / 38 / 48 / 58 = « mur » avec chrono.
