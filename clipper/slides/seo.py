@@ -239,7 +239,17 @@ def build(meta: dict, handle: str = "@animelorehq") -> dict:
              "oddlysatisfying"], "gauntlet": ["simulation", "gaming", "satisfying"]}.get(kind, ["simulation", "gaming",
                                                                                             "satisfying"])
     ig2 = list(dict.fromkeys(t for t in ctags[:1] + ani_tags[:1] if t))[:2]
-    insta = f"{line1}\n{easy}\n\n{_hashtags(ig2 + other, 5)}"
+    # Instagram compte les commentaires « de qualité » (une vraie phrase, un avis), pas « 1 » ou un emoji, et surtout
+    # les PARTAGES (≥ 2 % des vues) → question de débat + appel à envoyer à un pote (vidéo analysée le 05/11).
+    if kind == "domain" or kind == "race":
+        ig_q = f"{a} or {b}? Defend your pick 👇 Send this to the friend who'd lose this argument"
+    elif kind == "powerup":
+        ig_q = f"Is this fair or should {b} win easily? Explain 👇 Send this to a {short(names[0]) if names else a} fan"
+    elif kind == "fusion" or meta.get("tiers") and not names:
+        ig_q = "Which form is the strongest, and why? 👇 Send this to a friend who'd disagree"
+    else:
+        ig_q = "Who wins and why? 👇 Send this to the friend who'd pick wrong"
+    insta = f"{line1}\n{ig_q}\n\n{_hashtags(ig2 + other, 5)}"
     return {"youtube": {"title": title, "description": description, "tags": tags},
             "tiktok": tiktok, "instagram": insta}
 

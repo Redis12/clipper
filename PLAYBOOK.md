@@ -79,6 +79,26 @@ Les idées de vidéos sont dans `IDEES.md` ; le fonctionnement de Clipper est da
   **En test (05/11).**
 - **Ce qui fait tourner un reel, c'est le partage en DM** (quelqu'un l'envoie à un pote), puis le temps de visionnage.
   Les hashtags indiquent seulement le sujet. Idée : « Tag a friend who'd pick Sasuke 👇 ».
+- **Vidéos de coaching Instagram analysées (05/11, Dominik, « Grow fast in 30 days » + « Growing just got easier »)** :
+  - **Les abonnés ne comptent presque plus** : Instagram recommande les reels à des inconnus le jour même.
+    **Chaque reel est jugé seul** : Instagram analyse ce qu'il y a dedans (texte à l'écran, son, légende) et cherche le public qui va avec.
+    → Les noms des persos et le sujet doivent être **écrits dans la vidéo**, pas seulement dans la légende.
+  - **Les métriques qui comptent** : la durée de visionnage, le **taux de partage** (≥ 2 % des vues = ça décolle, 3–5 % = ça explose)
+    et les **commentaires « de qualité »** (une vraie phrase, un avis). « 1 » ou un emoji ne comptent presque pas.
+    → Sur Instagram, question de DÉBAT + appel au partage : « Is this fair or should Madara win easily? Explain 👇
+    Send this to a Sasuke fan ». Le Power Up Beerus a marché grâce au désaccord, ça va dans le même sens.
+    (TikTok garde la question à un mot.)
+  - **Un reel qui fait un flop ne veut rien dire** : on le **reposte en changeant UNE chose** (accroche, légende, image 0).
+    Exemple de la vidéo : 1 000 vues → 6 000 → 80 000 pour le même sujet.
+  - **Poster beaucoup au début** : 30 à 50 reels le plus vite possible pour apprendre au compte (et à nous) qui est le public.
+    Utiliser les **Trial Reels** (montrés seulement aux non-abonnés) quand ils sont disponibles.
+  - **Le profil décide en 2 secondes** : un inconnu qui arrive regarde les **9 derniers posts**. Ils doivent tous parler au même
+    public. Les vieux posts hors thème (actus, quiz) le font partir → les archiver (à faire à la main dans l'appli).
+  - **Session de « binge »** : un inconnu devient abonné s'il regarde environ **20 reels en 14 à 30 jours**.
+    → Séries numérotées (DOMAIN WAR #N), épingler les 3 meilleurs, rythme régulier.
+  - **« Gap theory »** : prendre un format qui marche dans une AUTRE niche et l'appliquer à l'anime. C'est ce qu'on fait déjà
+    (Pong Wars → Domain War, Suika → Transformations, Fibonacci → Power Up). Continuer à chercher hors anime.
+  - **Astuce** : un carrousel dont la 1re image est une vidéo qui bouge serait davantage poussé aux non-abonnés. **À tester.**
 - **À ne pas faire** : la légende copiée-collée « astuce algorithme » (#🇯🇵, résumés de films…) vue sur les comptes robots.
   C'est du spam, sans rapport avec la vidéo, et ça brouille le public.
 
