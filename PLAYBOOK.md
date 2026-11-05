@@ -36,6 +36,7 @@ Les idées de vidéos sont dans `IDEES.md` ; le fonctionnement de Clipper est da
   **Prouvé** : 18,9k vues, la vidéo accélérait encore.
 - **Mais il faut aussi des défaites**, et une **logique de puissance** (pas de Kid Sasuke au-delà du Perfect Susanoo).
   Alterner victoires et défaites dans une série.
+- **Répondre aux commentaires dans la vidéo** (05/11) : une « part 2 » commence par un écran « YOU SAID AFTER PART 1: » avec les vrais commentaires (captures en anglais) qui arrivent un par un avec un pop, puis « LET'S SEE... » qui claque, puis la vidéo (3 s en tout). Les gens voient que la chaîne lit les commentaires, et la part 2 a une raison d'exister. Les persos restent visibles dès l'image 0. **En test (Kid Goku vs Beerus Part 2).**
 - **Séries numérotées** (« DOMAIN WAR #6 ») et « part 2 » quand une vidéo marche.
 - **Musique** : continue et en fond, jamais rejouée à chaque événement. Volume autour de −24 LUFS (les gens trouvaient −6 LUFS beaucoup trop fort).
 - **Les formats qui marchent sur YouTube** : Transformations (fusion façon Suika, environ 30 s, avec un easter egg), Power Up.
