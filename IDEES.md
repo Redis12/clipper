@@ -281,3 +281,9 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
 ## Décision (05/11) : Domain War en pause
 - Les gens quittent les Domain War avant la moitié (< 50 % regardé) et c'est le format le plus long à produire → on n'en fait plus pour l'instant.
 - On mise sur : Transformations (meilleur format YouTube), Power Up (débat « injuste mais crédible »), Gauntlet, Hydraulic Press (test dimanche 08/11).
+
+## Idée en réserve : motion design 3D (05/11)
+- « Motivation vs Discipline » (pompes) et « Perfectionniste vs celui qui agit » (mur) en version anime (Sasuke vs Naruto, Neji vs Rock Lee).
+- Testé : Blender 5.2 tourne dans le conteneur (pip `bpy`, Cycles CPU ~6 s/image), mais un mannequin fait main fait « cheap ».
+- Le jour où on s'y remet : l'utilisateur télécharge sur mixamo.com (compte Adobe gratuit) le mannequin « X Bot » en FBX + animations (Push Up, Defeated/Dying, Brick Laying, Sitting Idle) dans `library/_3d/`, Claude fait le rendu avec tête d'anime + compteurs.
+- Décision : en pause tant que les simulations marchent.
