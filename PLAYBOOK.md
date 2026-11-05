@@ -73,6 +73,12 @@ Les idées de vidéos sont dans `IDEES.md` ; le fonctionnement de Clipper est da
   - **3 hashtags très précis** suffisent selon lui (nous : jusqu'à 8 ciblés ; à tester les deux).
   - **Accroche écrite en rouge** (10 de ses 12 vidéos virales) et **quelque chose qui change à l'écran toutes les 2-3 secondes**.
   - **Format et sujet en tendance** : chercher le sujet dans TikTok, regarder ce qui a percé et faire la même longueur que les vidéos qui marchent pour ce format.
+- **2e vidéo TikTok analysée (05/11, « TikTok algorithm in 120 seconds »)** :
+  - **Un compte neuf est d'abord « examiné »** : appareil, connexion, taille d'écran, fuseau horaire, comportement. S'il ressemble à un compte déjà banni ou suspect (même téléphone, même connexion), il est freiné avant même le 1er post. → Explique peut-être `animelorehq3` (3e compte sur le même téléphone). Nouveau compte : **ne rien poster pendant 2-3 jours**, juste regarder et liker des vidéos de la niche (« chauffer » le compte).
+  - **Groupe test de 200 à 500 personnes** qui regardent déjà ce genre de contenu ; TikTok mesure le % regardé, les revisionnages, les partages et la VITESSE de ces réactions. Si c'est bon → vague 5× plus grande, etc. (= notre plafond ~250 : on ne passe pas la 1re vague).
+  - **Ne pas poster trop souvent** (lassitude du public). Après 2 semaines, regarder la meilleure vidéo et en refaire dans le même style.
+  - **Heures décalées au hasard** (fait le 05/11 : 13:06, 18:11, 21:53… au lieu de 13:00 / 18:00 / 22:00 pile).
+  - Monétisation TikTok (Creator Rewards) : 10k abonnés + 100k vues sur 30 jours ; les vues US paient le plus.
 - **Idée pas encore faite** : « 1 or 2? Comment 👇 » écrit DANS la vidéo, avec un numéro sur chaque perso.
 
 ## 5. Instagram Reels
