@@ -115,6 +115,8 @@ Les idées de vidéos sont dans `IDEES.md` ; le fonctionnement de Clipper est da
 - Ne pas juger un format avant une vingtaine de posts. Ne pas toucher (accélérer, recouper) une vidéo déjà programmée.
 - Répondre aux premiers commentaires dans l'heure et épingler son propre commentaire.
 
+- **YouTube aussi dans Buffer** (05/11) : Buffer publie en public à l'heure (appli validée par YouTube), donc pas besoin de la programmation YouTube limitée des chaînes non vérifiées. Pas de champ « tags » : titre + description + hashtags. Plan gratuit = 3 comptes (TikTok, Instagram, YouTube).
+
 ## 7. Résultats des tests (à remplir)
 
 | Date | Test | Résultat |
