@@ -19,6 +19,8 @@ const SKINS = [
 	{"id": "gems", "name": "GEMS", "how": "boss", "boss": 15, "col": "#3fbfd9", "objs": ["Quartz", "Amethyst", "Topaz", "Emerald", "Sapphire", "Ruby", "Opal", "Pink Diamond", "Black Pearl", "Diamond"]},
 	{"id": "donuts", "name": "DONUTS", "how": "boss", "boss": 25, "col": "#ff8fc6", "objs": ["Mini Donut", "Glazed", "Sprinkled", "Choco", "Strawberry", "Matcha", "Caramel", "Rainbow", "Cream Filled", "Golden Donut"]},
 	{"id": "icecream", "name": "ICE CREAM", "how": "boss", "boss": 30, "col": "#8fd8ff", "objs": ["Sorbet", "Vanilla", "Strawberry", "Mint", "Choco", "Cone", "Double Cone", "Sundae", "Banana Split", "Golden Scoop"]},
+	{"id": "cookies", "name": "COOKIES", "how": "boss", "boss": 35, "col": "#c97a3a", "objs": ["Crumb", "Biscuit", "Choc Chip", "Oreo", "Ginger Star", "Macaron", "Shortbread", "Gingerbread", "Cookie Jar", "Golden Cookie"]},
+	{"id": "jellybeans", "name": "JELLY BEANS", "how": "boss", "boss": 40, "col": "#7df0c8", "objs": ["Tiny Bean", "Lime", "Cherry", "Lemon", "Grape", "Orange", "Blueberry", "Bubblegum", "Rainbow", "Golden Bean"]},
 	{"id": "retro", "name": "RETRO", "how": "shop", "price": 800, "col": "#3fcf5f", "objs": ["Berries", "Plum", "Strawberry", "Orange", "Apple", "Peach", "Mango", "Pineapple", "Banana", "Golden Pear"]},
 	{"id": "music", "name": "MUSIC", "how": "boss", "boss": 20, "col": "#ffb21e", "objs": ["Note", "Double Note", "Drum", "Maracas", "Trumpet", "Guitar", "Saxophone", "Piano", "Harp", "Gold Record"]},
 ]
@@ -28,8 +30,8 @@ const INKH = "#4a1f52"
 const CANDY_NAMES = ["Dragee", "Hard Candy", "Marshmallow", "Bubble Gum", "Cookie", "Donut", "Cupcake", "Lollipop", "Cake", "Golden Candy"]
 const SHAPE_COLS = [["#ff5fa2", "#7df0c8"], ["#9b7bff", "#ffd36b"], ["#ff9a5a", "#8fd8ff"], ["#3fcf9f", "#ff8fc6"], ["#ff4d6d", "#fff1a8"], ["#2fb8a0", "#ffd36b"], ["#4a6cf0", "#ff9a2e"]]
 const BUCKET_Y = 925.0
-const BOSS_NAMES = {"gummy": "GRUMPY GUMMY", "cupcake": "KING CUPCAKE", "choco": "CHOCO BRICK", "lolli": "LOLLIPOP LORD", "donut": "DONUT DUKE", "sundae": "SUNDAE SORCERER"}
-const BOSS_SIZE = {"gummy": Vector2(156, 108), "cupcake": Vector2(140, 150), "choco": Vector2(180, 112), "lolli": Vector2(140, 140), "donut": Vector2(128, 128), "sundae": Vector2(120, 150)}
+const BOSS_NAMES = {"gummy": "GRUMPY GUMMY", "cupcake": "KING CUPCAKE", "choco": "CHOCO BRICK", "lolli": "LOLLIPOP LORD", "donut": "DONUT DUKE", "sundae": "SUNDAE SORCERER", "ginger": "GINGERBREAD GOLEM", "jelly": "JELLY TRIO"}
+const BOSS_SIZE = {"gummy": Vector2(156, 108), "cupcake": Vector2(140, 150), "choco": Vector2(180, 112), "lolli": Vector2(140, 140), "donut": Vector2(128, 128), "sundae": Vector2(120, 150), "ginger": Vector2(120, 170), "jelly": Vector2(200, 110)}
 const FL_PIV = [Vector2(278, 966), Vector2(442, 966)]
 const FL_LEN = 84.0
 const WORLD_NAMES = ["CANDY TUBES", "SUGAR PLINKO", "FLIPPER FAIR", "PORTAL POPS", "COSMIC CANDY"]
@@ -71,8 +73,18 @@ var LEVELS = [
 	{"world": 3, "type": "flipper", "shape": 6, "m": 150.0, "balls": 2, "pads": [], "fb": 2, "targets": 5, "target": 5400000.0, "stars": [100, 115], "limit": 122.0, "movefb": true},
 	{"world": 3, "type": "flipper", "shape": 6, "m": 170.0, "balls": 5, "pads": [], "fb": 4, "targets": 4, "super": 2, "golden": 0.12, "target": 7000000.0, "stars": [40, 65]},
 	{"world": 3, "type": "flipper", "shape": 6, "m": 190.0, "balls": 4, "pads": [], "fb": 3, "boss": 370, "bkind": "sundae", "stars": [100, 150]},
+	{"world": 4, "shape": 0, "cols": ["#9b7bff", "#7df0c8"], "m": 220.0, "balls": 2, "pads": [0, 1], "portals": [[Vector2(250, 760), Vector2(470, 520)]], "target": 210000.0, "stars": [55, 85], "tut": "portal"},
+	{"world": 4, "shape": 1, "cols": ["#4a6cf0", "#ffd36b"], "m": 250.0, "balls": 2, "pads": [0], "portals": [[Vector2(250, 800), Vector2(470, 560)], [Vector2(470, 800), Vector2(250, 560)]], "target": 345000.0, "stars": [55, 85]},
+	{"world": 4, "shape": 2, "cols": ["#3fcf9f", "#ff8fc6"], "m": 280.0, "balls": 3, "pads": [0, 1], "portals": [[Vector2(220, 720), Vector2(500, 520)]], "movp": true, "target": 395000.0, "stars": [60, 95], "tut": "movp"},
+	{"world": 4, "shape": 3, "cols": ["#ff9a5a", "#8fd8ff"], "m": 310.0, "balls": 3, "pads": [0], "portals": [[Vector2(250, 780), Vector2(470, 600)]], "gold_portal": true, "target": 920000.0, "stars": [60, 95], "tut": "goldp"},
+	{"world": 4, "shape": 2, "cols": ["#c97a3a", "#fff1d6"], "m": 340.0, "balls": 4, "pads": [0, 1], "portals": [[Vector2(200, 760), Vector2(520, 760)]], "boss": 1140, "bkind": "ginger", "stars": [85, 130]},
+	{"world": 4, "shape": 1, "cols": ["#ff5fa2", "#7df0c8"], "m": 380.0, "balls": 3, "pads": [0, 1], "portals": [[Vector2(205, 860), Vector2(360, 470)]], "target": 360000.0, "stars": [55, 85], "tut": "trap"},
+	{"world": 4, "shape": 0, "cols": ["#4a6cf0", "#ff9a2e"], "m": 420.0, "balls": 3, "pads": [0], "portals": [[Vector2(260, 760), Vector2(460, 520)], [Vector2(460, 760), Vector2(260, 520)]], "movp": true, "target": 1170000.0, "stars": [65, 100]},
+	{"world": 4, "shape": 3, "cols": ["#9b7bff", "#ffd36b"], "m": 460.0, "balls": 2, "pads": [0], "portals": [[Vector2(250, 760), Vector2(470, 560)]], "movp": true, "target": 1700000.0, "stars": [100, 115], "limit": 122.0},
+	{"world": 4, "shape": 0, "cols": ["#ffd36b", "#ff5fa2"], "m": 500.0, "balls": 5, "pads": [0, 1, 2], "portals": [[Vector2(250, 760), Vector2(470, 520)]], "gold_portal": true, "golden": 0.12, "target": 1300000.0, "stars": [40, 65]},
+	{"world": 4, "shape": 4, "cols": ["#3fcf9f", "#ff8fc6"], "m": 550.0, "balls": 4, "pads": [0, 1, 2], "portals": [[Vector2(200, 700), Vector2(520, 700)]], "boss": 2100, "bkind": "jelly", "stars": [100, 150]},
 ]
-const BOSS_SKINS = {4: "fruits", 9: "space", 14: "gems", 19: "music", 24: "donuts", 29: "icecream"}
+const BOSS_SKINS = {4: "fruits", 9: "space", 14: "gems", 19: "music", 24: "donuts", 29: "icecream", 34: "cookies", 39: "jellybeans"}
 
 var font: Font
 var rng = RandomNumberGenerator.new()
@@ -110,6 +122,7 @@ var fbumps = []
 var ftargets = []
 var flips = [{"a": FL_DOWN, "pa": FL_DOWN, "hold": false, "t": 0.0}, {"a": FL_DOWN, "pa": FL_DOWN, "hold": false, "t": 0.0}]
 var tbonus = 0.0
+var portals = []
 var my_song_on = false
 var my_song_ok = false
 var song_player = null
@@ -333,7 +346,8 @@ func make_shape(idx: int) -> Dictionary:
 	var top = 9999.0
 	for p in pts:
 		top = min(top, p.y)
-	return {"pts": pts, "cum": cum, "len": cum[cum.size() - 1], "nrm": nrm, "net": net, "col": SHAPE_COLS[idx][0], "padc": SHAPE_COLS[idx][1], "spawn": Vector2(360, top + 70), "top": top}
+	var cc = L.get("cols", SHAPE_COLS[idx]) if L != null and L.size() > 0 else SHAPE_COLS[idx]
+	return {"pts": pts, "cum": cum, "len": cum[cum.size() - 1], "nrm": nrm, "net": net, "col": cc[0], "padc": cc[1], "spawn": Vector2(360, top + 70), "top": top}
 
 func at_s(s: float) -> Array:
 	var cum: PackedFloat32Array = shp.cum
@@ -478,6 +492,11 @@ func start_level(i: int) -> void:
 	pegs.clear(); buckets.clear(); boosts = 0; spout_x = 398.0; spout_tx = 398.0; drop_t = 0.4
 	bumpers.clear(); jack_t = 0.0; jack_i = -1
 	fbumps.clear(); ftargets.clear(); tbonus = 0.0
+	portals.clear()
+	for pr in L.get("portals", []):
+		portals.append({"a": pr[0], "b": pr[1], "ba": pr[0], "bb": pr[1], "f": 0.0})
+	if L.get("world", 1) == 4 and li == 30:
+		banner = {"t": 0.0, "txt": "WORLD 4", "col": "#ffd36b", "big": true}
 	for f in flips:
 		f.a = FL_DOWN; f.pa = FL_DOWN; f.hold = false; f.t = 0.0
 	if is_flipper():
@@ -883,6 +902,28 @@ func step(dt: float) -> void:
 				else:
 					b.v -= n * vn * 1.42
 					b.v *= 0.97
+		if portals.size() > 0:
+			b.pcd = b.get("pcd", 0.0) - dt
+			if b.pcd <= 0.0:
+				for k in range(portals.size()):
+					var po = portals[k]
+					for side in [0, 1]:
+						var src: Vector2 = po.a if side == 0 else po.b
+						var dst: Vector2 = po.b if side == 0 else po.a
+						if b.p.distance_to(src) < 30.0 + b.r * 0.5:
+							b.p = dst + (b.p - src)
+							b.pcd = 0.45
+							var mx = 4.0 if L.get("gold_portal", false) and k == 0 else 2.0
+							b.pm = minf(b.get("pm", 1.0) * mx, 16.0 if mx > 2.0 else 8.0)
+							po.f = 1.0
+							if not sim:
+								ring(src, C("#ffffff", 1.8), 60.0, 0.3)
+								ring(dst, C("#ffffff", 1.8), 60.0, 0.3)
+								floats.append({"p": dst + Vector2(0, -40), "txt": "x%d" % int(b.pm), "col": "#ffd36b" if mx > 2.0 else "#8fd8ff", "t": 0.0, "big": false})
+							play("swipe", 0.9 + minf(b.pm, 8.0) * 0.1, -10.0)
+							break
+					if b.pcd > 0.0:
+						break
 		if shp.net:
 			var a2 = pts[0]
 			var b2 = pts[pts.size() - 1]
@@ -983,7 +1024,8 @@ func hit_box(b: Dictionary, bx: Dictionary, w: float, h: float, is_b: bool) -> v
 			gift_timer = rng.randf_range(10.0, 15.0)
 
 func earn(b: Dictionary, pi: int, at: Vector2) -> void:
-	var v = val(b.lv) * (10.0 if b.gold else 1.0)
+	var v = val(b.lv) * (10.0 if b.gold else 1.0) * b.get("pm", 1.0)
+	b.pm = 1.0
 	money += v; earned += v
 	hist.append([t, v])
 	if not sim:
@@ -1037,7 +1079,7 @@ func run_sim() -> void:
 func run_tune() -> void:
 	# For each level: play with the bot up to the wanted duration with an unreachable goal,
 	# and print the median $ earned (or boss damage) at that time = suggested target / boss hp.
-	var want = [24, 34, 45, 45, 65, 45, 65, 100, 30, 90, 60, 50, 70, 65, 85, 60, 75, 105, 38, 100, 50, 55, 60, 60, 85, 50, 65, 105, 38, 100]
+	var want = [24, 34, 45, 45, 65, 45, 65, 100, 30, 90, 60, 50, 70, 65, 85, 60, 75, 105, 38, 100, 50, 55, 60, 60, 85, 50, 65, 105, 38, 100, 50, 55, 60, 60, 85, 55, 65, 105, 38, 100]
 	for i in range(LEVELS.size()):
 		if only_level >= 0 and i != only_level:
 			continue
@@ -1106,6 +1148,11 @@ func fx(dt: float) -> void:
 	floats = kf
 	for pd in pads:
 		pd.f = maxf(0.0, pd.f - dt * 6.0)
+	for po in portals:
+		po.f = maxf(0.0, po.f - dt * 4.0)
+		if L.get("movp", false):
+			po.a = po.ba + Vector2(sin(t * 0.9) * 50.0, cos(t * 0.7) * 30.0)
+			po.b = po.bb + Vector2(-sin(t * 0.8) * 50.0, sin(t * 0.6) * 30.0)
 	if gift != null:
 		gift.wob = maxf(0.0, gift.wob - dt * 6.0)
 	if boss != null:
@@ -1146,6 +1193,7 @@ func _draw() -> void:
 		draw_flipper()
 	else:
 		draw_pads()
+		draw_portals()
 	if gift != null:
 		draw_bonbon(gift.pos, (0.4 + 0.6 * minf(1.0, gift.born / 0.3)) * (1.0 + gift.wob * 0.12), gift.wob, str(gift.hp))
 	if boss != null and (boss.hp > 0 or ending > 1.9):
@@ -1468,6 +1516,14 @@ func boss_ai(dt: float) -> void:
 			b.pos.x = bx + sin(b.t * 0.8) * 140.0
 			b.pos.y = by
 			b.rot = (b.pos.x - bx) / 64.0
+		"ginger": # stomps slowly, jumps every 4 s
+			b.pos.x = bx + sin(b.t * 0.4) * 100.0
+			var ph2 = fmod(b.t, 4.0)
+			b.pos.y = by - (sin(ph2 / 0.6 * PI) * 70.0 if ph2 < 0.6 else 0.0)
+		"jelly": # three beans bobbing in a row
+			b.pos.x = bx + sin(b.t * 0.7) * 90.0
+			b.pos.y = by + sin(b.t * 2.0) * 15.0
+			b.rot += dt
 		"sundae": # floats; a scoop shield orbits around it
 			b.pos.x = bx + sin(b.t * 0.45) * 90.0
 			b.pos.y = by + sin(b.t * 1.1) * 25.0
@@ -1546,6 +1602,33 @@ func draw_boss_body(kind: String, c: Vector2, s: float, ratio: float, shield: bo
 				draw_polyline(PackedVector2Array([c + Vector2(0, -56) * s, c + Vector2(8, -30) * s, c + Vector2(-6, -12) * s]), ink, 4.0 * s, true)
 			boss_eyes(c + Vector2(0, -6) * s, 36.0, s, tgt, locked)
 			draw_line(c + Vector2(-16, 26) * s, c + Vector2(16, 26) * s, ink, 6.0 * s, true)
+		"ginger":
+			var bodyc = bcol("#c97a3a", locked)
+			var icing = bcol("#ffffff", locked)
+			# legs, arms, body, head
+			for sg in [-1, 1]:
+				draw_line(c + Vector2(sg * 22, 40) * s, c + Vector2(sg * 34, 82) * s, ink, 40 * s)
+				draw_line(c + Vector2(sg * 22, 40) * s, c + Vector2(sg * 34, 82) * s, bodyc, 32 * s)
+				draw_line(c + Vector2(sg * 30, 0) * s, c + Vector2(sg * 70, -20) * s, ink, 36 * s)
+				draw_line(c + Vector2(sg * 30, 0) * s, c + Vector2(sg * 70, -20) * s, bodyc, 28 * s)
+				draw_arc(c + Vector2(sg * 64, -18) * s, 8 * s, 0, PI, 8, icing, 3 * s)
+			ell(c + Vector2(0, 14) * s, 46 * s + 4, 52 * s + 4, ink)
+			ell(c + Vector2(0, 14) * s, 46 * s, 52 * s, bodyc)
+			draw_circle(c + Vector2(0, -50) * s, 42 * s + 4, ink)
+			draw_circle(c + Vector2(0, -50) * s, 42 * s, bodyc)
+			for k in range(3):
+				draw_circle(c + Vector2(0, 0 + k * 22) * s, 7 * s, bcol(["#ff5fa2", "#7df0c8", "#ffd36b"][k], locked))
+			draw_arc(c + Vector2(0, -30) * s, 14 * s, PI * 1.15, PI * 1.85, 10, icing, 4 * s, true)
+			boss_eyes(c + Vector2(0, -56) * s, 16.0, s * 0.6, tgt, locked)
+		"jelly":
+			var cols3 = ["#ff4d6d", "#7df0c8", "#ffd36b"]
+			for k in range(3):
+				var q = c + Vector2((k - 1) * 66, sin(rot * 2.0 + k * 2.0) * 10) * s
+				ell(q, 34 * s + 4, 46 * s + 4, ink)
+				ell(q, 34 * s, 46 * s, bcol(cols3[k], locked))
+				ell(q + Vector2(-10, -18) * s, 9 * s, 14 * s, Color(1, 1, 1, 0.55))
+				boss_eyes(q + Vector2(0, -2) * s, 12.0, s * 0.5, tgt, locked)
+			boss_crown(c + Vector2(0, -62) * s, s * 0.6, locked)
 		"donut":
 			draw_set_transform(c, rot)
 			draw_arc(Vector2.ZERO, 44 * s, 0, TAU, 48, ink, 52 * s + 8, true)
@@ -1798,6 +1881,14 @@ func draw_tutorial() -> void:
 		target_pos = gift.pos + Vector2(0, 70); msg = "Smash the candy!"
 	elif tut == "aim" and not tut_done.has("aim") and lt > 1.0:
 		target_pos = Vector2(200, 560); msg = "Tap to aim the drop!"
+	elif tut == "portal" and lt < 7.0:
+		msg = "Portals double your candy!"
+	elif tut == "movp" and lt < 6.0:
+		msg = "The portals are moving!"
+	elif tut == "goldp" and lt < 6.0:
+		msg = "Gold portal = x4!"
+	elif tut == "trap" and lt < 6.0:
+		msg = "Bottom portal sends you back up!"
 	elif tut == "flip" and not tut_done.has("flip") and lt > 1.0:
 		target_pos = Vector2(220, 860); msg = "Tap left / right to flip!"
 	elif tut == "targets" and lt < 6.0:
@@ -2037,7 +2128,7 @@ func draw_boss_icon(p: Vector2, open: bool, cur: bool, kind = "gummy") -> void:
 		for k in range(4):
 			draw_circle(p, 62 + k * 9 + sin(t * 3.0) * 4.0, C("#ff4d6d", 1.4, 0.07))
 	var bob = sin(t * 3.0) * 3.0 if open else 0.0
-	var sc = {"gummy": 0.5, "cupcake": 0.5, "choco": 0.48, "lolli": 0.52, "donut": 0.55, "sundae": 0.5}[kind]
+	var sc = {"gummy": 0.5, "cupcake": 0.5, "choco": 0.48, "lolli": 0.52, "donut": 0.55, "sundae": 0.5, "ginger": 0.45, "jelly": 0.42}[kind]
 	draw_boss_body(kind, p + Vector2(0, -8 + bob), sc, 1.0, false, t * 1.5 if kind == "lolli" else 0.0, p + Vector2(0, 80), not open, 0.0)
 	var rb = Rect2(p + Vector2(-46, 30), Vector2(92, 28))
 	draw_colored_polygon(PackedVector2Array([rb.position + Vector2(-14, 4), rb.position + Vector2(4, 4), rb.position + Vector2(4, 26), rb.position + Vector2(-14, 26), rb.position + Vector2(-6, 15)]), INK())
@@ -2214,6 +2305,27 @@ func draw_obj(sk: String, lv: int, p: Vector2, r: float, sq: float, rot: float, 
 				for k in range(10):
 					var an = k * TAU / 10.0
 					draw_circle(Vector2(cos(an), sin(an)) * r * 0.64, r * 0.06, C(["#7df0c8", "#ffd36b", "#8fd8ff"][k % 3]))
+		"cookies":
+			var cc2 = ["#e8c08a", "#e8b273", "#d99a5b", "#2a1a14", "#c97a3a", "#ff9fd0", "#f2d6a0", "#b8642e", "#8fd8ff", "#ffd36b"][clampi(lv - 1, 0, 9)]
+			draw_circle(Vector2.ZERO, r + 3, INK())
+			draw_circle(Vector2.ZERO, r, C(cc2, 1.4 if lv == 10 else 1.0))
+			if lv in [3, 7]:
+				for q in [Vector2(-0.4, -0.3), Vector2(0.35, -0.4), Vector2(0.1, 0.25), Vector2(-0.35, 0.4)]:
+					draw_circle(q * r, r * 0.13, C("#5a2d14"))
+			if lv == 4:
+				draw_circle(Vector2.ZERO, r * 0.7, C("#fff1d6"))
+				draw_circle(Vector2.ZERO, r * 0.6, C("#2a1a14"))
+			if lv == 6:
+				draw_rect(Rect2(-r, -r * 0.15, r * 2, r * 0.3), C("#fff1d6"))
+			gloss(r)
+		"jellybeans":
+			var jc = ["#ffb3d6", "#8bd63a", "#e0283c", "#ffe14d", "#9b4dff", "#ff9a2e", "#4a6cf0", "#ff7ab8", "#ffffff", "#ffd36b"][clampi(lv - 1, 0, 9)]
+			ell(Vector2.ZERO, r * 0.8 + 3, r * 1.05 + 3, INK())
+			ell(Vector2.ZERO, r * 0.8, r * 1.05, C(jc, 1.4 if lv == 10 else 1.0))
+			if lv == 9:
+				for k in range(4):
+					ell(Vector2(0, -r * 0.6 + k * r * 0.4), r * 0.6, r * 0.12, C(["#ff5fa2", "#ffd36b", "#7df0c8", "#9b7bff"][k]))
+			ell(Vector2(-r * 0.25, -r * 0.4), r * 0.18, r * 0.3, Color(1, 1, 1, 0.7))
 		"icecream":
 			var scol = ["#ffb3d6", "#fff1d6", "#ff9fd0", "#9fe6c0", "#8a5a3a", "#fff1d6", "#ff9fd0", "#ffd36b", "#fff1d6", "#ffd36b"][clampi(lv - 1, 0, 9)]
 			if lv >= 6:
@@ -3109,3 +3221,22 @@ func draw_flipper() -> void:
 	draw_circle(Vector2(360, 262), 17, C("#9b7bff"))
 	if qn > 0:
 		text_c(Vector2(360, 263), "x%d" % qn, 18, Color(1, 1, 1), 5)
+
+
+# ================================================================ WORLD 4 : PORTAL POPS
+func draw_portals() -> void:
+	var pcols = [["#4fa3ff", "#ff9a2e"], ["#9b4dff", "#3fcf5f"]]
+	for k in range(portals.size()):
+		var po = portals[k]
+		var gold = L.get("gold_portal", false) and k == 0
+		for side in [0, 1]:
+			var p: Vector2 = po.a if side == 0 else po.b
+			var col = "#ffd36b" if gold else pcols[k % 2][side]
+			draw_circle(p, 38.0, INK())
+			draw_circle(p, 34.0, C(col, 1.0 + po.f))
+			draw_circle(p, 26.0, C("#1a0b2e"))
+			for j in range(3):
+				var a0 = t * (3.0 if side == 0 else -3.0) + j * TAU / 3.0
+				draw_arc(p, 8.0 + j * 6.0, a0, a0 + 2.2, 12, C(col, 1.6, 0.9), 3.0, true)
+			if side == 0:
+				text_c(p + Vector2(0, -50), "x4" if gold else "x2", 20, C(col), 5)
