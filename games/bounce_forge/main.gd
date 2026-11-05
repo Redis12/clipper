@@ -21,6 +21,10 @@ const SKINS = [
 	{"id": "icecream", "name": "ICE CREAM", "how": "boss", "boss": 30, "col": "#8fd8ff", "objs": ["Sorbet", "Vanilla", "Strawberry", "Mint", "Choco", "Cone", "Double Cone", "Sundae", "Banana Split", "Golden Scoop"]},
 	{"id": "cookies", "name": "COOKIES", "how": "boss", "boss": 35, "col": "#c97a3a", "objs": ["Crumb", "Biscuit", "Choc Chip", "Oreo", "Ginger Star", "Macaron", "Shortbread", "Gingerbread", "Cookie Jar", "Golden Cookie"]},
 	{"id": "jellybeans", "name": "JELLY BEANS", "how": "boss", "boss": 40, "col": "#7df0c8", "objs": ["Tiny Bean", "Lime", "Cherry", "Lemon", "Grape", "Orange", "Blueberry", "Bubblegum", "Rainbow", "Golden Bean"]},
+	{"id": "planets", "name": "CANDY PLANETS", "how": "boss", "boss": 45, "col": "#9b7bff", "objs": ["Comet", "Mint Moon", "Berry World", "Caramel Rock", "Gum Giant", "Ice Planet", "Ring World", "Lava Candy", "Twin Stars", "Candy Sun"]},
+	{"id": "clouds", "name": "COTTON CLOUDS", "how": "boss", "boss": 50, "col": "#ff9fd0", "objs": ["Puff", "Pink Puff", "Blue Puff", "Swirl", "Rain Cloud", "Rainbow", "Storm", "Big Fluff", "Dream Cloud", "Golden Cloud"]},
+	{"id": "gumballs", "name": "GUMBALLS", "how": "boss", "boss": 55, "col": "#ff4d6d", "objs": ["Mini Gum", "Red Gum", "Blue Gum", "Green Gum", "Yellow Gum", "Purple Gum", "Striped Gum", "Galaxy Gum", "Mega Gum", "Golden Gum"]},
+	{"id": "crown", "name": "ROYAL", "how": "boss", "boss": 60, "col": "#ffd36b", "objs": ["Copper Coin", "Silver Coin", "Gold Coin", "Ruby Ring", "Sapphire Ring", "Scepter Gem", "Royal Orb", "Crown Jewel", "Golden Crown", "Sugar Throne"]},
 	{"id": "retro", "name": "RETRO", "how": "shop", "price": 800, "col": "#3fcf5f", "objs": ["Berries", "Plum", "Strawberry", "Orange", "Apple", "Peach", "Mango", "Pineapple", "Banana", "Golden Pear"]},
 	{"id": "music", "name": "MUSIC", "how": "boss", "boss": 20, "col": "#ffb21e", "objs": ["Note", "Double Note", "Drum", "Maracas", "Trumpet", "Guitar", "Saxophone", "Piano", "Harp", "Gold Record"]},
 ]
@@ -28,10 +32,10 @@ const MELODY = [0, 4, 7, 12, 11, 7, 4, 5, 9, 12, 14, 12, 9, 7, 5, 4, 2, 4, 7, 4]
 const INKH = "#4a1f52"
 
 const CANDY_NAMES = ["Dragee", "Hard Candy", "Marshmallow", "Bubble Gum", "Cookie", "Donut", "Cupcake", "Lollipop", "Cake", "Golden Candy"]
-const SHAPE_COLS = [["#ff5fa2", "#7df0c8"], ["#9b7bff", "#ffd36b"], ["#ff9a5a", "#8fd8ff"], ["#3fcf9f", "#ff8fc6"], ["#ff4d6d", "#fff1a8"], ["#2fb8a0", "#ffd36b"], ["#4a6cf0", "#ff9a2e"]]
+const SHAPE_COLS = [["#ff5fa2", "#7df0c8"], ["#9b7bff", "#ffd36b"], ["#ff9a5a", "#8fd8ff"], ["#3fcf9f", "#ff8fc6"], ["#ff4d6d", "#fff1a8"], ["#2fb8a0", "#ffd36b"], ["#4a6cf0", "#ff9a2e"], ["#6a4ee0", "#ffd36b"]]
 const BUCKET_Y = 925.0
-const BOSS_NAMES = {"gummy": "GRUMPY GUMMY", "cupcake": "KING CUPCAKE", "choco": "CHOCO BRICK", "lolli": "LOLLIPOP LORD", "donut": "DONUT DUKE", "sundae": "SUNDAE SORCERER", "ginger": "GINGERBREAD GOLEM", "jelly": "JELLY TRIO"}
-const BOSS_SIZE = {"gummy": Vector2(156, 108), "cupcake": Vector2(140, 150), "choco": Vector2(180, 112), "lolli": Vector2(140, 140), "donut": Vector2(128, 128), "sundae": Vector2(120, 150), "ginger": Vector2(120, 170), "jelly": Vector2(200, 110)}
+const BOSS_NAMES = {"gummy": "GRUMPY GUMMY", "cupcake": "KING CUPCAKE", "choco": "CHOCO BRICK", "lolli": "LOLLIPOP LORD", "donut": "DONUT DUKE", "sundae": "SUNDAE SORCERER", "ginger": "GINGERBREAD GOLEM", "jelly": "JELLY TRIO", "mallow": "MARSHMALLOW MOON", "cloud": "COTTON CLOUD", "gumball": "GUMBALL MACHINE", "overlord": "SUGAR OVERLORD"}
+const BOSS_SIZE = {"gummy": Vector2(156, 108), "cupcake": Vector2(140, 150), "choco": Vector2(180, 112), "lolli": Vector2(140, 140), "donut": Vector2(128, 128), "sundae": Vector2(120, 150), "ginger": Vector2(120, 170), "jelly": Vector2(200, 110), "mallow": Vector2(130, 130), "cloud": Vector2(190, 110), "gumball": Vector2(130, 170), "overlord": Vector2(150, 170)}
 const FL_PIV = [Vector2(278, 966), Vector2(442, 966)]
 const FL_LEN = 84.0
 const WORLD_NAMES = ["CANDY TUBES", "SUGAR PLINKO", "FLIPPER FAIR", "PORTAL POPS", "COSMIC CANDY"]
@@ -83,8 +87,28 @@ var LEVELS = [
 	{"world": 4, "shape": 3, "cols": ["#9b7bff", "#ffd36b"], "m": 460.0, "balls": 2, "pads": [0], "portals": [[Vector2(250, 760), Vector2(470, 560)]], "movp": true, "target": 1700000.0, "stars": [100, 115], "limit": 122.0},
 	{"world": 4, "shape": 0, "cols": ["#ffd36b", "#ff5fa2"], "m": 500.0, "balls": 5, "pads": [0, 1, 2], "portals": [[Vector2(250, 760), Vector2(470, 520)]], "gold_portal": true, "golden": 0.12, "target": 1300000.0, "stars": [40, 65]},
 	{"world": 4, "shape": 4, "cols": ["#3fcf9f", "#ff8fc6"], "m": 550.0, "balls": 4, "pads": [0, 1, 2], "portals": [[Vector2(200, 700), Vector2(520, 700)]], "boss": 2100, "bkind": "jelly", "stars": [100, 150]},
+	{"world": 5, "type": "space", "shape": 7, "m": 600.0, "balls": 2, "pads": [], "planets": [Vector2(360, 640)], "target": 718000.0, "stars": [55, 85], "tut": "orbit"},
+	{"world": 5, "type": "space", "shape": 7, "m": 650.0, "balls": 2, "pads": [], "planets": [Vector2(360, 640)], "moons": 1, "target": 1100000.0, "stars": [55, 85], "tut": "moon"},
+	{"world": 5, "type": "space", "shape": 7, "m": 700.0, "balls": 3, "pads": [], "planets": [Vector2(270, 560), Vector2(450, 720)], "target": 1400000.0, "stars": [60, 95], "tut": "two"},
+	{"world": 5, "type": "space", "shape": 7, "m": 760.0, "balls": 3, "pads": [], "planets": [Vector2(360, 640)], "moons": 1, "hole": Vector2(520, 470), "target": 448000.0, "stars": [60, 95], "tut": "hole"},
+	{"world": 5, "type": "space", "shape": 7, "m": 820.0, "balls": 4, "pads": [], "planets": [Vector2(360, 780)], "moons": 1, "boss": 777, "bkind": "mallow", "stars": [85, 130]},
+	{"world": 5, "type": "space", "shape": 7, "m": 900.0, "balls": 3, "pads": [], "planets": [Vector2(360, 640)], "moons": 2, "comets": true, "target": 2900000.0, "stars": [55, 85], "tut": "comet"},
+	{"world": 5, "type": "space", "shape": 7, "m": 980.0, "balls": 3, "pads": [], "planets": [Vector2(360, 640)], "moons": 1, "movplanet": true, "target": 1690000.0, "stars": [65, 100], "tut": "movplanet"},
+	{"world": 5, "type": "space", "shape": 7, "m": 1060.0, "balls": 2, "pads": [], "planets": [Vector2(270, 560), Vector2(450, 720)], "hole": Vector2(360, 640), "target": 2400000.0, "stars": [100, 115], "limit": 122.0},
+	{"world": 5, "type": "space", "shape": 7, "m": 1150.0, "balls": 5, "pads": [], "planets": [Vector2(360, 640)], "moons": 3, "comets": true, "golden": 0.12, "target": 3800000.0, "stars": [40, 65]},
+	{"world": 5, "type": "space", "shape": 7, "m": 1250.0, "balls": 4, "pads": [], "planets": [Vector2(360, 800)], "moons": 2, "boss": 1320, "bkind": "cloud", "stars": [100, 150]},
+	{"world": 5, "shape": 0, "cols": ["#6a4ee0", "#7df0c8"], "space_bg": true, "grav": 0.55, "m": 1350.0, "balls": 3, "pads": [0, 1], "portals": [[Vector2(250, 760), Vector2(470, 520)]], "target": 1567000.0, "stars": [55, 85], "tut": "remix"},
+	{"world": 5, "type": "plinko", "shape": 5, "cols": ["#6a4ee0", "#ffd36b"], "space_bg": true, "grav": 0.6, "m": 1450.0, "balls": 3, "pads": [], "mults": [10.0, 3.0, 1.0, 0.0, 1.0, 3.0, 10.0], "target": 5700000.0, "stars": [60, 95]},
+	{"world": 5, "type": "flipper", "shape": 6, "cols": ["#6a4ee0", "#ff9a2e"], "space_bg": true, "grav": 0.65, "m": 1550.0, "balls": 3, "pads": [], "fb": 3, "targets": 4, "super": 1, "target": 94000000.0, "stars": [60, 95]},
+	{"world": 5, "type": "space", "shape": 7, "m": 1650.0, "balls": 3, "pads": [], "planets": [Vector2(270, 560), Vector2(450, 720)], "moons": 2, "hole": Vector2(520, 480), "comets": true, "target": 1300000.0, "stars": [65, 100]},
+	{"world": 5, "type": "space", "shape": 7, "m": 1750.0, "balls": 4, "pads": [], "planets": [Vector2(360, 800)], "moons": 2, "boss": 1790, "bkind": "gumball", "stars": [100, 150]},
+	{"world": 5, "shape": 4, "cols": ["#9b7bff", "#ffd36b"], "space_bg": true, "grav": 0.5, "m": 1900.0, "balls": 3, "pads": [0, 1], "portals": [[Vector2(200, 700), Vector2(520, 700)]], "gold_portal": true, "movp": true, "target": 8000000.0, "stars": [60, 95]},
+	{"world": 5, "type": "plinko", "shape": 5, "cols": ["#6a4ee0", "#ff8fc6"], "space_bg": true, "grav": 0.6, "m": 2050.0, "balls": 3, "pads": [], "jackpot": true, "mults": [2.0, 1.5, 1.0, 1.0, 1.0, 1.5, 2.0], "moving": [2, 4], "target": 21000000.0, "stars": [70, 105]},
+	{"world": 5, "type": "flipper", "shape": 6, "cols": ["#6a4ee0", "#7df0c8"], "space_bg": true, "grav": 0.65, "m": 2200.0, "balls": 2, "pads": [], "fb": 3, "targets": 5, "movefb": true, "target": 167000000.0, "stars": [100, 115], "limit": 122.0},
+	{"world": 5, "type": "space", "shape": 7, "m": 2400.0, "balls": 6, "pads": [], "planets": [Vector2(360, 640)], "moons": 4, "comets": true, "golden": 0.15, "target": 7000000.0, "stars": [40, 65]},
+	{"world": 5, "type": "space", "shape": 7, "m": 2600.0, "balls": 4, "pads": [], "planets": [Vector2(270, 760), Vector2(450, 760)], "moons": 2, "comets": true, "boss": 2290, "bkind": "overlord", "stars": [120, 180]},
 ]
-const BOSS_SKINS = {4: "fruits", 9: "space", 14: "gems", 19: "music", 24: "donuts", 29: "icecream", 34: "cookies", 39: "jellybeans"}
+const BOSS_SKINS = {4: "fruits", 9: "space", 14: "gems", 19: "music", 24: "donuts", 29: "icecream", 34: "cookies", 39: "jellybeans", 44: "planets", 49: "clouds", 54: "gumballs", 59: "crown"}
 
 var font: Font
 var rng = RandomNumberGenerator.new()
@@ -123,6 +147,11 @@ var ftargets = []
 var flips = [{"a": FL_DOWN, "pa": FL_DOWN, "hold": false, "t": 0.0}, {"a": FL_DOWN, "pa": FL_DOWN, "hold": false, "t": 0.0}]
 var tbonus = 0.0
 var portals = []
+var planets = []
+var moons = []
+var hole = null
+var comet = null
+var comet_t = 6.0
 var my_song_on = false
 var my_song_ok = false
 var song_player = null
@@ -269,6 +298,8 @@ func is_boss() -> bool: return L.has("boss")
 func is_plinko() -> bool: return L.get("type", "") == "plinko"
 func is_flipper() -> bool: return L.get("type", "") == "flipper"
 func queued_world() -> bool: return is_plinko() or is_flipper()
+func is_space() -> bool: return L.get("type", "") == "space"
+func grav() -> float: return L.get("grav", 1.0)
 func cost_boost() -> float: return round(15.0 * pow(2.0, boosts) * m())
 func boost_mult() -> float: return pow(1.5, boosts)
 func lvl_label() -> String:
@@ -327,6 +358,11 @@ func make_shape(idx: int) -> Dictionary:
 		5:
 			# plinko board: tall rounded box, open at the top
 			pts = catmull([Vector2(156, 300), Vector2(150, 640), Vector2(152, 940), Vector2(192, 1000), Vector2(398, 1004), Vector2(604, 1000), Vector2(642, 940), Vector2(644, 640), Vector2(638, 300)])
+		7:
+			var c7 = Vector2(360, 640)
+			for k in range(145):
+				var a7 = k * TAU / 144.0
+				pts.append(c7 + Vector2(cos(a7), sin(a7)) * 300.0)
 		6:
 			# pinball table: arched roof, funnel down to the two flippers
 			pts = catmull([Vector2(268, 972), Vector2(150, 860), Vector2(134, 620), Vector2(150, 360), Vector2(230, 252), Vector2(360, 224), Vector2(490, 252), Vector2(570, 360), Vector2(586, 620), Vector2(570, 860), Vector2(452, 972)])
@@ -492,7 +528,15 @@ func start_level(i: int) -> void:
 	pegs.clear(); buckets.clear(); boosts = 0; spout_x = 398.0; spout_tx = 398.0; drop_t = 0.4
 	bumpers.clear(); jack_t = 0.0; jack_i = -1
 	fbumps.clear(); ftargets.clear(); tbonus = 0.0
-	portals.clear()
+	portals.clear(); planets.clear(); moons.clear(); hole = null; comet = null; comet_t = 6.0
+	for pl in L.get("planets", []):
+		planets.append({"p": pl, "b": pl, "r": 62.0 if L.get("planets", []).size() == 1 else 48.0, "f": 0.0})
+	for k in range(int(L.get("moons", 0))):
+		add_moon(true)
+	if L.has("hole"):
+		hole = {"p": L.hole, "f": 0.0}
+	if L.get("world", 1) == 5 and li == 40:
+		banner = {"t": 0.0, "txt": "WORLD 5", "col": "#ffd36b", "big": true}
 	for pr in L.get("portals", []):
 		portals.append({"a": pr[0], "b": pr[1], "ba": pr[0], "bb": pr[1], "f": 0.0})
 	if L.get("world", 1) == 4 and li == 30:
@@ -537,7 +581,7 @@ func start_level(i: int) -> void:
 			buckets.append({"x0": 166.0 + k * bw, "x1": 166.0 + (k + 1) * bw, "m": ms[k], "base": ms[k], "f": 0.0})
 		if li == 10:
 			banner = {"t": 0.0, "txt": "WORLD 2", "col": "#ffd36b", "big": true}
-	banner = {"t": 0.0, "txt": "LEVEL %d" % (i + 1), "col": "#ffffff", "big": false}
+	banner = {"t": 0.0, "txt": "LEVEL " + lvl_name(i), "col": "#ffffff", "big": false}
 	if is_boss():
 		var hp = int(L.boss)
 		var kind = L.get("bkind", "gummy")
@@ -547,6 +591,8 @@ func start_level(i: int) -> void:
 			boss.pos = Vector2(398, 610)
 		elif is_flipper():
 			boss.pos = Vector2(360, 520)
+		elif is_space():
+			boss.pos = Vector2(360, 500)
 		banner = {"t": 0.0, "txt": BOSS_NAMES[kind] + "!", "col": "#ff4d6d", "big": false}
 	for k in range(int(L.balls)):
 		spawn_ball(1, true)
@@ -572,8 +618,10 @@ func free_slots() -> Array:
 
 func spawn_ball(lv: int, quiet = false) -> void:
 	var sp: Vector2 = shp.spawn + Vector2(rng.randf_range(-40, 40), 0)
+	if is_space():
+		sp = Vector2(200 + rng.randf_range(-40, 40), 430)
 	var gold = rng.randf() < L.get("golden", 0.015) and not quiet
-	balls.append({"p": sp, "v": Vector2(rng.randf_range(-120, 120), 60), "lv": lv, "r": rad(lv), "tr": [], "cd": 0.0, "sq": 0.0, "mg": null, "rot": rng.randf() * TAU, "gold": gold, "q": queued_world(), "lift": -1.0})
+	balls.append({"p": sp, "v": Vector2(rng.randf_range(-120, 120), 60) if not is_space() else Vector2(rng.randf_range(80, 160), 0), "lv": lv, "r": rad(lv), "tr": [], "cd": 0.0, "sq": 0.0, "mg": null, "rot": rng.randf() * TAU, "gold": gold, "q": queued_world(), "lift": -1.0})
 	if gold:
 		banner = {"t": 0.0, "txt": "GOLDEN CANDY! x10", "col": "#ffd36b", "big": false}
 		burst(sp, C("#ffd36b", 2.0), 30, 300.0, 4.0, 0.7)
@@ -604,6 +652,8 @@ func merge_pair() -> Array:
 func can_ball() -> bool: return state == "play" and ending < 0 and balls.size() < MAXBALLS and money >= cost_ball()
 func can_merge() -> bool: return state == "play" and ending < 0 and merge_pair().size() == 2 and money >= cost_merge()
 func can_pad() -> bool:
+	if is_space():
+		return state == "play" and ending < 0 and moons.size() < 6 and money >= cost_pad()
 	if is_flipper():
 		return state == "play" and ending < 0 and fbumps.size() < FB_SLOTS.size() and money >= cost_pad()
 	if is_plinko():
@@ -612,7 +662,9 @@ func can_pad() -> bool:
 
 func act(i: int) -> void:
 	card_press[i] = 1.0
-	if i == 0 and can_pad() and is_flipper():
+	if i == 0 and can_pad() and is_space():
+		money -= cost_pad(); np += 1; add_moon(); play("pad", 1.0, -4.0); buzz()
+	elif i == 0 and can_pad() and is_flipper():
 		money -= cost_pad(); np += 1; add_fbump(fbumps.size()); play("pad", 1.0, -4.0); buzz()
 	elif i == 0 and can_pad() and is_plinko():
 		money -= cost_boost(); boosts += 1; play("pad", 1.1, -4.0); buzz()
@@ -793,7 +845,7 @@ func tick(dt: float) -> void:
 		ending -= dt
 		if ending <= 0.0:
 			finish_level()
-	if ending < 0 and not queued_world() and lt > 8.0 and rate() == 0.0 and not can_ball() and not can_pad() and not can_merge() and free_slots().has(0):
+	if ending < 0 and not queued_world() and not is_space() and lt > 8.0 and rate() == 0.0 and not can_ball() and not can_pad() and not can_merge() and free_slots().has(0):
 		add_pad_slot(0)
 		banner = {"t": 0.0, "txt": "FREE PAD!", "col": "#7df0c8", "big": false}
 		play("pad", 1.0, -4.0)
@@ -849,6 +901,9 @@ func bot(dt: float) -> void:
 		act(0)
 
 func step(dt: float) -> void:
+	if is_space():
+		step_space(dt)
+		return
 	if is_flipper():
 		step_flipper(dt)
 		return
@@ -868,7 +923,7 @@ func step(dt: float) -> void:
 				dead.append(b)
 			continue
 		b.cd -= dt
-		b.v.y += G * dt
+		b.v.y += G * grav() * dt
 		b.p += b.v * dt
 		var r: float = b.r
 		var best = 1e9
@@ -1079,7 +1134,7 @@ func run_sim() -> void:
 func run_tune() -> void:
 	# For each level: play with the bot up to the wanted duration with an unreachable goal,
 	# and print the median $ earned (or boss damage) at that time = suggested target / boss hp.
-	var want = [24, 34, 45, 45, 65, 45, 65, 100, 30, 90, 60, 50, 70, 65, 85, 60, 75, 105, 38, 100, 50, 55, 60, 60, 85, 50, 65, 105, 38, 100, 50, 55, 60, 60, 85, 55, 65, 105, 38, 100]
+	var want = [24, 34, 45, 45, 65, 45, 65, 100, 30, 90, 60, 50, 70, 65, 85, 60, 75, 105, 38, 100, 50, 55, 60, 60, 85, 50, 65, 105, 38, 100, 50, 55, 60, 60, 85, 55, 65, 105, 38, 100, 50, 55, 60, 60, 85, 55, 65, 105, 38, 100, 55, 60, 60, 65, 100, 60, 70, 105, 38, 130]
 	for i in range(LEVELS.size()):
 		if only_level >= 0 and i != only_level:
 			continue
@@ -1184,13 +1239,17 @@ func _draw() -> void:
 		return
 	var off = Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * shake
 	draw_set_transform(off)
-	if not queued_world():
+	if L.get("space_bg", false) or is_space():
+		draw_space_bg()
+	if not queued_world() and not is_space():
 		draw_spout()
 	draw_tube()
 	if is_plinko():
 		draw_plinko()
 	elif is_flipper():
 		draw_flipper()
+	elif is_space():
+		draw_space()
 	else:
 		draw_pads()
 		draw_portals()
@@ -1493,7 +1552,7 @@ func draw_boss() -> void:
 func boss_ai(dt: float) -> void:
 	var b = boss
 	var bx = 398.0 if is_plinko() else 360.0
-	var by = 610.0 if is_plinko() else (520.0 if is_flipper() else 600.0)
+	var by = 610.0 if is_plinko() else (520.0 if is_flipper() else (500.0 if is_space() else 600.0))
 	var amp = 0.75 if is_plinko() else 1.0
 	match b.kind:
 		"gummy": # fast and bouncy
@@ -1520,6 +1579,36 @@ func boss_ai(dt: float) -> void:
 			b.pos.x = bx + sin(b.t * 0.4) * 100.0
 			var ph2 = fmod(b.t, 4.0)
 			b.pos.y = by - (sin(ph2 / 0.6 * PI) * 70.0 if ph2 < 0.6 else 0.0)
+		"mallow": # orbits the planet slowly
+			b.pos = Vector2(360, 640) + Vector2(cos(b.t * 0.5), sin(b.t * 0.5) * 0.6 - 0.5) * 150.0
+		"cloud": # drifts, puffs a shield of fluff 2 s every 7 s
+			b.pos.x = bx + sin(b.t * 0.5) * 110.0
+			b.pos.y = by + sin(b.t * 0.9) * 20.0
+			var was2 = b.shield
+			b.shield = fmod(b.t, 7.0) > 5.0
+			if b.shield and not was2:
+				play("pad", 0.6, -8.0)
+		"gumball": # spits a gumball shower every 6 s (pure show) and wobbles
+			b.pos.x = bx + sin(b.t * 0.6) * 100.0
+			b.pos.y = by
+			if fmod(b.t, 6.0) < dt * 1.5 and not sim:
+				for k in range(12):
+					burst(b.pos + Vector2(0, -40), C(["#ff4d6d", "#4fa3ff", "#ffd36b", "#3fcf5f"][k % 4], 1.6), 1, 380.0, 9.0, 0.8)
+		"overlord": # final boss: moves, shields, then teleports when below half hp
+			b.rot += dt * 2.0
+			var slot2 = int(b.t / 6.0) % 3
+			if float(b.hp) / b.max < 0.5 and slot2 != b.tp:
+				b.tp = slot2
+				burst(b.pos, C("#ffd36b", 1.6), 30, 320.0, 5.0, 0.5)
+				b.pos = Vector2(360 + [0.0, -120.0, 120.0][slot2], 500 + [0.0, 60.0, 60.0][slot2])
+				play("swipe", 1.5, -8.0)
+			elif float(b.hp) / b.max >= 0.5:
+				b.pos.x = bx + sin(b.t * 0.5) * 110.0
+				b.pos.y = by
+			var was3 = b.shield
+			b.shield = fmod(b.t, 8.0) > 6.3
+			if b.shield and not was3 and not sim:
+				floats.append({"p": b.pos + Vector2(0, -120), "txt": "SHIELD!", "col": "#ffd36b", "t": 0.0, "big": true})
 		"jelly": # three beans bobbing in a row
 			b.pos.x = bx + sin(b.t * 0.7) * 90.0
 			b.pos.y = by + sin(b.t * 2.0) * 15.0
@@ -1602,6 +1691,60 @@ func draw_boss_body(kind: String, c: Vector2, s: float, ratio: float, shield: bo
 				draw_polyline(PackedVector2Array([c + Vector2(0, -56) * s, c + Vector2(8, -30) * s, c + Vector2(-6, -12) * s]), ink, 4.0 * s, true)
 			boss_eyes(c + Vector2(0, -6) * s, 36.0, s, tgt, locked)
 			draw_line(c + Vector2(-16, 26) * s, c + Vector2(16, 26) * s, ink, 6.0 * s, true)
+		"mallow":
+			draw_circle(c, 66 * s + 4, ink)
+			draw_circle(c, 66 * s, bcol("#fff0f6", locked))
+			draw_circle(c + Vector2(8, 8) * s, 56 * s, bcol("#ffd3ea", locked))
+			for q in [Vector2(-30, -30), Vector2(25, 30), Vector2(30, -25)]:
+				draw_circle(c + q * s, 9 * s, bcol("#f0c8dc", locked))
+			draw_arc(c, 92 * s, -0.3, PI + 0.3, 24, ink, 12 * s, true)
+			draw_arc(c, 92 * s, -0.3, PI + 0.3, 24, bcol("#7df0c8", locked), 7 * s, true)
+			boss_eyes(c + Vector2(0, -6) * s, 24.0, s * 0.8, tgt, locked)
+			draw_arc(c + Vector2(0, 34) * s, 12 * s, PI * 1.15, PI * 1.85, 10, ink, 5.0 * s, true)
+		"cloud":
+			for q in [Vector2(-60, 10, ), Vector2(-25, -22), Vector2(20, -28), Vector2(60, 5), Vector2(0, 18)]:
+				draw_circle(c + q * s, 46 * s + 4, ink)
+			for q in [Vector2(-60, 10), Vector2(-25, -22), Vector2(20, -28), Vector2(60, 5), Vector2(0, 18)]:
+				draw_circle(c + q * s, 46 * s, bcol("#ffb3d6", locked))
+			for q in [Vector2(-40, -10), Vector2(30, -20)]:
+				draw_circle(c + q * s, 22 * s, bcol("#ffe3f0", locked))
+			boss_eyes(c + Vector2(0, 0) * s, 26.0, s * 0.8, tgt, locked)
+			draw_arc(c + Vector2(0, 36) * s, 12 * s, PI * 1.15, PI * 1.85, 10, ink, 5.0 * s, true)
+			if shield:
+				draw_circle(c, 120 * s, C("#ffffff", 1.2, 0.3))
+				draw_arc(c, 120 * s, 0, TAU, 48, C("#ffffff", 1.6, 0.8), 5.0, true)
+		"gumball":
+			var base = PackedVector2Array([c + Vector2(-50, 40) * s, c + Vector2(50, 40) * s, c + Vector2(60, 90) * s, c + Vector2(-60, 90) * s])
+			draw_colored_polygon(PackedVector2Array([base[0] + Vector2(-4, -4), base[1] + Vector2(4, -4), base[2] + Vector2(4, 4), base[3] + Vector2(-4, 4)]), ink)
+			draw_colored_polygon(base, bcol("#ff4d6d", locked))
+			rrect(Rect2(c + Vector2(-10, 55) * s, Vector2(20, 20) * s), bcol("#ffd36b", locked), int(4 * s))
+			draw_circle(c + Vector2(0, -20) * s, 64 * s + 4, ink)
+			draw_circle(c + Vector2(0, -20) * s, 64 * s, C("#d9f2ff", 1.0, 0.85) if not locked else C("#e6e6ee"))
+			var gcols = ["#ff4d6d", "#4fa3ff", "#ffd36b", "#3fcf5f", "#9b7bff", "#ff9a2e"]
+			for k in range(14):
+				var gq = c + Vector2(cos(k * 2.4) * (12 + (k % 4) * 11), -20 + sin(k * 2.4) * (12 + (k % 4) * 11)) * s
+				draw_circle(gq, 9 * s, bcol(gcols[k % 6], locked))
+			draw_circle(c + Vector2(0, -90) * s, 12 * s, ink)
+			draw_circle(c + Vector2(0, -90) * s, 9 * s, bcol("#ff4d6d", locked))
+			boss_eyes(c + Vector2(0, -20) * s, 26.0, s * 0.75, tgt, locked)
+		"overlord":
+			# cape
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-70, -20) * s, c + Vector2(70, -20) * s, c + Vector2(95, 90) * s, c + Vector2(-95, 90) * s]), ink)
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-64, -16) * s, c + Vector2(64, -16) * s, c + Vector2(88, 84) * s, c + Vector2(-88, 84) * s]), bcol("#9b2a5a", locked))
+			# body = big wrapped candy king
+			ell(c, 70 * s + 4, 62 * s + 4, ink)
+			ell(c, 70 * s, 62 * s, bcol("#ff5fa2", locked))
+			for k in range(-2, 3):
+				draw_line(c + Vector2(k * 24 - 10, -54) * s, c + Vector2(k * 24 + 10, 54) * s, Color(1, 1, 1, 0.45), 9 * s, true)
+			for sg in [-1, 1]:
+				draw_colored_polygon(PackedVector2Array([c + Vector2(sg * 64, -14) * s, c + Vector2(sg * 110, -44) * s, c + Vector2(sg * 110, 44) * s, c + Vector2(sg * 64, 14) * s]), bcol("#ffd36b", locked))
+			boss_eyes(c + Vector2(0, -8) * s, 26.0, s * 0.85, tgt, locked)
+			var mouth2 = PackedVector2Array([c + Vector2(-22, 26) * s, c + Vector2(22, 26) * s, c + Vector2(14, 38) * s, c + Vector2(-14, 38) * s])
+			draw_colored_polygon(mouth2, ink)
+			boss_crown(c + Vector2(0, -86) * s, s * 1.2, locked)
+			if shield:
+				draw_circle(c, 130 * s, C("#ffd36b", 1.2, 0.22))
+				draw_arc(c, 130 * s, 0, TAU, 48, C("#ffd36b", 1.8, 0.9), 6.0, true)
 		"ginger":
 			var bodyc = bcol("#c97a3a", locked)
 			var icing = bcol("#ffffff", locked)
@@ -1801,7 +1944,7 @@ func draw_hud() -> void:
 func draw_cards() -> void:
 	var nopair = merge_pair().size() < 2
 	var info = [
-		["BOOST" if is_plinko() else ("BUMPER" if is_flipper() else "ADD PAD"), "#b8f5e1", "#5fd6b0", cost_boost() if is_plinko() else cost_pad(), can_pad(), (boosts >= 8) if is_plinko() else ((fbumps.size() >= FB_SLOTS.size()) if is_flipper() else free_slots().size() == 0)],
+		["BOOST" if is_plinko() else ("BUMPER" if is_flipper() else ("ADD MOON" if is_space() else "ADD PAD")), "#b8f5e1", "#5fd6b0", cost_boost() if is_plinko() else cost_pad(), can_pad(), (boosts >= 8) if is_plinko() else ((fbumps.size() >= FB_SLOTS.size()) if is_flipper() else ((moons.size() >= 6) if is_space() else free_slots().size() == 0))],
 		["ADD BALL", "#ffd08a", "#ff9a5a", cost_ball(), can_ball(), balls.size() >= MAXBALLS],
 		["MERGE", "#d9b8ff", "#9b7bff", cost_merge(), can_merge(), nopair],
 	]
@@ -1881,6 +2024,20 @@ func draw_tutorial() -> void:
 		target_pos = gift.pos + Vector2(0, 70); msg = "Smash the candy!"
 	elif tut == "aim" and not tut_done.has("aim") and lt > 1.0:
 		target_pos = Vector2(200, 560); msg = "Tap to aim the drop!"
+	elif tut == "orbit" and lt < 7.0:
+		msg = "Candies orbit the planet!"
+	elif tut == "moon" and lt < 6.0:
+		msg = "Moons pay x2!"
+	elif tut == "two" and lt < 6.0:
+		msg = "Two planets, double gravity!"
+	elif tut == "hole" and lt < 6.0:
+		msg = "Avoid the black hole!"
+	elif tut == "comet" and lt < 6.0:
+		msg = "Hit the comet for a jackpot!"
+	elif tut == "movplanet" and lt < 6.0:
+		msg = "The planet is moving!"
+	elif tut == "remix" and lt < 6.0:
+		msg = "Low gravity remix!"
 	elif tut == "portal" and lt < 7.0:
 		msg = "Portals double your candy!"
 	elif tut == "movp" and lt < 6.0:
@@ -2030,8 +2187,12 @@ func draw_drop() -> void:
 # ---------------------------------------------------------------- map (Candy Crush path)
 func map_nodes() -> Array:
 	var nodes = []
-	for i in range(clampi(LEVELS.size() - (map_world - 1) * 10, 0, 10)):
-		nodes.append(Vector2(360 + sin(i * 0.95 + 0.4) * 190.0, 1120.0 - i * 95.0))
+	var n = clampi(LEVELS.size() - (map_world - 1) * 10, 0, 20 if map_world == 5 else 10)
+	for i in range(n):
+		if n > 10:
+			nodes.append(Vector2(360 + sin(i * 1.25 + 0.4) * 210.0, 1110.0 - i * 44.0))
+		else:
+			nodes.append(Vector2(360 + sin(i * 0.95 + 0.4) * 190.0, 1120.0 - i * 95.0))
 	return nodes
 
 func draw_map() -> void:
@@ -2062,7 +2223,7 @@ func draw_map() -> void:
 	var gate = Rect2(220, 150, 280, 64)
 	var next_open = unlocked > base + 10 and base + 10 < LEVELS.size()
 	nine("pill_w" if next_open else "pill", gate.grow(10), 70, 60, 70, 70)
-	text_c(gate.get_center() + Vector2(0, -2), ("WORLD %d  >" % (map_world + 1)) if next_open else ("WORLD %d  LOCKED" % (map_world + 1)), 26, Color(1, 1, 1) if next_open else C("#9b7bff"), 6 if next_open else 0)
+	text_c(gate.get_center() + Vector2(0, -2), "FINAL WORLD" if map_world == 5 else (("WORLD %d  >" % (map_world + 1)) if next_open else ("WORLD %d  LOCKED" % (map_world + 1))), 26, Color(1, 1, 1) if next_open else C("#9b7bff"), 6 if next_open else 0)
 	if map_world > 1:
 		var back = Rect2(40, 1060, 170, 56)
 		nine("pill_w", back.grow(8), 70, 60, 70, 70)
@@ -2128,7 +2289,7 @@ func draw_boss_icon(p: Vector2, open: bool, cur: bool, kind = "gummy") -> void:
 		for k in range(4):
 			draw_circle(p, 62 + k * 9 + sin(t * 3.0) * 4.0, C("#ff4d6d", 1.4, 0.07))
 	var bob = sin(t * 3.0) * 3.0 if open else 0.0
-	var sc = {"gummy": 0.5, "cupcake": 0.5, "choco": 0.48, "lolli": 0.52, "donut": 0.55, "sundae": 0.5, "ginger": 0.45, "jelly": 0.42}[kind]
+	var sc = {"gummy": 0.5, "cupcake": 0.5, "choco": 0.48, "lolli": 0.52, "donut": 0.55, "sundae": 0.5, "ginger": 0.45, "jelly": 0.42, "mallow": 0.5, "cloud": 0.42, "gumball": 0.42, "overlord": 0.45}[kind]
 	draw_boss_body(kind, p + Vector2(0, -8 + bob), sc, 1.0, false, t * 1.5 if kind == "lolli" else 0.0, p + Vector2(0, 80), not open, 0.0)
 	var rb = Rect2(p + Vector2(-46, 30), Vector2(92, 28))
 	draw_colored_polygon(PackedVector2Array([rb.position + Vector2(-14, 4), rb.position + Vector2(4, 4), rb.position + Vector2(4, 26), rb.position + Vector2(-14, 26), rb.position + Vector2(-6, 15)]), INK())
@@ -2790,7 +2951,7 @@ func step_plinko(dt: float) -> void:
 				b.q = true
 			continue
 		b.cd -= dt
-		b.v.y += G * 0.75 * dt
+		b.v.y += G * 0.75 * grav() * dt
 		b.p += b.v * dt
 		var r: float = b.r
 		# walls (the board tube)
@@ -3033,7 +3194,7 @@ func step_flipper(dt: float) -> void:
 				b.wait -= dt
 			continue
 		b.cd -= dt
-		b.v.y += G * 0.8 * dt
+		b.v.y += G * 0.8 * grav() * dt
 		b.p += b.v * dt
 		var r: float = b.r
 		# table walls
@@ -3240,3 +3401,202 @@ func draw_portals() -> void:
 				draw_arc(p, 8.0 + j * 6.0, a0, a0 + 2.2, 12, C(col, 1.6, 0.9), 3.0, true)
 			if side == 0:
 				text_c(p + Vector2(0, -50), "x4" if gold else "x2", 20, C(col), 5)
+
+
+# ================================================================ WORLD 5 : COSMIC CANDY (zero gravity, planets)
+func add_moon(quiet = false) -> void:
+	if planets.size() == 0:
+		return
+	var k = moons.size()
+	var pl = planets[k % planets.size()]
+	moons.append({"pl": k % planets.size(), "rad": 120.0 + (k / planets.size()) * 45.0, "a": k * 2.1, "w": 0.6 + (k % 3) * 0.2, "p": Vector2.ZERO, "f": 0.0})
+	if not quiet:
+		ring(pl.p, C("#ffd36b", 1.5), 160.0)
+
+func step_space(dt: float) -> void:
+	var pts: PackedVector2Array = shp.pts
+	for k in range(planets.size()):
+		var pl = planets[k]
+		pl.f = maxf(0.0, pl.f - dt * 5.0)
+		if L.get("movplanet", false):
+			pl.p = pl.b + Vector2(sin(t * 0.6) * 90.0, cos(t * 0.45) * 40.0)
+	for mo in moons:
+		mo.a += mo.w * dt
+		mo.p = planets[mo.pl].p + Vector2(cos(mo.a), sin(mo.a)) * mo.rad
+		mo.f = maxf(0.0, mo.f - dt * 5.0)
+	if hole != null:
+		hole.f += dt
+	if L.get("comets", false):
+		comet_t -= dt
+		if comet == null and comet_t <= 0.0:
+			var y0 = rng.randf_range(420, 860)
+			comet = {"p": Vector2(40, y0), "v": Vector2(260, rng.randf_range(-60, 60))}
+			play("swipe", 1.6, -10.0)
+		if comet != null:
+			comet.p += comet.v * dt
+			if comet.p.x > 700:
+				comet = null
+				comet_t = rng.randf_range(7.0, 11.0)
+	var dead = []
+	for b in balls:
+		b.rot += dt * 2.0
+		if b.mg != null:
+			b.mg.t += dt
+			var k = minf(1.0, b.mg.t / 0.3)
+			b.p = b.mg.from.lerp(b.mg.to, k * k)
+			if k >= 1.0:
+				dead.append(b)
+			continue
+		if b.get("wait", 0.0) > 0.0:
+			b.wait -= dt
+			if b.wait <= 0.0:
+				b.p = Vector2(200, 430)
+				b.v = Vector2(120.0, 0)
+				b.tr.clear()
+			continue
+		b.cd -= dt
+		var r: float = b.r
+		# planet gravity (+ a little orbital drag so candies keep falling back onto the planet)
+		var nearest = null
+		var nd = 1e9
+		for pl in planets:
+			var d = pl.p - b.p
+			var dist = maxf(d.length(), 60.0)
+			b.v += d.normalized() * (5200000.0 / (dist * dist)) * dt
+			if d.length() < nd:
+				nd = d.length(); nearest = pl
+		if nearest != null:
+			var rn = (nearest.p - b.p).normalized()
+			var vt = b.v - rn * b.v.dot(rn)
+			b.v -= vt * minf(1.0, 0.9 * dt)
+		if hole != null:
+			var dh = hole.p - b.p
+			var disth = maxf(dh.length(), 40.0)
+			b.v += dh.normalized() * (3000000.0 / (disth * disth)) * dt
+			if dh.length() < 26.0:
+				b.wait = 1.5
+				b.p = Vector2(-500, -500)
+				if not sim:
+					floats.append({"p": hole.p + Vector2(0, -40), "txt": "SUCKED IN!", "col": "#c06bff", "t": 0.0, "big": false})
+				play("fail", 1.2, -14.0)
+				continue
+		var sp = b.v.length()
+		if sp > 900.0:
+			b.v *= 900.0 / sp
+		b.p += b.v * dt
+		# arena wall (no money, keeps energy)
+		for i in range(pts.size() - 1):
+			var a = pts[i]
+			if absf(a.x - b.p.x) > 70.0 or absf(a.y - b.p.y) > 70.0:
+				continue
+			var ab = pts[i + 1] - a
+			var u = clampf((b.p - a).dot(ab) / ab.length_squared(), 0.0, 1.0)
+			var q = a + ab * u
+			var dd = b.p.distance_to(q)
+			if dd < TR + r and dd > 0.001:
+				var n: Vector2 = (b.p - q) / dd
+				b.p = q + n * (TR + r)
+				var vn: float = b.v.dot(n)
+				if vn < 0.0:
+					b.v -= n * vn * 1.6
+		# planets: bounce + money (like pads)
+		for k in range(planets.size()):
+			var pl = planets[k]
+			var dp = b.p.distance_to(pl.p)
+			var mp = pl.r + r
+			if dp < mp and dp > 0.001:
+				var n2: Vector2 = (b.p - pl.p) / dp
+				b.p = pl.p + n2 * mp
+				var tg = Vector2(-n2.y, n2.x)
+				b.v = n2 * 540.0 + tg * rng.randf_range(-90, 90)
+				b.sq = 1.0
+				pl.f = 1.0
+				if b.cd <= 0.0:
+					b.cd = 0.05
+					earn(b, k, pl.p + n2 * (pl.r + 10.0))
+		# moons: x2
+		for mo in moons:
+			var dm = b.p.distance_to(mo.p)
+			if dm < 24.0 + r and dm > 0.001:
+				var n3: Vector2 = (b.p - mo.p) / dm
+				b.p = mo.p + n3 * (24.0 + r)
+				b.v = n3 * 560.0
+				mo.f = 1.0
+				if b.cd <= 0.0:
+					b.cd = 0.05
+					b.pm = 2.0
+					earn(b, 3, mo.p + Vector2(0, -30))
+		if comet != null and b.p.distance_to(comet.p) < 30.0 + r:
+			var v = val(b.lv) * 30.0
+			money += v; earned += v
+			hist.append([t, v])
+			if not sim:
+				floats.append({"p": comet.p + Vector2(0, -30), "txt": "COMET! +$" + fmt(v), "col": "#ffd36b", "t": 0.0, "big": true})
+				burst(comet.p, C("#ffd36b", 2.0), 30, 360.0, 5.0, 0.7)
+			play("cash", 1.3, -8.0)
+			comet = null
+			comet_t = rng.randf_range(8.0, 12.0)
+		if boss != null and boss.hp > 0:
+			hit_box(b, boss, boss.w, boss.h, true)
+		b.sq = maxf(0.0, b.sq - dt * 7.0)
+	for b in dead:
+		balls.erase(b)
+	if dead.size() >= 2:
+		var lv: int = dead[0].lv + 1
+		var p: Vector2 = dead[0].mg.to
+		balls.append({"p": p, "v": Vector2(120, 0), "lv": lv, "r": rad(lv), "tr": [], "cd": 0.0, "sq": 1.0, "mg": null, "rot": 0.0, "gold": false, "q": false, "lift": -1.0})
+		var c = C(obj_col(lv), 1.8)
+		ring(p, c, 60.0 + lv * 10.0)
+		burst(p, c, 18 + lv * 4, 320.0, 4.0, 0.55)
+		snd_merge(lv)
+		var sk_key = "%s:%d" % [equip, lv]
+		if not seen.has(sk_key):
+			seen[sk_key] = true
+			popup = {"t": 0.0, "kind": "candy", "lv": lv}
+			state = "newcandy"
+			play("drop", 1.0, -4.0)
+			save_game()
+
+func draw_space_bg() -> void:
+	# deep-space disc behind the play area with twinkling stars
+	draw_circle(Vector2(360, 640), 330.0, C("#2a1650", 1.0, 0.92))
+	var r2 = RandomNumberGenerator.new()
+	r2.seed = 11
+	for i in range(60):
+		var a = r2.randf() * TAU
+		var d = sqrt(r2.randf()) * 310.0
+		var p = Vector2(360, 640) + Vector2(cos(a), sin(a)) * d
+		var tw = 0.5 + 0.5 * sin(t * 2.0 + i)
+		draw_circle(p, 1.5 + (i % 3), Color(1.4, 1.4, 1.6, 0.3 + 0.6 * tw))
+
+func draw_space() -> void:
+	if hole != null:
+		for k in range(6):
+			draw_arc(hole.p, 26.0 + k * 8.0, hole.f * 3.0 + k, hole.f * 3.0 + k + 4.0, 16, C("#c06bff", 1.6, 0.6 - k * 0.08), 4.0, true)
+		draw_circle(hole.p, 24.0, C("#0b0614"))
+	for k in range(planets.size()):
+		var pl = planets[k]
+		var r: float = pl.r + pl.f * 6.0
+		var cols = [["#ff5fa2", "#ffd36b"], ["#7df0c8", "#9b7bff"]][k % 2]
+		draw_arc(pl.p, r * 1.55, PI * 1.05, TAU * 0.98, 32, INK(), 12.0, true)
+		draw_circle(pl.p, r + 5, INK())
+		draw_circle(pl.p, r, C(cols[0], 1.0 + pl.f))
+		for j in range(-2, 3):
+			var yy = j * r * 0.32
+			var hw = sqrt(maxf(0.0, r * r - yy * yy))
+			draw_line(pl.p + Vector2(-hw * 0.95, yy), pl.p + Vector2(hw * 0.95, yy), C(cols[1], 1.0, 0.45), r * 0.12, true)
+		draw_circle(pl.p + Vector2(-r * 0.35, -r * 0.38), r * 0.2, Color(1, 1, 1, 0.6))
+		draw_arc(pl.p, r * 1.55, 0.02, PI * 0.95, 32, INK(), 12.0, true)
+		draw_arc(pl.p, r * 1.55, 0.02, PI * 0.95, 32, C("#fff1d6"), 6.0, true)
+	for mo in moons:
+		var f: float = mo.f
+		draw_circle(mo.p, 27.0 + f * 4.0, INK())
+		draw_circle(mo.p, 23.0 + f * 4.0, C("#d9dbe6", 1.0 + f))
+		draw_circle(mo.p + Vector2(-6, -4), 6.0, C("#b3b6c4"))
+		draw_circle(mo.p + Vector2(7, 6), 4.0, C("#b3b6c4"))
+		text_c(mo.p + Vector2(0, -36), "x2", 16, C("#ffd36b"), 4)
+	if comet != null:
+		for k in range(10):
+			draw_circle(comet.p - comet.v.normalized() * k * 12.0, 16.0 - k * 1.3, C("#ffd36b", 1.6, 0.8 - k * 0.07))
+		draw_circle(comet.p, 18.0, INK())
+		draw_circle(comet.p, 15.0, C("#fff1d6", 1.5))
