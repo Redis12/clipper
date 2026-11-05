@@ -162,7 +162,7 @@ def build(meta: dict, handle: str = "@animelorehq") -> dict:
         hook = f"{a} vs {b}: every hit gets stronger and he transforms. Can he do it before the timer hits 0?"
         ask = "Comment if you think he makes it 👇"
         core = ["satisfying", "animebattle"]
-        ctags = [t for n in names[:1] for t in char_tags(n)[:1]]
+        ctags = [t for n in names[:2] for t in char_tags(n)[:1]]
         kw = [f"{a} vs {b}", "anime simulation", "satisfying", "ball simulation", "who would win"]
     elif kind == "race":
         a, b = short(names[0]), short(names[1])
@@ -208,9 +208,25 @@ def build(meta: dict, handle: str = "@animelorehq") -> dict:
         credit = "\nSFX: " + ", ".join(meta["sfx_credits"]) + " (CC BY 4.0)"
     description = f"{hook}\n{ask}\n\nNew anime battle every day → follow {handle}{credit}\n\n{_hashtags(spec + CORE_TAGS, 5)}"
     tags = ", ".join(dict.fromkeys(kw + [n for n in names] + ani_names + ["anime", "anime shorts"]))[:480]
-    # TikTok : la légende est indexée par sa recherche → titre + phrase pleine de mots-clés + question + 5 hashtags
-    tiktok = f"{title.rstrip(' 🤯⚡😳🏆')} — {hook} {ask}\n{_hashtags(five, 5)}"
-    insta = f"{hook} {ask}\n\nFollow {handle} for daily anime battles 🔥\n\n{_hashtags(five, 5)}"
+    # TikTok / Instagram (05/11, 88 % de vues en France, ~250 vues et 0 commentaire) : hashtags de FANS
+    # (persos + franchise, ex. #sasuke #naruto #narutoshippuden) + 1 seul tag de format, plus de #anime trop large ;
+    # question à 1 mot (« Yes or no? ») : le moindre effort pour commenter, c'est ce qui fait sortir du 1er groupe.
+    fmt = {"domain": "animebattle", "powerup": "animebattle", "race": "animetransformation",
+           "fusion": "animetransformation"}.get(kind, "animebattle")
+    fan = list(dict.fromkeys(t for t in ctags[:2] + ani_tags[:2] if t))[:4] + [fmt]
+    if kind == "domain":
+        easy = f"{a} or {b}? One word 👇"
+    elif kind == "powerup":
+        easy = f"Does {a} make it? Yes or no 👇"
+    elif kind == "race":
+        easy = f"{a} or {b}? 👇"
+    elif kind == "fusion" or meta.get("tiers") and not names:
+        easy = "Rate the final form 1-10 👇"
+    else:
+        easy = "Who wins? One name 👇"
+    line1 = title.rstrip(' 🤯⚡😳🏆')
+    tiktok = f"{line1}\n{hook}\n{easy}\n{_hashtags(fan, 5)}"
+    insta = f"{line1}\n{hook}\n{easy}\n\nFollow {handle} for daily anime battles 🔥\n\n{_hashtags(fan, 5)}"
     return {"youtube": {"title": title, "description": description, "tags": tags},
             "tiktok": tiktok, "instagram": insta}
 
