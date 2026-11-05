@@ -66,6 +66,13 @@ Les idées de vidéos sont dans `IDEES.md` ; le fonctionnement de Clipper est da
 - **Créneau** : test d'un post à 1:00 AM Bruxelles (7 PM New York) face à un post à 6:00 PM. Rappel : l'heure ne change pas le PAYS,
   seulement combien de gens sont réveillés. **En test (05/11).**
 - **Pas de son tendance ni de post à la main** : tout passe par Buffer (indispensable avec plusieurs comptes).
+- **Vidéo de coaching TikTok analysée (05/11, Rob, « Fastest way to go viral on TikTok 2026 » ; c'est en partie une pub pour l'outil Content Buddy, et ses chiffres sont ceux d'un seul créateur)** :
+  - **Avoir l'air humain** : TikTok soupçonne les comptes qui ne font que poster (robots) et peut les freiner sans le dire. → Passer 10 minutes à la main, 3 à 5 jours par semaine, à des heures **différentes** : liker et commenter des vidéos anime, répondre à nos commentaires. Nos posts partent aussi à des heures trop « rondes » (13:00, 18:00, 22:00 pile) → décaler de quelques minutes au hasard (13:07, 18:12…).
+  - **Le compte doit dire de quoi il parle** : le niche dans le **nom affiché** (ex. « AnimeLore | Anime Battles »), une bio avec les mots qu'on tape (anime battles, who would win, transformations), des playlists par série (Domain War, Transformations, Power Up). C'est ce qui fait apparaître le compte dans la recherche TikTok. À faire à la main dans l'appli.
+  - **Les mêmes mots partout** : le texte de l'accroche à l'écran = la 1re ligne de la légende = les hashtags. Si les commentaires reprennent ces mots, c'est un signal en plus.
+  - **3 hashtags très précis** suffisent selon lui (nous : jusqu'à 8 ciblés ; à tester les deux).
+  - **Accroche écrite en rouge** (10 de ses 12 vidéos virales) et **quelque chose qui change à l'écran toutes les 2-3 secondes**.
+  - **Format et sujet en tendance** : chercher le sujet dans TikTok, regarder ce qui a percé et faire la même longueur que les vidéos qui marchent pour ce format.
 - **Idée pas encore faite** : « 1 or 2? Comment 👇 » écrit DANS la vidéo, avec un numéro sur chaque perso.
 
 ## 5. Instagram Reels
