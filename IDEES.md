@@ -268,3 +268,12 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
 - Power Up : Kid Goku vs Beerus, Kid Naruto vs Sasuke, Kid Sasuke vs Madara (défaite), Kid Goku vs Beerus Part 2 (Hakai, ven. 06/11).
 - Domain War : Goku vs Vegeta, Naruto vs Sasuke, #5 Gogeta vs Vegito, #6 Luffy vs Kaido.
 - Battle : Naruto (11 persos).
+
+## 2e chaîne : recherche de niche (05/11)
+- Constat : les Shorts paient peu PARTOUT. Exemple : chaîne Countryballs « Herr Globus » (501k abonnés) = 16 M de vues en octobre 2026 pour ~900 $ estimés (vidIQ) ; marble race « Crazy Marble Race » (256k abonnés, 112 M de vues au total). L'argent vient du format long (RPM 2–18 $), des sponsors et du TikTok Creator Rewards (vidéos > 1 min).
+- CPM long format par niche : finance/investissement 15–45 $, éducation/science ~15–18 $ RPM, divertissement ~2–5 $, gaming 3–8 $.
+- Pistes classées :
+  1. **Simulations d'argent** (« Can $1 become $1M in 60 seconds? », « Can Fibonacci pay off the US debt? » = la vidéo virale à l'origine du Power Up) : niche la mieux payée, public US, aucun droit d'auteur, moteur Power Up réutilisable, peu de concurrents en format simulation. Format long possible plus tard (« explained »).
+  2. **Pays** (Countryballs, guerre de territoires façon Domain War, marble race de pays) : énormément de vues, drapeaux libres, mais RPM très bas et concurrence forte.
+  3. **Animaux** (« Lion vs Gorilla » en simulation) : pas de format simulation repéré parmi les Shorts animaux qui percent (surtout sauvetages, zoos) → trou à tester, mais public jeune (RPM bas).
+  4. Football : public énorme, mais images de joueurs = droits → seulement avatars dessinés.
