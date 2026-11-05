@@ -11,6 +11,16 @@ const SLOTS = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8, 0.12, 0.88]
 const PENTA = [0, 2, 4, 7, 9]
 const CARDS = [Rect2(42, 1028, 196, 212), Rect2(262, 1028, 196, 212), Rect2(482, 1028, 196, 212)]
 const MAPBTN = Rect2(34, 148, 76, 76)
+const SKINBTN = Rect2(34, 238, 76, 76)
+const SKINS = [
+	{"id": "candy", "name": "CANDY", "how": "start", "col": "#ff5fa2", "objs": ["Dragee", "Hard Candy", "Marshmallow", "Bubble Gum", "Cookie", "Donut", "Cupcake", "Lollipop", "Cake", "Golden Candy"]},
+	{"id": "fruits", "name": "FRUITS", "how": "boss", "boss": 5, "col": "#ff5d73", "objs": ["Blueberry", "Cherry", "Strawberry", "Lemon", "Orange", "Apple", "Peach", "Pineapple", "Melon", "Watermelon"]},
+	{"id": "space", "name": "SPACE", "how": "boss", "boss": 10, "col": "#6a4ee0", "objs": ["Stardust", "Asteroid", "Moon", "Mars", "Earth", "Neptune", "Saturn", "Jupiter", "Sun", "Black Hole"]},
+	{"id": "gems", "name": "GEMS", "how": "shop", "price": 500, "col": "#3fbfd9", "objs": ["Quartz", "Amethyst", "Topaz", "Emerald", "Sapphire", "Ruby", "Opal", "Pink Diamond", "Black Pearl", "Diamond"]},
+	{"id": "retro", "name": "RETRO", "how": "shop", "price": 800, "col": "#3fcf5f", "objs": ["Berries", "Plum", "Strawberry", "Orange", "Apple", "Peach", "Mango", "Pineapple", "Banana", "Golden Pear"]},
+	{"id": "music", "name": "MUSIC", "how": "shop", "price": 1200, "col": "#ffb21e", "objs": ["Note", "Double Note", "Drum", "Maracas", "Trumpet", "Guitar", "Saxophone", "Piano", "Harp", "Gold Record"]},
+]
+const MELODY = [0, 4, 7, 12, 11, 7, 4, 5, 9, 12, 14, 12, 9, 7, 5, 4, 2, 4, 7, 4]
 const INKH = "#4a1f52"
 
 const CANDY_NAMES = ["Dragee", "Hard Candy", "Marshmallow", "Bubble Gum", "Cookie", "Donut", "Cupcake", "Lollipop", "Cake", "Golden Candy"]
@@ -30,7 +40,7 @@ var LEVELS = [
 	{"shape": 0, "m": 12.0, "balls": 5, "pads": [0, 1, 2], "target": 40000.0, "stars": [40, 65], "golden": 0.12, "gift": true},
 	{"shape": 4, "m": 15.0, "balls": 4, "pads": [0, 1, 2], "boss": 1800, "stars": [115, 170], "gift": false},
 ]
-const BOSS_SKINS = {4: {"id": "fruits", "name": "FRUITS", "col": "#ff5d73"}, 9: {"id": "space", "name": "SPACE", "col": "#6a4ee0"}}
+const BOSS_SKINS = {4: "fruits", 9: "space"}
 
 var font: Font
 var rng = RandomNumberGenerator.new()
@@ -41,6 +51,19 @@ var best_stars = {}
 var unlocked = 1
 var seen = {1: true}
 var skins = {"candy": true}
+var equip = "candy"
+var sel_skin = 0
+var skins_from = "play"
+var mel_i = 0
+var tex = {}
+var mus_on = true
+var sfx_on = true
+var vib_on = true
+var music_player = null
+var cur_track = ""
+var set_from = "play"
+var want_screen = ""
+const SETBTN = Rect2(34, 328, 76, 76)
 
 # run
 var li = 0
@@ -158,7 +181,7 @@ func load_wav(path: String):
 	return s
 
 func play(name: String, pitch = 1.0, vol = 0.0) -> void:
-	if sim or not sfx.has(name) or sfx[name] == null:
+	if sim or not sfx_on or not sfx.has(name) or sfx[name] == null:
 		return
 	var p: AudioStreamPlayer = players[pidx]
 	pidx = (pidx + 1) % players.size()
@@ -168,7 +191,7 @@ func play(name: String, pitch = 1.0, vol = 0.0) -> void:
 	p.play()
 
 func buzz(ms = 18) -> void:
-	if not sim and not autoplay:
+	if not sim and not autoplay and vib_on:
 		Input.vibrate_handheld(ms)
 
 func semis(i: int) -> float:
@@ -260,7 +283,7 @@ func _ready() -> void:
 	var ff = FontFile.new()
 	ff.load_dynamic_font("res://fonts/LilitaOne.ttf")
 	font = ff
-	for n in ["pop1", "pop2", "pop3", "pop4", "pop5", "match1", "match2", "match3", "match4", "match5", "match6", "match7", "match8", "match9", "buy", "pad", "hit", "bosshit", "cash", "ko", "clear", "drop", "spawn", "fail", "swipe"]:
+	for n in ["pop1", "pop2", "pop3", "pop4", "pop5", "match1", "match2", "match3", "match4", "match5", "match6", "match7", "match8", "match9", "buy", "pad", "hit", "bosshit", "cash", "ko", "clear", "drop", "spawn", "fail", "swipe", "fruit_pop1", "fruit_pop2", "fruit_pop3", "fruit_merge", "gem_pop1", "gem_pop2", "gem_pop3", "gem_merge", "marimba", "chord", "space_pop1", "space_pop2", "space_pop3", "space_merge", "space_spawn", "retro_pop", "retro_merge", "retro_spawn"]:
 		sfx[n] = load_wav("res://snd/%s.wav" % n)
 	for i in range(20):
 		var p = AudioStreamPlayer.new()
@@ -293,6 +316,10 @@ func _ready() -> void:
 			demo = true
 		elif a.begins_with("--level="):
 			start = int(a.substr(8)) - 1
+		elif a.begins_with("--screen="):
+			want_screen = a.substr(9)
+		elif a.begins_with("--skin="):
+			equip = a.substr(7)
 		elif a.begins_with("--seed="):
 			rng.seed = int(a.substr(7))
 	if not autoplay and not demo and not show_map_only:
@@ -310,6 +337,15 @@ func _ready() -> void:
 		unlocked = 7
 		for k in range(6):
 			best_stars[k] = [3, 2, 3, 1, 3, 2][k]
+	if want_screen != "":
+		coins = 640
+		skins = {"candy": true, "fruits": true, "retro": true}
+		for k in range(1, 8):
+			seen["candy:%d" % k] = true
+		for k in range(1, 5):
+			seen["fruits:%d" % k] = true
+		state = want_screen
+		sel_skin = 1
 	if demo:
 		for i in range(3):
 			add_pad_slot(pads.size() + 1, true)
@@ -329,6 +365,10 @@ func load_save() -> void:
 		seen = cf.get_value("p", "seen", {1: true})
 		skins = cf.get_value("p", "skins", {"candy": true})
 		tut_done = cf.get_value("p", "tut", {})
+		equip = cf.get_value("p", "equip", "candy")
+		mus_on = cf.get_value("p", "music", true)
+		sfx_on = cf.get_value("p", "sfx", true)
+		vib_on = cf.get_value("p", "vib", true)
 
 func save_game() -> void:
 	if autoplay or demo:
@@ -340,6 +380,10 @@ func save_game() -> void:
 	cf.set_value("p", "seen", seen)
 	cf.set_value("p", "skins", skins)
 	cf.set_value("p", "tut", tut_done)
+	cf.set_value("p", "equip", equip)
+	cf.set_value("p", "music", mus_on)
+	cf.set_value("p", "sfx", sfx_on)
+	cf.set_value("p", "vib", vib_on)
 	cf.save("user://save.cfg")
 
 func start_level(i: int) -> void:
@@ -389,7 +433,7 @@ func spawn_ball(lv: int, quiet = false) -> void:
 		play("drop", 1.2, -4.0)
 	elif not quiet:
 		burst(sp, C("#ffffff", 1.4), 10, 160.0, 3.0, 0.35)
-		play("spawn", 1.0 + rng.randf() * 0.15, -10.0)
+		snd_spawn()
 
 func rad(lv: int) -> float:
 	return 14.0 + 1.6 * (lv - 1)
@@ -442,6 +486,10 @@ func _input(ev: InputEvent) -> void:
 				act(i)
 		if MAPBTN.has_point(pos):
 			state = "map"; screen_t = 0.0; play("swipe", 1.0, -6.0)
+		elif SKINBTN.has_point(pos):
+			open_skins("play")
+		elif SETBTN.has_point(pos):
+			set_from = "play"; state = "settings"; play("swipe", 1.1, -6.0)
 	elif state == "end":
 		if screen_t > 0.6:
 			if Rect2(190, 830, 340, 92).has_point(pos):
@@ -451,7 +499,17 @@ func _input(ev: InputEvent) -> void:
 	elif state == "fail":
 		if Rect2(190, 830, 340, 92).has_point(pos):
 			start_level(li)
+	elif state == "skins":
+		skins_input(pos)
+	elif state == "settings":
+		settings_input(pos)
 	elif state == "map":
+		if Rect2(600, 1180, 90, 90).has_point(pos):
+			open_skins("map")
+			return
+		if Rect2(30, 1180, 90, 90).has_point(pos):
+			set_from = "map"; state = "settings"; play("swipe", 1.1, -6.0)
+			return
 		var nodes = map_nodes()
 		for i in range(nodes.size()):
 			if i < unlocked and pos.distance_to(nodes[i]) < 52.0:
@@ -475,6 +533,7 @@ func _process(dt: float) -> void:
 	dt = minf(dt, 1.0 / 30.0)
 	tick(dt)
 	if not sim:
+		update_music()
 		queue_redraw()
 
 func tick(dt: float) -> void:
@@ -497,7 +556,7 @@ func tick(dt: float) -> void:
 			else:
 				start_level(li)
 		return
-	if state == "map":
+	if state == "map" or state == "skins" or state == "settings":
 		fx(dt)
 		return
 	if hitstop > 0.0:
@@ -563,7 +622,7 @@ func finish_level() -> void:
 	endinfo = {"stars": st, "coins": gain, "time": lt}
 	screen_t = 0.0
 	if BOSS_SKINS.has(li):
-		var sk = BOSS_SKINS[li]
+		var sk = skin_by_id(BOSS_SKINS[li])
 		skins[sk.id] = true
 		popup = {"t": 0.0, "kind": "drop", "skin": sk}
 		state = "drop"
@@ -664,22 +723,23 @@ func step(dt: float) -> void:
 		var lv: int = dead[0].lv + 1
 		var p: Vector2 = dead[0].mg.to
 		balls.append({"p": p, "v": Vector2(rng.randf_range(-100, 100), -KICK * 0.75), "lv": lv, "r": rad(lv), "tr": [], "cd": 0.0, "sq": 1.0, "mg": null, "rot": 0.0, "gold": false})
-		var c = C(candy_col(lv), 1.8)
+		var c = C(obj_col(lv), 1.8)
 		ring(p, c, 60.0 + lv * 10.0)
 		ring(p, Color(2, 2, 2), 34.0 + lv * 5.0, 0.25)
 		burst(p, c, 18 + lv * 4, 320.0, 4.0, 0.55)
-		play("match%d" % clampi(lv - 1, 1, 9), 1.0, -3.0)
+		snd_merge(lv)
 		if lv >= 4:
 			hitstop = 0.05
 			shake = maxf(shake, lv * 1.2)
-		if not seen.has(lv):
-			seen[lv] = true
+		var sk_key = "%s:%d" % [equip, lv]
+		if not seen.has(sk_key):
+			seen[sk_key] = true
 			popup = {"t": 0.0, "kind": "candy", "lv": lv}
 			state = "newcandy"
 			play("drop", 1.0, -4.0)
 			save_game()
 		else:
-			floats.append({"p": p - Vector2(0, 30), "txt": CANDY_NAMES[lv - 1].to_upper(), "col": "#ffffff", "t": 0.0, "big": true})
+			floats.append({"p": p - Vector2(0, 30), "txt": obj_name(lv).to_upper(), "col": "#ffffff", "t": 0.0, "big": true})
 
 func pad_at(s: float) -> int:
 	for i in range(pads.size()):
@@ -751,7 +811,7 @@ func earn(b: Dictionary, pi: int, at: Vector2) -> void:
 	if now - last_pop > 0.028:
 		last_pop = now
 		var idx: int = (b.lv - 1) * 2 + pi % 3 + int(mini(combo, 24) / 4)
-		play("pop%d" % (1 + rng.randi() % 3), semis(idx) * 0.8, -10.0)
+		snd_bounce(idx)
 
 # ================================================================ balancing (--sim)
 func run_sim() -> void:
@@ -874,6 +934,14 @@ func _draw() -> void:
 	draw_bg()
 	if state == "map":
 		draw_map()
+		return
+	if state == "skins":
+		draw_skins()
+		return
+	if state == "settings":
+		if set_from == "map":
+			draw_map()
+		draw_settings()
 		return
 	var off = Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * shake
 	draw_set_transform(off)
@@ -1010,7 +1078,14 @@ func draw_pads() -> void:
 func candy_col(lv: int) -> String:
 	return ["#8fd8ff", "#ff4d6d", "#ffb3d6", "#ff7ab8", "#d99a5b", "#ff8fc6", "#ffcf6b", "#9b7bff", "#7a4a2a", "#ffd36b"][clampi(lv - 1, 0, 9)]
 
-func draw_candy(lv: int, p: Vector2, r: float, sq = 0.0, rot = 0.0, gold = false) -> void:
+func draw_candy(lv: int, p: Vector2, r: float, sq = 0.0, rot = 0.0, gold = false, skin = "") -> void:
+	var sk = equip if skin == "" else skin
+	if sk == "candy":
+		draw_candy_base(lv, p, r, sq, rot, gold)
+	else:
+		draw_obj(sk, lv, p, r, sq, rot, gold)
+
+func draw_candy_base(lv: int, p: Vector2, r: float, sq = 0.0, rot = 0.0, gold = false) -> void:
 	draw_circle(p + Vector2(0, r * 0.25), r + 3, Color(0.2, 0.05, 0.25, 0.25))
 	draw_set_transform(p, rot, Vector2(1.0 + sq * 0.16, 1.0 - sq * 0.16))
 	var ink = INK()
@@ -1229,10 +1304,13 @@ func draw_hud() -> void:
 		elif k == 1:
 			on = lt <= L.stars[1]
 		draw_star(Vector2(130 + k * 34, 158), 13.0, C("#ffd36b") if on else C("#d6c8f0"))
-	# map button
-	rrect(MAPBTN.grow(4), INK(), 22)
-	rrect(MAPBTN, C("#ffffff"), 20)
-	var mc = MAPBTN.get_center()
+	# map + skins buttons (Cozy UI round button)
+	img("round", MAPBTN.grow(6))
+	img("round", SKINBTN.grow(6))
+	img("round", SETBTN.grow(6))
+	draw_gear(SETBTN.get_center() + Vector2(0, -4), 22.0)
+	draw_candy(lv_icon(), SKINBTN.get_center() + Vector2(0, -4), 20.0)
+	var mc = MAPBTN.get_center() + Vector2(0, -4)
 	var path = PackedVector2Array([mc + Vector2(-22, 18), mc + Vector2(-8, 4), mc + Vector2(6, 12), mc + Vector2(20, -16)])
 	draw_polyline(path, C("#ff5fa2"), 6.0, true)
 	for q in [mc + Vector2(-22, 18), mc + Vector2(6, 12), mc + Vector2(20, -16)]:
@@ -1368,16 +1446,14 @@ func draw_banner() -> void:
 
 # ---------------------------------------------------------------- overlays
 func panel(r: Rect2, col = "#fff0f6") -> void:
-	rrect(Rect2(r.position + Vector2(0, 10), r.size), C(INKH, 1.0, 0.35), 34)
-	rrect(r.grow(6), INK(), 36)
-	rrect(r, C(col), 30)
+	nine("card", r.grow(12), 46, 70, 46, 46)
 
 func big_button(r: Rect2, label: String, col: String) -> void:
-	rrect(Rect2(r.position + Vector2(0, 8), r.size), C(INKH, 1.0, 0.35), 30)
-	rrect(r.grow(5), INK(), 32)
-	rrect(r, C(col), 28)
-	rrect(Rect2(r.position + Vector2(10, 6), Vector2(r.size.x - 20, r.size.y * 0.3)), C("#ffffff", 1.0, 0.3), 12)
-	text_c(r.get_center() + Vector2(0, 2), label, 40, Color(1, 1, 1), 9)
+	if col == "#b3a7c4":
+		nine("pill", r.grow(6), 70, 60, 70, 70)
+	else:
+		nine("pill_w", r.grow(6), 70, 60, 70, 70)
+	text_c(r.get_center() + Vector2(0, -2), label, 40, Color(1, 1, 1), 9)
 
 func draw_end() -> void:
 	var a = minf(1.0, screen_t / 0.25)
@@ -1431,10 +1507,10 @@ func draw_newcandy() -> void:
 	for i in range(12):
 		var an = t * 0.6 + i * TAU / 12.0
 		draw_line(Vector2(360, 600), Vector2(360, 600) + Vector2(cos(an), sin(an)) * 420.0 * sc, C("#ffffff", 1.0, 0.12), 34.0)
-	text_c(Vector2(360, 380), "NEW CANDY!", int(70 * (0.5 + 0.5 * sc)), C("#ffd36b"), 12)
+	text_c(Vector2(360, 380), "NEW!", int(70 * (0.5 + 0.5 * sc)), C("#ffd36b"), 12)
 	var lv: int = popup.lv
 	draw_candy(lv, Vector2(360, 610), 110.0 * (0.3 + 0.7 * sc) * (1.0 + 0.05 * sin(t * 4.0)))
-	text_c(Vector2(360, 820), CANDY_NAMES[lv - 1], 56, Color(1, 1, 1), 10)
+	text_c(Vector2(360, 820), obj_name(lv), 56, Color(1, 1, 1), 10)
 	text_c(Vector2(360, 885), "x%s per bounce" % fmt(pow(3.0, lv - 1)), 34, C("#7df0c8"), 7)
 	if k > 0.6:
 		text_c(Vector2(360, 1000), "Tap to continue", 28, C("#ffffff", 1.0, 0.6 + 0.4 * sin(t * 4.0)), 6)
@@ -1448,10 +1524,8 @@ func draw_drop() -> void:
 		var an = t * 0.8 + i * TAU / 14.0
 		draw_line(Vector2(360, 600), Vector2(360, 600) + Vector2(cos(an), sin(an)) * 480.0 * sc, C(sk.col, 1.2, 0.18), 30.0)
 	text_c(Vector2(360, 360), "BOSS DEFEATED!", int(62 * (0.5 + 0.5 * sc)), C("#ffd36b"), 12)
-	draw_circle(Vector2(360, 600), 130 * sc + 6, INK())
-	draw_circle(Vector2(360, 600), 130 * sc, C(sk.col))
-	draw_circle(Vector2(320, 555), 36 * sc, Color(1, 1, 1, 0.6))
-	text_c(Vector2(360, 600), "?", int(120 * sc), Color(1, 1, 1), 10)
+	for j in range(5):
+		draw_candy(1 + j * 2, Vector2(360 + (j - 2) * 120, 640 + absf(j - 2) * 30), (38.0 + (2 - absf(j - 2)) * 14.0) * sc, 0.0, 0.0, false, sk.id)
 	text_c(Vector2(360, 800), "NEW SKIN: " + sk.name, 50, Color(1, 1, 1), 10)
 	text_c(Vector2(360, 860), "New candies + new sounds!", 30, C("#7df0c8"), 6)
 	if k > 0.6:
@@ -1528,4 +1602,458 @@ func draw_map() -> void:
 	draw_circle(Vector2(560, 240), 15, INK())
 	draw_circle(Vector2(560, 240), 12, C("#ffd36b"))
 	text_l(Vector2(584, 240), str(coins), 26, Color(1, 1, 1), 6)
-	big_button(Rect2(180, 1170, 360, 86), "PLAY  LEVEL %d" % (cur + 1), "#3fcf9f")
+	big_button(Rect2(160, 1170, 360, 86), "PLAY  LEVEL %d" % (cur + 1), "#3fcf9f")
+	img("round", Rect2(600, 1180, 90, 90))
+	img("round", Rect2(30, 1180, 90, 90))
+	draw_gear(Vector2(75, 1220), 24.0)
+	draw_candy(lv_icon(), Vector2(645, 1220), 24.0)
+
+
+# ================================================================ UI pack (Cozy UI by dobo_ui, recolored) + skins
+func img_tex(name: String):
+	if tex.has(name):
+		return tex[name]
+	var im = Image.load_from_file(ProjectSettings.globalize_path("res://ui/%s.png" % name))
+	var tt = ImageTexture.create_from_image(im) if im != null else null
+	tex[name] = tt
+	return tt
+
+func img(name: String, r: Rect2, mod = Color(1, 1, 1)) -> void:
+	var tt = img_tex(name)
+	if tt != null:
+		draw_texture_rect(tt, r, false, mod)
+
+func nine(name: String, r: Rect2, ml: int, mt: int, mr: int, mb: int) -> void:
+	var tt = img_tex(name)
+	if tt == null:
+		rrect(r, C("#fff0f6"), 30, 6, INK())
+		return
+	var sbt = StyleBoxTexture.new()
+	sbt.texture = tt
+	sbt.texture_margin_left = ml
+	sbt.texture_margin_top = mt
+	sbt.texture_margin_right = mr
+	sbt.texture_margin_bottom = mb
+	draw_style_box(sbt, r)
+
+func skin_by_id(id: String) -> Dictionary:
+	for sk in SKINS:
+		if sk.id == id:
+			return sk
+	return SKINS[0]
+
+func obj_name(lv: int) -> String:
+	return skin_by_id(equip).objs[clampi(lv - 1, 0, 9)]
+
+func lv_icon() -> int:
+	return 2
+
+func obj_col(lv: int) -> String:
+	match equip:
+		"fruits":
+			return ["#4a6cf0", "#e0283c", "#ff4d6d", "#ffe14d", "#ff9a2e", "#ff4d4d", "#ffb08a", "#ffd23a", "#9be15d", "#3fcf5f"][clampi(lv - 1, 0, 9)]
+		"space":
+			return ["#cfe8ff", "#a49a90", "#e6e6f0", "#e0603a", "#3a8ff0", "#4a6cf0", "#e8c890", "#e0a060", "#ffd23a", "#9b4dff"][clampi(lv - 1, 0, 9)]
+		"gems":
+			return ["#e8f4ff", "#b06cff", "#ffc83d", "#2fd47a", "#3a7bff", "#ff3a5a", "#9ff0ff", "#ff9fd0", "#3a3a52", "#ffffff"][clampi(lv - 1, 0, 9)]
+		"retro":
+			return ["#4a6cf0", "#7a3aa0", "#e0283c", "#ff9a2e", "#e0283c", "#ffb08a", "#ffb21e", "#ffd23a", "#ffe14d", "#ffd36b"][clampi(lv - 1, 0, 9)]
+		"music":
+			return ["#ff5fa2", "#9b7bff", "#ff9a2e", "#3fcf9f", "#ffd23a", "#e0603a", "#ffb21e", "#ffffff", "#ffe6a0", "#ffd36b"][clampi(lv - 1, 0, 9)]
+	return candy_col(lv)
+
+# ---------------------------------------------------------------- per-skin sounds
+func snd_bounce(idx: int) -> void:
+	match equip:
+		"fruits":
+			play("fruit_pop%d" % (1 + rng.randi() % 3), semis(idx) * 0.7, -8.0)
+		"space":
+			play("space_pop%d" % (1 + rng.randi() % 3), semis(idx) * 0.6, -14.0)
+		"gems":
+			play("gem_pop%d" % (1 + rng.randi() % 3), semis(idx) * 0.5, -12.0)
+		"retro":
+			play("retro_pop", semis(idx) * 0.6, -16.0)
+		"music":
+			# every bounce plays the next note of an original little tune
+			play("marimba", pow(2.0, MELODY[mel_i % MELODY.size()] / 12.0), -8.0)
+			mel_i += 1
+		_:
+			play("pop%d" % (1 + rng.randi() % 3), semis(idx) * 0.8, -10.0)
+
+func snd_merge(lv: int) -> void:
+	match equip:
+		"fruits":
+			play("fruit_merge", semis(lv) * 0.8, -4.0)
+		"space":
+			play("space_merge", semis(lv) * 0.7, -6.0)
+		"gems":
+			play("gem_merge", semis(lv) * 0.6, -5.0)
+		"music":
+			play("chord", semis(lv) * 0.8, -4.0)
+		"retro":
+			play("retro_merge", semis(lv) * 0.7, -10.0)
+		_:
+			play("match%d" % clampi(lv - 1, 1, 9), 1.0, -3.0)
+
+func snd_spawn() -> void:
+	match equip:
+		"space":
+			play("space_spawn", 1.0 + rng.randf() * 0.15, -12.0)
+		"gems":
+			play("gem_pop1", 1.4, -14.0)
+		"retro":
+			play("retro_spawn", 1.0, -16.0)
+		_:
+			play("spawn", 1.0 + rng.randf() * 0.15, -10.0)
+
+# ---------------------------------------------------------------- objects of the other skins (procedural, our own drawings)
+func draw_obj(sk: String, lv: int, p: Vector2, r: float, sq: float, rot: float, gold: bool) -> void:
+	var keep = equip
+	equip = sk
+	var col = obj_col(lv)
+	equip = keep
+	var ink = INK()
+	draw_circle(p + Vector2(0, r * 0.25), r + 3, Color(0.2, 0.05, 0.25, 0.25))
+	draw_set_transform(p, rot if sk != "music" else 0.0, Vector2(1.0 + sq * 0.16, 1.0 - sq * 0.16))
+	match sk:
+		"fruits":
+			fruit(lv, r, C(col))
+		"space":
+			planet(lv, r, C(col))
+		"gems":
+			gem(lv, r, C(col))
+		"music":
+			music(lv, r, C(col))
+		"retro":
+			var tt = img_tex_path("res://pixel/%d.png" % lv)
+			if tt != null:
+				draw_texture_rect(tt, Rect2(-r * 1.25, -r * 1.25, r * 2.5, r * 2.5), false)
+	if gold:
+		draw_arc(Vector2.ZERO, r + 6, 0, TAU, 32, C("#ffd36b", 2.2, 0.9), 4.0, true)
+	draw_set_transform(Vector2.ZERO)
+
+func gloss(r: float) -> void:
+	ell(Vector2(-r * 0.35, -r * 0.38), r * 0.3, r * 0.16, Color(1, 1, 1, 0.75))
+
+func fruit(lv: int, r: float, col: Color) -> void:
+	var ink = INK()
+	var leaf = C("#3fcf5f")
+	match lv:
+		3: # strawberry
+			var pts = PackedVector2Array()
+			for k in range(28):
+				var an = k * TAU / 28.0
+				var rr2 = r * (1.0 - 0.25 * maxf(0.0, sin(an)))
+				pts.append(Vector2(cos(an) * rr2 * (1.0 - 0.3 * maxf(0.0, sin(an))), sin(an) * r))
+			var o = PackedVector2Array()
+			for q in pts:
+				o.append(q * 1.0 + q.normalized() * 3.0)
+			draw_colored_polygon(o, ink)
+			draw_colored_polygon(pts, col)
+			for q in [Vector2(-0.4, -0.2), Vector2(0.3, -0.3), Vector2(0, 0.1), Vector2(-0.2, 0.45), Vector2(0.35, 0.25)]:
+				ell(q * r, r * 0.06, r * 0.1, C("#fff3a0"))
+			for k in range(-1, 2):
+				draw_colored_polygon(PackedVector2Array([Vector2(k * r * 0.3, -r * 0.8), Vector2(k * r * 0.3 - r * 0.2, -r * 1.15), Vector2(k * r * 0.3 + r * 0.2, -r * 1.15)]), leaf)
+		4: # lemon
+			ell(Vector2.ZERO, r * 1.1 + 3, r * 0.82 + 3, ink)
+			ell(Vector2.ZERO, r * 1.1, r * 0.82, col)
+			draw_circle(Vector2(r * 1.05, 0), r * 0.18, col)
+			draw_circle(Vector2(-r * 1.05, 0), r * 0.18, col)
+			gloss(r)
+		8: # pineapple
+			for k in range(-1, 2):
+				draw_colored_polygon(PackedVector2Array([Vector2(k * r * 0.25, -r * 0.7), Vector2(k * r * 0.45, -r * 1.45), Vector2(k * r * 0.25 + r * 0.18, -r * 0.7)]), leaf)
+			ell(Vector2(0, r * 0.1), r * 0.82 + 3, r * 1.0 + 3, ink)
+			ell(Vector2(0, r * 0.1), r * 0.82, r * 1.0, col)
+			for k in range(-2, 3):
+				draw_line(Vector2(k * r * 0.3 - r * 0.4, -r * 0.7), Vector2(k * r * 0.3 + r * 0.4, r * 0.9), C("#c8901a"), 2.0)
+				draw_line(Vector2(k * r * 0.3 + r * 0.4, -r * 0.7), Vector2(k * r * 0.3 - r * 0.4, r * 0.9), C("#c8901a"), 2.0)
+		10: # watermelon slice-ball
+			draw_circle(Vector2.ZERO, r + 3, ink)
+			draw_circle(Vector2.ZERO, r, C("#2fa84a"))
+			for k in range(6):
+				var an = k * TAU / 6.0
+				draw_arc(Vector2.ZERO, r * 0.8, an - 0.15, an + 0.15, 6, C("#1a6e2e"), r * 0.4, true)
+			gloss(r)
+		_:
+			draw_circle(Vector2.ZERO, r + 3, ink)
+			draw_circle(Vector2.ZERO, r, col)
+			draw_circle(Vector2(r * 0.12, r * 0.15), r * 0.82, col.darkened(0.12))
+			if lv == 5:
+				for k in range(9):
+					var an = k * 0.7
+					draw_circle(Vector2(cos(an), sin(an)) * r * 0.55, r * 0.05, col.darkened(0.25))
+			if lv == 7:
+				draw_arc(Vector2(r * 0.2, 0), r * 0.75, PI * 0.6, PI * 1.4, 10, col.darkened(0.3), 3.0, true)
+			if lv == 9:
+				for k in range(5):
+					draw_arc(Vector2.ZERO, r * 0.9, k * 1.26, k * 1.26 + 0.2, 4, C("#5fa83a"), 3.0, true)
+			gloss(r)
+			if lv in [2, 6, 7]:
+				draw_line(Vector2(0, -r * 0.9), Vector2(r * 0.25, -r * 1.4), C("#6b3a1a"), 4.0, true)
+				ell(Vector2(r * 0.45, -r * 1.25), r * 0.28, r * 0.13, leaf)
+			if lv == 1:
+				for k in range(5):
+					var an = -PI / 2 + k * TAU / 5.0
+					draw_line(Vector2(0, -r * 0.55), Vector2(0, -r * 0.55) + Vector2(cos(an), sin(an)) * r * 0.22, C("#2a3a8a"), 2.5, true)
+
+func planet(lv: int, r: float, col: Color) -> void:
+	var ink = INK()
+	if lv == 9:
+		for k in range(12):
+			var an = k * TAU / 12.0 + t * 0.4
+			draw_colored_polygon(PackedVector2Array([Vector2(cos(an - 0.12), sin(an - 0.12)) * r * 0.9, Vector2(cos(an), sin(an)) * r * 1.35, Vector2(cos(an + 0.12), sin(an + 0.12)) * r * 0.9]), C("#ff9a2e", 1.4))
+	if lv == 10:
+		draw_arc(Vector2.ZERO, r * 1.1, 0, TAU, 40, C("#c06bff", 1.8, 0.8), r * 0.35, true)
+	if lv == 7:
+		draw_arc(Vector2.ZERO, r * 1.45, PI, TAU, 24, ink, 7.0, true)
+	draw_circle(Vector2.ZERO, r + 3, ink)
+	draw_circle(Vector2.ZERO, r, C("#0b0614") if lv == 10 else col)
+	match lv:
+		1:
+			for k in range(6):
+				var an = k * TAU / 6.0 + t
+				draw_circle(Vector2(cos(an), sin(an)) * r * 0.5, r * 0.12, Color(1.5, 1.5, 1.8, 0.9))
+		2, 3:
+			for q in [Vector2(-0.3, -0.2), Vector2(0.35, 0.1), Vector2(-0.1, 0.45)]:
+				draw_circle(q * r, r * 0.2, col.darkened(0.2))
+		4:
+			for q in [Vector2(-0.3, -0.25), Vector2(0.3, 0.3)]:
+				ell(q * r, r * 0.3, r * 0.15, col.darkened(0.25))
+		5:
+			for q in [Vector2(-0.35, -0.2), Vector2(0.3, 0.25), Vector2(0.25, -0.45)]:
+				ell(q * r, r * 0.32, r * 0.22, C("#3fcf5f"))
+		6, 8:
+			for k in range(-2, 3):
+				draw_line(Vector2(-r * 0.95 + absf(k) * r * 0.15, k * r * 0.33), Vector2(r * 0.95 - absf(k) * r * 0.15, k * r * 0.33), col.darkened(0.2) if k % 2 == 0 else col.lightened(0.2), r * 0.16)
+			if lv == 8:
+				ell(Vector2(r * 0.35, r * 0.3), r * 0.25, r * 0.14, C("#c0402a"))
+		9:
+			draw_circle(Vector2.ZERO, r * 0.8, C("#ffe14d", 1.5))
+	if lv == 7:
+		draw_arc(Vector2.ZERO, r * 1.45, 0, PI, 24, ink, 7.0, true)
+		draw_arc(Vector2.ZERO, r * 1.45, 0, PI, 24, C("#f0dca0"), 4.0, true)
+	if lv != 10:
+		gloss(r)
+
+func gem(lv: int, r: float, col: Color) -> void:
+	var ink = INK()
+	var sides = [6, 8, 5, 8, 6, 10, 12, 4, 0, 8][clampi(lv - 1, 0, 9)]
+	if sides == 0:
+		draw_circle(Vector2.ZERO, r + 3, ink)
+		draw_circle(Vector2.ZERO, r, col)
+		gloss(r)
+		return
+	var pts = PackedVector2Array()
+	var o = PackedVector2Array()
+	for k in range(sides):
+		var an = -PI / 2 + k * TAU / sides
+		var sx = 1.0 if lv != 4 else 1.15
+		pts.append(Vector2(cos(an) * r * sx, sin(an) * r))
+		o.append(Vector2(cos(an) * (r * sx + 4), sin(an) * (r + 4)))
+	draw_colored_polygon(o, ink)
+	draw_colored_polygon(pts, col)
+	var inner = PackedVector2Array()
+	for q in pts:
+		inner.append(q * 0.55)
+	draw_colored_polygon(inner, col.lightened(0.25))
+	for k in range(sides):
+		draw_line(pts[k], inner[k], col.darkened(0.25), 2.0, true)
+	if lv == 7:
+		draw_colored_polygon(inner, Color(1.3, 0.8, 1.4, 0.5))
+	if lv == 10:
+		for k in range(4):
+			var an = t * 2.0 + k * PI / 2
+			draw_line(Vector2.ZERO, Vector2(cos(an), sin(an)) * r * 1.4, Color(1.8, 1.8, 1.8, 0.6), 3.0, true)
+	ell(Vector2(-r * 0.25, -r * 0.35), r * 0.22, r * 0.1, Color(1, 1, 1, 0.85))
+
+func music(lv: int, r: float, col: Color) -> void:
+	var ink = INK()
+	draw_circle(Vector2.ZERO, r + 3, ink)
+	draw_circle(Vector2.ZERO, r, col if lv < 10 else C("#ffd36b", 1.3))
+	if lv == 10 or lv == 8:
+		for k in range(3):
+			draw_arc(Vector2.ZERO, r * (0.45 + k * 0.17), 0, TAU, 28, col.darkened(0.2), 1.5, true)
+		draw_circle(Vector2.ZERO, r * 0.22, ink)
+	var w = Color(1, 1, 1) if lv not in [8, 9, 10] else ink
+	# note glyph(s)
+	var notes = 1 if lv in [1, 3, 5] else 2
+	for k in range(notes):
+		var x = -r * 0.25 + k * r * 0.45 - (r * 0.1 if notes == 1 else r * 0.2)
+		ell(Vector2(x, r * 0.3), r * 0.2, r * 0.15, w)
+		draw_line(Vector2(x + r * 0.17, r * 0.3), Vector2(x + r * 0.17, -r * 0.45), w, 3.0)
+	if notes == 2:
+		draw_line(Vector2(-r * 0.28, -r * 0.45), Vector2(r * 0.17 + r * 0.25 - r * 0.2, -r * 0.45), w, 5.0)
+	else:
+		draw_line(Vector2(r * 0.07, -r * 0.45), Vector2(r * 0.35, -r * 0.2), w, 3.0)
+	gloss(r)
+
+# ---------------------------------------------------------------- skins tab
+func open_skins(from: String) -> void:
+	skins_from = from
+	state = "skins"
+	screen_t = 0.0
+	for i in range(SKINS.size()):
+		if SKINS[i].id == equip:
+			sel_skin = i
+	play("swipe", 1.1, -6.0)
+
+func skin_card_rect(i: int) -> Rect2:
+	var col = i % 3
+	var row = i / 3
+	return Rect2(42 + col * 218, 170 + row * 254, 200, 236)
+
+func skins_input(pos: Vector2) -> void:
+	if Rect2(620, 40, 80, 80).has_point(pos):
+		state = skins_from
+		play("swipe", 0.9, -6.0)
+		return
+	for i in range(SKINS.size()):
+		if skin_card_rect(i).has_point(pos):
+			sel_skin = i
+			play("pop2", 1.2, -8.0)
+			return
+	var sk = SKINS[sel_skin]
+	if Rect2(190, 1150, 340, 90).has_point(pos):
+		if skins.has(sk.id):
+			equip = sk.id
+			play("match3", 1.0, -6.0)
+			save_game()
+		elif sk.how == "shop" and coins >= sk.price:
+			coins -= sk.price
+			skins[sk.id] = true
+			equip = sk.id
+			play("cash", 1.0, -4.0)
+			save_game()
+
+func draw_skins() -> void:
+	draw_rect(Rect2(0, 0, 720, 1280), C(INKH, 1.0, 0.35))
+	text_c(Vector2(360, 82), "SKINS", 64, Color(1, 1, 1), 12)
+	img("close", Rect2(620, 40, 80, 80))
+	draw_circle(Vector2(70, 82), 18, INK())
+	draw_circle(Vector2(70, 82), 15, C("#ffd36b"))
+	text_l(Vector2(96, 82), str(coins), 30, Color(1, 1, 1), 7)
+	for i in range(SKINS.size()):
+		var sk = SKINS[i]
+		var r = skin_card_rect(i)
+		var owned = skins.has(sk.id)
+		nine("card" if i == sel_skin else "card_w", r, 46, 64, 46, 46)
+		text_c(Vector2(r.get_center().x, r.position.y + 30), sk.name, 28, Color(1, 1, 1), 7)
+		draw_candy(10 if owned else 1, r.get_center() + Vector2(0, 8), 46.0 if owned else 40.0, 0.0, 0.0, false, sk.id)
+		var st = ""
+		var scol = C("#9b7bff")
+		if sk.id == equip:
+			st = "EQUIPPED"; scol = C("#3fcf9f")
+		elif owned:
+			st = "OWNED"
+		elif sk.how == "boss":
+			st = "BOSS LV %d" % sk.boss; scol = C("#ff4d6d")
+		else:
+			st = "%d coins" % sk.price; scol = C("#e0a020")
+		text_c(Vector2(r.get_center().x, r.end.y - 34), st, 24, scol, 0)
+	# selected skin: the whole merge chain, unknown items as silhouettes
+	var sk2 = SKINS[sel_skin]
+	nine("panel_b", Rect2(36, 700, 648, 420), 50, 50, 50, 50)
+	text_c(Vector2(360, 742), sk2.name + "  ·  merge chain", 30, INK(), 0)
+	for lv in range(1, 11):
+		var col = (lv - 1) % 5
+		var row = (lv - 1) / 5
+		var sr = Rect2(66 + col * 120, 790 + row * 150, 108, 116)
+		img("slot_sel" if lv == 10 else "slot", sr)
+		var known = seen.has("%s:%d" % [sk2.id, lv]) or (sk2.id == "candy" and lv == 1) or lv == 1
+		var c = sr.get_center() + Vector2(0, -8)
+		if known:
+			draw_candy(lv, c, 30.0, 0.0, 0.0, false, sk2.id)
+		else:
+			draw_circle(c, 30, C("#d8cce6"))
+			text_c(c + Vector2(0, 2), "?", 40, C("#ffffff"), 6)
+		text_c(Vector2(c.x, sr.end.y - 16), str(lv), 20, INK(), 0)
+	var owned2 = skins.has(sk2.id)
+	if sk2.id == equip:
+		big_button(Rect2(190, 1150, 340, 90), "EQUIPPED", "#3fcf9f")
+	elif owned2:
+		big_button(Rect2(190, 1150, 340, 90), "EQUIP", "#3fcf9f")
+	elif sk2.how == "shop":
+		big_button(Rect2(190, 1150, 340, 90), "BUY  %d" % sk2.price, "#ff5fa2" if coins >= sk2.price else "#b3a7c4")
+	else:
+		big_button(Rect2(190, 1150, 340, 90), "BEAT BOSS LV %d" % sk2.boss, "#ff5fa2")
+
+
+func img_tex_path(path: String):
+	if tex.has(path):
+		return tex[path]
+	var im = Image.load_from_file(ProjectSettings.globalize_path(path))
+	var tt = ImageTexture.create_from_image(im) if im != null else null
+	tex[path] = tt
+	return tt
+
+# ---------------------------------------------------------------- music + settings
+func update_music() -> void:
+	if autoplay or demo or show_map_only:
+		return
+	var want = "game2" if li % 2 == 1 else "game"
+	if state in ["map"] or (state == "settings" and set_from == "map"):
+		want = "map"
+	elif state == "skins":
+		want = "shop"
+	elif boss != null and state == "play":
+		want = "boss"
+	if music_player == null:
+		music_player = AudioStreamPlayer.new()
+		add_child(music_player)
+	if want != cur_track:
+		cur_track = want
+		var st = AudioStreamOggVorbis.load_from_file(ProjectSettings.globalize_path("res://music/%s.ogg" % want))
+		if st != null:
+			st.loop = true
+			music_player.stream = st
+			music_player.volume_db = -10.0
+			music_player.play()
+	music_player.stream_paused = not mus_on
+
+func draw_gear(c: Vector2, r: float) -> void:
+	var pts = PackedVector2Array()
+	for k in range(32):
+		var an = k * TAU / 32.0
+		var rr2 = r if (k / 2) % 2 == 0 else r * 0.74
+		pts.append(c + Vector2(cos(an), sin(an)) * rr2)
+	var o = PackedVector2Array()
+	for q in pts:
+		o.append(c + (q - c) * 1.0 + (q - c).normalized() * 4.0)
+	draw_colored_polygon(o, INK())
+	draw_colored_polygon(pts, C("#9b7bff"))
+	draw_circle(c, r * 0.36 + 3, INK())
+	draw_circle(c, r * 0.36, C("#fff0f6"))
+
+func set_rows() -> Array:
+	return [["MUSIC", mus_on], ["SOUNDS", sfx_on], ["VIBRATION", vib_on]]
+
+func settings_input(pos: Vector2) -> void:
+	if Rect2(560, 330, 80, 80).has_point(pos):
+		state = set_from
+		save_game()
+		return
+	for i in range(3):
+		if Rect2(110, 470 + i * 130, 500, 110).has_point(pos):
+			if i == 0:
+				mus_on = not mus_on
+			elif i == 1:
+				sfx_on = not sfx_on
+			else:
+				vib_on = not vib_on
+				buzz(40)
+			play("pop2", 1.3, -6.0)
+			save_game()
+
+func draw_settings() -> void:
+	draw_rect(Rect2(0, 0, 720, 1280), C(INKH, 1.0, 0.55))
+	nine("card", Rect2(70, 330, 580, 560), 46, 70, 46, 46)
+	text_c(Vector2(360, 372), "SETTINGS", 44, Color(1, 1, 1), 9)
+	img("close", Rect2(560, 330, 80, 80))
+	var rows = set_rows()
+	for i in range(3):
+		var y = 470 + i * 130
+		nine("bar_white", Rect2(110, y, 500, 104), 40, 40, 40, 40)
+		text_l(Vector2(150, y + 50), rows[i][0], 40, C("#ff5fa2"), 0)
+		img("check" if rows[i][1] else "uncheck", Rect2(500, y + 6, 88, 92))
+	text_c(Vector2(360, 860), "Bounce Forge  v0.1", 22, C("#9b7bff"), 0)

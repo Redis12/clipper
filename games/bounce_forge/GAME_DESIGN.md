@@ -56,3 +56,16 @@ Pack « Triple Treat: Sound Effects for Match-3 Games » (Reghan Cutler, itch.io
 - `godot --path . -- --autoplay` : un bot joue (vidéos d'aperçu avec `--write-movie`).
 - `-- --sim` : simule les niveaux sans rendu pour l'équilibrage.
 - `-- --level=N`, `--map`, `--demo` : captures.
+
+## Assets externes (licences à vérifier avant publication)
+| Asset | Source | Utilisé pour | Licence |
+|---|---|---|---|
+| Triple Treat SFX | Reghan Cutler (itch.io) | sons du skin Bonbons | non indiquée → demander |
+| Cozy UI Pack DEMO | dobo_ui (itch.io), recoloré en violet/rose | panneaux, cartes, boutons ronds, cases, X | DEMO → vérifier, sinon acheter la version complète |
+| MF Items v2 (16 px) | fourni par l'utilisateur | skin RETRO (10 fruits pixel) | à vérifier |
+| « poopie pack » (8 musiques) | fourni par l'utilisateur | musiques : jeu (town / blossom), boss, boutique (shop), carte (start) | à vérifier |
+| Kenney Sci-Fi Sounds | Kenney, CC0 | sons du skin SPACE | CC0 |
+Sons des skins Fruits / Gemmes / Musique / Retro : synthétisés par nous.
+
+## Skins (v0.1)
+Bonbons (base), Fruits (boss niv 5), Espace (boss niv 10), Gemmes (500 pièces), Retro (800), Musique (1 200 : chaque rebond joue la note suivante d'une petite mélodie). Onglet Skins = grille + chaîne de fusion du skin choisi (objets jamais atteints = « ? »). Réglages : musique / sons / vibration.
