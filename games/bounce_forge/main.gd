@@ -26,6 +26,8 @@ const INKH = "#4a1f52"
 const CANDY_NAMES = ["Dragee", "Hard Candy", "Marshmallow", "Bubble Gum", "Cookie", "Donut", "Cupcake", "Lollipop", "Cake", "Golden Candy"]
 const SHAPE_COLS = [["#ff5fa2", "#7df0c8"], ["#9b7bff", "#ffd36b"], ["#ff9a5a", "#8fd8ff"], ["#3fcf9f", "#ff8fc6"], ["#ff4d6d", "#fff1a8"], ["#2fb8a0", "#ffd36b"]]
 const BUCKET_Y = 925.0
+const BOSS_NAMES = {"gummy": "GRUMPY GUMMY", "cupcake": "KING CUPCAKE", "choco": "CHOCO BRICK", "lolli": "LOLLIPOP LORD"}
+const BOSS_SIZE = {"gummy": Vector2(156, 108), "cupcake": Vector2(140, 150), "choco": Vector2(180, 112), "lolli": Vector2(140, 140)}
 const BUCKET_MULTS = [8.0, 3.0, 1.5, 1.0, 1.5, 3.0, 8.0]
 
 # World 1 levels. m = economy multiplier, target = $ to earn, stars = [3-star time, 2-star time] in seconds.
@@ -35,22 +37,22 @@ var LEVELS = [
 	{"shape": 0, "m": 1.0, "balls": 2, "pads": [0], "target": 230.0, "stars": [45, 70], "tut": "merge"},
 	{"shape": 1, "m": 2.0, "balls": 2, "pads": [0], "target": 800.0, "stars": [58, 90], "tut": "pad"},
 	{"shape": 1, "m": 3.0, "balls": 3, "pads": [0, 1], "target": 8500.0, "stars": [58, 90], "tut": "candy", "gift": true},
-	{"shape": 2, "m": 4.0, "balls": 4, "pads": [0, 1], "boss": 450, "stars": [85, 130], "gift": false},
+	{"shape": 2, "m": 4.0, "balls": 4, "pads": [0, 1], "boss": 400, "bkind": "gummy", "stars": [85, 130], "gift": false},
 	{"shape": 2, "m": 6.0, "balls": 3, "pads": [0, 1], "target": 18000.0, "stars": [55, 85], "tut": "stars", "gift": true},
 	{"shape": 3, "m": 8.0, "balls": 3, "pads": [3, 4], "money": 200.0, "target": 64000.0, "stars": [85, 130], "gift": true},
 	{"shape": 3, "m": 10.0, "balls": 2, "pads": [0], "target": 130000.0, "stars": [105, 118], "limit": 125.0, "gift": true},
 	{"shape": 0, "m": 12.0, "balls": 5, "pads": [0, 1, 2], "target": 40000.0, "stars": [40, 65], "golden": 0.12, "gift": true},
-	{"shape": 4, "m": 15.0, "balls": 4, "pads": [0, 1, 2], "boss": 1800, "stars": [115, 170], "gift": false},
+	{"shape": 4, "m": 15.0, "balls": 4, "pads": [0, 1, 2], "boss": 1340, "bkind": "cupcake", "stars": [115, 170], "gift": false},
 	{"world": 2, "type": "plinko", "shape": 5, "m": 20.0, "balls": 3, "pads": [], "target": 160000.0, "stars": [60, 95], "tut": "aim"},
 	{"world": 2, "type": "plinko", "shape": 5, "m": 24.0, "balls": 3, "pads": [], "target": 137000.0, "stars": [55, 85], "mults": [10.0, 2.0, 1.0, 1.0, 1.0, 2.0, 10.0], "tut": "edges"},
 	{"world": 2, "type": "plinko", "shape": 5, "m": 28.0, "balls": 3, "pads": [], "target": 450000.0, "stars": [70, 105], "moving": [2, 4], "tut": "moving"},
 	{"world": 2, "type": "plinko", "shape": 5, "m": 32.0, "balls": 3, "pads": [], "target": 290000.0, "stars": [65, 100], "mults": [8.0, 0.0, 3.0, 1.0, 3.0, 0.0, 8.0], "tut": "sour"},
-	{"world": 2, "type": "plinko", "shape": 5, "m": 36.0, "balls": 4, "pads": [], "boss": 900, "stars": [85, 130]},
+	{"world": 2, "type": "plinko", "shape": 5, "m": 36.0, "balls": 4, "pads": [], "boss": 1900, "bkind": "choco", "stars": [85, 130]},
 	{"world": 2, "type": "plinko", "shape": 5, "m": 40.0, "balls": 3, "pads": [], "target": 700000.0, "stars": [60, 95], "bumpers": [Vector2(250, 600), Vector2(546, 600)], "tut": "bumper"},
 	{"world": 2, "type": "plinko", "shape": 5, "m": 45.0, "balls": 3, "pads": [], "target": 1100000.0, "stars": [75, 110], "jackpot": true, "mults": [2.0, 1.5, 1.0, 1.0, 1.0, 1.5, 2.0], "tut": "jackpot"},
 	{"world": 2, "type": "plinko", "shape": 5, "m": 50.0, "balls": 2, "pads": [], "target": 900000.0, "stars": [100, 115], "limit": 122.0, "mults": [8.0, 0.0, 2.0, 0.0, 2.0, 0.0, 8.0], "moving": [1, 3, 5]},
 	{"world": 2, "type": "plinko", "shape": 5, "m": 55.0, "balls": 5, "pads": [], "target": 700000.0, "stars": [40, 65], "golden": 0.12, "goldpegs": 6, "bumpers": [Vector2(398, 520)]},
-	{"world": 2, "type": "plinko", "shape": 5, "m": 60.0, "balls": 4, "pads": [], "boss": 1400, "stars": [100, 150], "moving": [5], "bumpers": [Vector2(230, 760), Vector2(566, 760)]},
+	{"world": 2, "type": "plinko", "shape": 5, "m": 60.0, "balls": 4, "pads": [], "boss": 1600, "bkind": "lolli", "stars": [100, 150], "moving": [5], "bumpers": [Vector2(230, 760), Vector2(566, 760)]},
 ]
 const BOSS_SKINS = {4: "fruits", 9: "space", 14: "gems", 19: "music"}
 
@@ -479,12 +481,12 @@ func start_level(i: int) -> void:
 	banner = {"t": 0.0, "txt": "LEVEL %d" % (i + 1), "col": "#ffffff", "big": false}
 	if is_boss():
 		var hp = int(L.boss)
-		boss = {"pos": Vector2(360, 600), "hp": hp, "max": hp, "w": 156.0, "h": 108.0, "wob": 0.0, "t": 0.0, "dead": 0.0}
+		var kind = L.get("bkind", "gummy")
+		var sz: Vector2 = BOSS_SIZE[kind]
+		boss = {"pos": Vector2(360, 600), "hp": hp, "max": hp, "w": sz.x, "h": sz.y, "wob": 0.0, "t": 0.0, "dead": 0.0, "kind": kind, "shield": false, "rot": 0.0, "tp": 0}
 		if is_plinko():
 			boss.pos = Vector2(398, 610)
-			boss.w = 150.0
-			boss.h = 96.0
-		banner = {"t": 0.0, "txt": "BOSS!", "col": "#ff4d6d", "big": true}
+		banner = {"t": 0.0, "txt": BOSS_NAMES[kind] + "!", "col": "#ff4d6d", "big": false}
 	for k in range(int(L.balls)):
 		spawn_ball(1, true)
 
@@ -691,8 +693,7 @@ func tick(dt: float) -> void:
 	if boss != null:
 		boss.t += sdt
 		if boss.hp > 0:
-			boss.pos.x = 360.0 + sin(boss.t * 0.6) * 120.0
-			boss.pos.y = 600.0 + sin(boss.t * 1.3) * 22.0
+			boss_ai(sdt)
 	if ending < 0:
 		var done = (boss != null and boss.hp <= 0) or (boss == null and earned >= target())
 		if done:
@@ -875,6 +876,12 @@ func hit_box(b: Dictionary, bx: Dictionary, w: float, h: float, is_b: bool) -> v
 	if b.cd > 0.0:
 		return
 	b.cd = 0.06
+	if is_b and bx.get("shield", false):
+		bx.wob = 0.5
+		play("pop2", 0.6, -12.0)
+		if not sim and rng.randf() < 0.3:
+			floats.append({"p": b.p + Vector2(0, -20), "txt": "BLOCK!", "col": "#8fd8ff", "t": 0.0, "big": false})
+		return
 	var dmg: int = b.lv * (10 if b.gold else 1)
 	bx.hp = maxi(0, bx.hp - dmg)
 	bx.wob = 1.0
@@ -1343,43 +1350,173 @@ func draw_bonbon(c: Vector2, s: float, wob: float, label: String) -> void:
 	text_c(c + Vector2(0, 3), label, int(32 * s), Color(1, 1, 1), 8)
 
 func draw_boss() -> void:
-	# Boss = a giant grumpy candy box (gummy jelly block)
 	var b: Dictionary = boss
-	var s = 1.0 + b.wob * 0.08
-	var w: float = b.w * s
-	var h: float = b.h * s
-	var c: Vector2 = b.pos
-	var r = Rect2(c - Vector2(w, h) / 2.0, Vector2(w, h))
-	rrect(Rect2(r.position + Vector2(0, 10), r.size), C(INKH, 1.0, 0.3), 30)
-	rrect(r.grow(6), INK(), 32)
-	rrect(r, C("#ff4d6d"), 28)
-	rrect(Rect2(r.position + Vector2(10, 8), Vector2(w - 20, h * 0.34)), C("#ff9aae", 1.0, 0.7), 18)
-	for k in range(5):
-		draw_circle(Vector2(r.position.x + 22 + k * (w - 44) / 4.0, r.end.y - 10), 7, C("#ffd36b"))
-	if b.wob > 0.0:
-		rrect(r, Color(1, 1, 1, b.wob * 0.6), 28)
 	var tgt = Vector2(360, 900)
 	var best = 1e9
 	for q in balls:
-		var d: float = q.p.distance_to(c)
+		if hidden_ball(q):
+			continue
+		var d: float = q.p.distance_to(b.pos)
 		if d < best:
 			best = d; tgt = q.p
-	for sgn in [-1, 1]:
-		var e = c + Vector2(sgn * 34, -8)
-		draw_circle(e, 21, INK())
-		draw_circle(e, 18, Color(1, 1, 1))
-		var dir: Vector2 = (tgt - e).normalized()
-		draw_circle(e + dir * 7.0, 9, INK())
-		draw_line(e + Vector2(-20, -28 + (7 if sgn < 0 else -7)), e + Vector2(20, -28 + (-7 if sgn < 0 else 7)), INK(), 7.0, true)
-	draw_arc(c + Vector2(0, 40), 18, PI * 1.15, PI * 1.85, 12, INK(), 6.0, true)
-	# hp bar
-	var hb = Rect2(c.x - 90, r.position.y - 46, 180, 26)
+	var s2 = 1.0 + b.wob * 0.08
+	draw_boss_body(b.kind, b.pos, s2, float(b.hp) / b.max, b.shield, b.rot, tgt, false, b.wob)
+	# hp bar + name
+	var top = b.pos.y - b.h / 2.0 - (40.0 if b.kind == "cupcake" else 20.0)
+	var hb = Rect2(b.pos.x - 90, top - 34, 180, 26)
 	rrect(hb.grow(4), INK(), 16)
 	rrect(hb, C("#ffffff", 1.0, 0.6), 13)
 	var k2 = float(b.hp) / b.max
 	if k2 > 0.0:
 		rrect(Rect2(hb.position, Vector2(hb.size.x * k2, hb.size.y)), C("#ff4d6d"), 13)
 	text_c(hb.get_center() + Vector2(0, 1), str(b.hp), 22, Color(1, 1, 1), 6)
+
+func boss_ai(dt: float) -> void:
+	var b = boss
+	var bx = 398.0 if is_plinko() else 360.0
+	var by = 610.0 if is_plinko() else 600.0
+	var amp = 0.75 if is_plinko() else 1.0
+	match b.kind:
+		"gummy": # fast and bouncy
+			b.pos.x = bx + sin(b.t * 0.9) * 120.0 * amp
+			b.pos.y = by + absf(sin(b.t * 2.2)) * -40.0 + 20.0
+		"cupcake": # slow, raises a whipped-cream shield 1.8 s out of every 6 s
+			b.pos.x = bx + sin(b.t * 0.5) * 110.0 * amp
+			b.pos.y = by
+			var ph = fmod(b.t, 6.0)
+			var was = b.shield
+			b.shield = ph > 4.2
+			if b.shield and not was:
+				play("pad", 0.7, -8.0)
+				if not sim:
+					floats.append({"p": b.pos + Vector2(0, -110), "txt": "SHIELD!", "col": "#8fd8ff", "t": 0.0, "big": true})
+		"choco": # heavy: barely moves
+			b.pos.x = bx + sin(b.t * 0.3) * 60.0
+			b.pos.y = by
+		"lolli": # spins, teleports every 7 s
+			b.rot += dt * 2.4
+			var slot = int(b.t / 7.0) % 3
+			if slot != b.tp:
+				b.tp = slot
+				burst(b.pos, C("#ffffff", 1.6), 26, 300.0, 5.0, 0.5)
+				play("swipe", 1.5, -8.0)
+				b.pos = Vector2(bx + [0.0, -110.0, 110.0][slot] * amp, by + [0.0, -40.0, 30.0][slot])
+				burst(b.pos, C("#9b7bff", 1.6), 26, 300.0, 5.0, 0.5)
+
+func boss_eyes(c: Vector2, sp: float, s: float, tgt: Vector2, locked: bool) -> void:
+	for sg in [-1, 1]:
+		var e = c + Vector2(sg * sp, 0) * s
+		draw_circle(e, 20 * s, INK())
+		draw_circle(e, 17 * s, Color(1, 1, 1))
+		var dir: Vector2 = (tgt - e).normalized()
+		draw_circle(e + dir * 6.0 * s, 8 * s, INK())
+		draw_line(e + Vector2(-19, -26 + (7 if sg < 0 else -7)) * s, e + Vector2(19, -26 + (-7 if sg < 0 else 7)) * s, INK(), 6.0 * s, true)
+
+func bcol(h: String, locked: bool) -> Color:
+	return gray(C(h)) if locked else C(h)
+
+func draw_boss_body(kind: String, c: Vector2, s: float, ratio: float, shield: bool, rot: float, tgt: Vector2, locked: bool, wob: float) -> void:
+	var ink = INK()
+	match kind:
+		"cupcake":
+			# wrapper
+			var top_y = c.y + 6 * s
+			var cup = PackedVector2Array([Vector2(c.x - 62 * s, top_y), Vector2(c.x + 62 * s, top_y), Vector2(c.x + 46 * s, top_y + 64 * s), Vector2(c.x - 46 * s, top_y + 64 * s)])
+			var cupo = PackedVector2Array([Vector2(c.x - 68 * s, top_y - 4 * s), Vector2(c.x + 68 * s, top_y - 4 * s), Vector2(c.x + 50 * s, top_y + 69 * s), Vector2(c.x - 50 * s, top_y + 69 * s)])
+			draw_colored_polygon(cupo, ink)
+			draw_colored_polygon(cup, bcol("#3fbfd9", locked))
+			for k in range(6):
+				var x = c.x - 50 * s + k * 20 * s
+				draw_line(Vector2(x, top_y + 4 * s), Vector2(c.x + (x - c.x) * 0.75, top_y + 60 * s), Color(1, 1, 1, 0.45), 4.0 * s)
+			# frosting tiers
+			for tier in [[0.0, 74.0, 34.0], [-30.0, 56.0, 28.0], [-56.0, 36.0, 22.0]]:
+				ell(c + Vector2(0, tier[0] - 6) * s, (tier[1] + 5) * s, (tier[2] + 5) * s, ink)
+				ell(c + Vector2(0, tier[0] - 6) * s, tier[1] * s, tier[2] * s, bcol("#ff9fd0", locked))
+				ell(c + Vector2(-tier[1] * 0.35, tier[0] - 14) * s, tier[1] * 0.3 * s, tier[2] * 0.25 * s, Color(1, 1, 1, 0.6))
+			# cherry + crown
+			draw_circle(c + Vector2(0, -84) * s, 13 * s, ink)
+			draw_circle(c + Vector2(0, -84) * s, 10 * s, bcol("#ff4d6d", locked))
+			boss_crown(c + Vector2(0, -104) * s, s * 0.8, locked)
+			boss_eyes(c + Vector2(0, -6) * s, 30.0, s * 0.85, tgt, locked)
+			draw_arc(c + Vector2(0, 42) * s, 14 * s, PI * 1.15, PI * 1.85, 10, ink, 5.0 * s, true)
+			if shield:
+				draw_circle(c, 112 * s, C("#8fd8ff", 1.3, 0.25))
+				draw_arc(c, 112 * s, 0, TAU, 48, C("#ffffff", 1.6, 0.8), 5.0, true)
+				draw_arc(c, 98 * s, -2.2, -1.4, 12, C("#ffffff", 1.6, 0.8), 6.0, true)
+		"choco":
+			var w = 180.0 * s
+			var h = 112.0 * s
+			var r = Rect2(c - Vector2(w, h) / 2.0, Vector2(w, h))
+			rrect(Rect2(r.position + Vector2(0, 10), r.size), C(INKH, 1.0, 0.3), int(20 * s))
+			rrect(r.grow(6 * s), ink, int(22 * s))
+			rrect(r, bcol("#6b3a1e", locked), int(18 * s))
+			for gx in range(3):
+				for gy in range(2):
+					var cell = Rect2(r.position + Vector2(10 + gx * 56, 10 + gy * 48) * s, Vector2(48, 40) * s)
+					rrect(cell, bcol("#8a4f2a", locked), int(8 * s))
+					rrect(Rect2(cell.position + Vector2(4, 3) * s, Vector2(40, 8) * s), bcol("#a8693e", locked), int(4 * s))
+			# silver foil on the bottom
+			rrect(Rect2(r.position + Vector2(-4, h * 0.72), Vector2(w + 8, h * 0.32)), bcol("#d9dbe6", locked), int(10 * s))
+			for k in range(6):
+				draw_line(r.position + Vector2(10 + k * 30, h * 0.75) * Vector2(s / s, 1) + Vector2(0, 0), r.position + Vector2(20 + k * 30, h) , Color(1, 1, 1, 0.6), 3.0)
+			# cracks as hp drops
+			if ratio < 0.67:
+				draw_polyline(PackedVector2Array([c + Vector2(-60, -50) * s, c + Vector2(-40, -20) * s, c + Vector2(-55, 5) * s, c + Vector2(-30, 25) * s]), ink, 4.0 * s, true)
+			if ratio < 0.34:
+				draw_polyline(PackedVector2Array([c + Vector2(70, -48) * s, c + Vector2(45, -18) * s, c + Vector2(62, 8) * s, c + Vector2(38, 30) * s]), ink, 4.0 * s, true)
+				draw_polyline(PackedVector2Array([c + Vector2(0, -56) * s, c + Vector2(8, -30) * s, c + Vector2(-6, -12) * s]), ink, 4.0 * s, true)
+			boss_eyes(c + Vector2(0, -6) * s, 36.0, s, tgt, locked)
+			draw_line(c + Vector2(-16, 26) * s, c + Vector2(16, 26) * s, ink, 6.0 * s, true)
+		"lolli":
+			draw_line(c + Vector2(0, 40) * s, c + Vector2(0, 120) * s, ink, 16 * s)
+			draw_line(c + Vector2(0, 40) * s, c + Vector2(0, 120) * s, bcol("#fff1d6", locked), 9 * s)
+			draw_circle(c, 76 * s, ink)
+			var sw = ["#9b7bff", "#ff5fa2", "#7df0c8", "#ffd36b", "#8fd8ff"]
+			draw_circle(c, 70 * s, bcol("#ffffff", locked))
+			for k in range(5):
+				var a0 = rot + k * TAU / 5.0
+				var pts = PackedVector2Array([c])
+				for j in range(13):
+					var aa = a0 + j * (TAU / 5.0) / 12.0
+					var rr2 = 70.0 * s
+					pts.append(c + Vector2(cos(aa + (1.0 - rr2 / (70.0 * s)) * 2.0), sin(aa)) * rr2)
+				draw_colored_polygon(pts, bcol(sw[k], locked))
+			for k in range(3):
+				draw_arc(c, (18 + k * 17) * s, rot * 1.5 + k, rot * 1.5 + k + 3.5, 16, Color(1, 1, 1, 0.55), 5.0 * s, true)
+			draw_circle(c, 40 * s, ink)
+			draw_circle(c, 36 * s, bcol("#fff0f6", locked))
+			boss_eyes(c + Vector2(0, -2) * s, 15.0, s * 0.62, tgt, locked)
+			boss_crown(c + Vector2(0, -84) * s, s * 0.7, locked)
+		_:
+			# Grumpy Gummy: red jelly block
+			var w = 156.0 * s
+			var h = 108.0 * s
+			var r = Rect2(c - Vector2(w, h) / 2.0, Vector2(w, h))
+			rrect(Rect2(r.position + Vector2(0, 10), r.size), C(INKH, 1.0, 0.3), int(30 * s))
+			rrect(r.grow(6 * s), ink, int(32 * s))
+			rrect(r, bcol("#ff4d6d", locked), int(28 * s))
+			rrect(Rect2(r.position + Vector2(10, 8) * s, Vector2(w - 20 * s, h * 0.34)), C("#ff9aae", 1.0, 0.7) if not locked else Color(1, 1, 1, 0.3), int(18 * s))
+			for k in range(5):
+				draw_circle(Vector2(r.position.x + 22 * s + k * (w - 44 * s) / 4.0, r.end.y - 10 * s), 7 * s, bcol("#ffd36b", locked))
+			boss_eyes(c + Vector2(0, -8) * s, 34.0, s, tgt, locked)
+			var mouth = PackedVector2Array([c + Vector2(-20, 24) * s, c + Vector2(20, 24) * s, c + Vector2(13, 36) * s, c + Vector2(-13, 36) * s])
+			draw_colored_polygon(mouth, ink)
+			for k in range(3):
+				draw_colored_polygon(PackedVector2Array([c + Vector2(-13 + k * 10, 24) * s, c + Vector2(-6 + k * 10, 24) * s, c + Vector2(-9.5 + k * 10, 31) * s]), Color(1, 1, 1))
+	if wob > 0.0 and kind != "lolli":
+		draw_circle(c, 70 * s, Color(1, 1, 1, wob * 0.25))
+
+func boss_crown(p: Vector2, s: float, locked: bool) -> void:
+	var cr = PackedVector2Array([Vector2(-30, 22), Vector2(-30, -2), Vector2(-15, 12), Vector2(0, -8), Vector2(15, 12), Vector2(30, -2), Vector2(30, 22)])
+	var o = PackedVector2Array()
+	var pts = PackedVector2Array()
+	for q in cr:
+		pts.append(p + q * s)
+		o.append(p + q * s + (q - Vector2(0, 10)).normalized() * 4.0)
+	draw_colored_polygon(o, INK())
+	draw_colored_polygon(pts, bcol("#ffd36b", locked))
+	for q in [Vector2(-30, -2), Vector2(0, -8), Vector2(30, -2)]:
+		draw_circle(p + q * s, 5 * s, bcol("#ff5fa2", locked))
 
 func draw_parts() -> void:
 	for p in parts:
@@ -1716,12 +1853,12 @@ func draw_map() -> void:
 		var idx = base + i
 		var open = idx < unlocked
 		if LEVELS[idx].has("boss"):
-			draw_boss_icon(p, open, i == cur)
+			draw_boss_icon(p, open, i == cur, LEVELS[idx].get("bkind", "gummy"))
 		else:
 			draw_level_node(p, i + 1, open, i == cur, i < cur)
 		var st = best_stars.get(idx, 0)
 		if st > 0:
-			var yoff = 66.0 if LEVELS[idx].has("boss") else 44.0
+			var yoff = 76.0 if LEVELS[idx].has("boss") else 44.0
 			for s2 in range(3):
 				draw_star(p + Vector2((s2 - 1) * 28, yoff + (6 if s2 == 1 else 0)), 12.0, C("#ffd36b") if s2 < st else C("#e6dcf5"))
 	# player marker: the equipped candy hopping on the current level
@@ -1766,50 +1903,19 @@ func draw_level_node(p: Vector2, n: int, open: bool, cur: bool, done: bool) -> v
 		draw_arc(p + Vector2(0, -4), 9, PI, TAU, 12, C("#9b8cb4"), 5.0, true)
 		draw_circle(p + Vector2(0, 7), 3.5, C("#e6dcf5"))
 
-func draw_boss_icon(p: Vector2, open: bool, cur: bool) -> void:
-	# grumpy jelly boss with a golden crown and a ribbon, gray when locked
-	var body = C("#ff4d6d") if open else C("#c9b3e6")
-	var body_d = C("#c2183f") if open else C("#9b8cb4")
-	var hi = C("#ff9aae", 1.0, 0.7) if open else C("#e6dcf5", 1.0, 0.6)
-	var wob = sin(t * 3.0) * 0.05 if open else 0.0
+func draw_boss_icon(p: Vector2, open: bool, cur: bool, kind = "gummy") -> void:
 	if open:
 		for k in range(4):
-			draw_circle(p, 64 + k * 9 + sin(t * 3.0) * 4.0, C("#ff4d6d", 1.4, 0.07))
-	draw_set_transform(p + Vector2(0, -6), wob, Vector2(0.8, 0.8))
-	var r = Rect2(-50, -40, 100, 80)
-	rrect(Rect2(r.position + Vector2(0, 14), r.size), C(INKH, 1.0, 0.3), 26)
-	rrect(Rect2(r.position + Vector2(-5, 3), r.size + Vector2(10, 14)), INK(), 28)
-	rrect(Rect2(r.position + Vector2(0, 8), r.size), body_d, 24)
-	rrect(r, body, 24)
-	rrect(Rect2(r.position + Vector2(8, 6), Vector2(84, 22)), hi, 12)
-	# crown
-	var cr = PackedVector2Array([Vector2(-30, -38), Vector2(-30, -62), Vector2(-15, -48), Vector2(0, -68), Vector2(15, -48), Vector2(30, -62), Vector2(30, -38)])
-	var cro = PackedVector2Array()
-	for q in cr:
-		cro.append(q + (q - Vector2(0, -50)).normalized() * 4.0)
-	draw_colored_polygon(cro, INK())
-	draw_colored_polygon(cr, C("#ffd36b") if open else C("#d6c8f0"))
-	for q in [Vector2(-30, -62), Vector2(0, -68), Vector2(30, -62)]:
-		draw_circle(q, 5, C("#ff5fa2") if open else C("#e6dcf5"))
-	# angry face
-	for sg in [-1, 1]:
-		var e = Vector2(sg * 20, -4)
-		draw_circle(e, 12, INK())
-		draw_circle(e, 9.5, Color(1, 1, 1))
-		draw_circle(e + Vector2(-sg * 2, 2), 5, INK())
-		draw_line(e + Vector2(-13, -16 + (5 if sg < 0 else -5)), e + Vector2(13, -16 + (-5 if sg < 0 else 5)), INK(), 5.0, true)
-	var mouth = PackedVector2Array([Vector2(-18, 20), Vector2(18, 20), Vector2(12, 30), Vector2(-12, 30)])
-	draw_colored_polygon(mouth, INK())
-	for k in range(3):
-		draw_colored_polygon(PackedVector2Array([Vector2(-12 + k * 9, 20), Vector2(-6 + k * 9, 20), Vector2(-9 + k * 9, 26)]), Color(1, 1, 1))
-	# ribbon
-	var rb = Rect2(Vector2(-46, 40), Vector2(92, 30))
-	draw_colored_polygon(PackedVector2Array([rb.position + Vector2(-14, 4), rb.position + Vector2(4, 4), rb.position + Vector2(4, 28), rb.position + Vector2(-14, 28), rb.position + Vector2(-6, 16)]), INK())
-	draw_colored_polygon(PackedVector2Array([rb.end + Vector2(14, -26), rb.end + Vector2(-4, -26), rb.end + Vector2(-4, -2), rb.end + Vector2(14, -2), rb.end + Vector2(6, -14)]), INK())
+			draw_circle(p, 62 + k * 9 + sin(t * 3.0) * 4.0, C("#ff4d6d", 1.4, 0.07))
+	var bob = sin(t * 3.0) * 3.0 if open else 0.0
+	var sc = {"gummy": 0.5, "cupcake": 0.5, "choco": 0.48, "lolli": 0.52}[kind]
+	draw_boss_body(kind, p + Vector2(0, -8 + bob), sc, 1.0, false, t * 1.5 if kind == "lolli" else 0.0, p + Vector2(0, 80), not open, 0.0)
+	var rb = Rect2(p + Vector2(-46, 30), Vector2(92, 28))
+	draw_colored_polygon(PackedVector2Array([rb.position + Vector2(-14, 4), rb.position + Vector2(4, 4), rb.position + Vector2(4, 26), rb.position + Vector2(-14, 26), rb.position + Vector2(-6, 15)]), INK())
+	draw_colored_polygon(PackedVector2Array([rb.end + Vector2(14, -24), rb.end + Vector2(-4, -24), rb.end + Vector2(-4, -2), rb.end + Vector2(14, -2), rb.end + Vector2(6, -13)]), INK())
 	rrect(rb.grow(4), INK(), 8)
 	rrect(rb, C("#9b7bff") if open else C("#b3a7c4"), 6)
 	text_c(rb.get_center() + Vector2(0, 1), "BOSS", 22, Color(1, 1, 1), 5)
-	draw_set_transform(Vector2.ZERO)
 
 func map_decor(w2: bool) -> void:
 	if not w2:
@@ -2390,8 +2496,6 @@ func step_plinko(dt: float) -> void:
 			buckets[jack_i].f = 1.0
 			if not sim:
 				play("swipe", 1.4, -12.0)
-	if boss != null and boss.hp > 0:
-		boss.pos.x = 398.0 + sin(boss.t * 0.7) * 90.0
 	# drop the next queued candy
 	drop_t -= dt
 	if drop_t <= 0.0 and ending < 0:
