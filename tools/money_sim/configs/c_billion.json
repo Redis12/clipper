@@ -1,0 +1,4 @@
+{"seed": 300, "out": "Money Sim - 1 dollar to 1 billion.mp4", "start": 1, "target": 1000000000,
+ "title1": [["CAN ", "white"], ["$1", "gold"], [" BECOME", "white"]], "title2": "$1,000,000,000",
+ "marks": [[1000, "$1K"], [1000000, "$1M"], [1000000000, "$1B"]],
+ "win_big": "BILLIONAIRE", "cta": "Can a penny pay off the US debt? 👇", "counter": "MONEY"}

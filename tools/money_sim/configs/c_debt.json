@@ -1,0 +1,6 @@
+{"seed": 15, "out": "Money Sim - penny vs US debt.mp4", "start": 0.01, "target": 40500000000000, "mult": 2.0,
+ "sim": {"v0": 330, "acc": 1.022, "vmax": 1300},
+ "title1": [["CAN ", "white"], ["1 PENNY", "gold"], [" PAY OFF", "white"]], "title2": "THE $40 TRILLION US DEBT",
+ "marks": [[1000, "$1K"], [1000000, "$1M"], [1000000000, "$1B"], [1000000000000, "$1T"]],
+ "mult_label": "×2 every bounce", "counter": "MONEY",
+ "win_big": "DEBT PAID", "lose_big": "TIME'S UP!", "lose_small": "{money} · only {pct:.0f}% of the debt", "cta": "One more bounce and it pays it all. Fair? 👇"}
