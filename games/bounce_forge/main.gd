@@ -16,9 +16,9 @@ const SKINS = [
 	{"id": "candy", "name": "CANDY", "how": "start", "col": "#ff5fa2", "objs": ["Dragee", "Hard Candy", "Marshmallow", "Bubble Gum", "Cookie", "Donut", "Cupcake", "Lollipop", "Cake", "Golden Candy"]},
 	{"id": "fruits", "name": "FRUITS", "how": "boss", "boss": 5, "col": "#ff5d73", "objs": ["Blueberry", "Cherry", "Strawberry", "Lemon", "Orange", "Apple", "Peach", "Pineapple", "Melon", "Watermelon"]},
 	{"id": "space", "name": "SPACE", "how": "boss", "boss": 10, "col": "#6a4ee0", "objs": ["Stardust", "Asteroid", "Moon", "Mars", "Earth", "Neptune", "Saturn", "Jupiter", "Sun", "Black Hole"]},
-	{"id": "gems", "name": "GEMS", "how": "shop", "price": 500, "col": "#3fbfd9", "objs": ["Quartz", "Amethyst", "Topaz", "Emerald", "Sapphire", "Ruby", "Opal", "Pink Diamond", "Black Pearl", "Diamond"]},
+	{"id": "gems", "name": "GEMS", "how": "boss", "boss": 15, "col": "#3fbfd9", "objs": ["Quartz", "Amethyst", "Topaz", "Emerald", "Sapphire", "Ruby", "Opal", "Pink Diamond", "Black Pearl", "Diamond"]},
 	{"id": "retro", "name": "RETRO", "how": "shop", "price": 800, "col": "#3fcf5f", "objs": ["Berries", "Plum", "Strawberry", "Orange", "Apple", "Peach", "Mango", "Pineapple", "Banana", "Golden Pear"]},
-	{"id": "music", "name": "MUSIC", "how": "shop", "price": 1200, "col": "#ffb21e", "objs": ["Note", "Double Note", "Drum", "Maracas", "Trumpet", "Guitar", "Saxophone", "Piano", "Harp", "Gold Record"]},
+	{"id": "music", "name": "MUSIC", "how": "boss", "boss": 20, "col": "#ffb21e", "objs": ["Note", "Double Note", "Drum", "Maracas", "Trumpet", "Guitar", "Saxophone", "Piano", "Harp", "Gold Record"]},
 ]
 const MELODY = [0, 4, 7, 12, 11, 7, 4, 5, 9, 12, 14, 12, 9, 7, 5, 4, 2, 4, 7, 4]
 const INKH = "#4a1f52"
@@ -42,8 +42,17 @@ var LEVELS = [
 	{"shape": 0, "m": 12.0, "balls": 5, "pads": [0, 1, 2], "target": 40000.0, "stars": [40, 65], "golden": 0.12, "gift": true},
 	{"shape": 4, "m": 15.0, "balls": 4, "pads": [0, 1, 2], "boss": 1800, "stars": [115, 170], "gift": false},
 	{"world": 2, "type": "plinko", "shape": 5, "m": 20.0, "balls": 3, "pads": [], "target": 160000.0, "stars": [60, 95], "tut": "aim"},
+	{"world": 2, "type": "plinko", "shape": 5, "m": 24.0, "balls": 3, "pads": [], "target": 137000.0, "stars": [55, 85], "mults": [10.0, 2.0, 1.0, 1.0, 1.0, 2.0, 10.0], "tut": "edges"},
+	{"world": 2, "type": "plinko", "shape": 5, "m": 28.0, "balls": 3, "pads": [], "target": 450000.0, "stars": [70, 105], "moving": [2, 4], "tut": "moving"},
+	{"world": 2, "type": "plinko", "shape": 5, "m": 32.0, "balls": 3, "pads": [], "target": 290000.0, "stars": [65, 100], "mults": [8.0, 0.0, 3.0, 1.0, 3.0, 0.0, 8.0], "tut": "sour"},
+	{"world": 2, "type": "plinko", "shape": 5, "m": 36.0, "balls": 4, "pads": [], "boss": 900, "stars": [85, 130]},
+	{"world": 2, "type": "plinko", "shape": 5, "m": 40.0, "balls": 3, "pads": [], "target": 700000.0, "stars": [60, 95], "bumpers": [Vector2(250, 600), Vector2(546, 600)], "tut": "bumper"},
+	{"world": 2, "type": "plinko", "shape": 5, "m": 45.0, "balls": 3, "pads": [], "target": 1100000.0, "stars": [75, 110], "jackpot": true, "mults": [2.0, 1.5, 1.0, 1.0, 1.0, 1.5, 2.0], "tut": "jackpot"},
+	{"world": 2, "type": "plinko", "shape": 5, "m": 50.0, "balls": 2, "pads": [], "target": 900000.0, "stars": [100, 115], "limit": 122.0, "mults": [8.0, 0.0, 2.0, 0.0, 2.0, 0.0, 8.0], "moving": [1, 3, 5]},
+	{"world": 2, "type": "plinko", "shape": 5, "m": 55.0, "balls": 5, "pads": [], "target": 700000.0, "stars": [40, 65], "golden": 0.12, "goldpegs": 6, "bumpers": [Vector2(398, 520)]},
+	{"world": 2, "type": "plinko", "shape": 5, "m": 60.0, "balls": 4, "pads": [], "boss": 1400, "stars": [100, 150], "moving": [5], "bumpers": [Vector2(230, 760), Vector2(566, 760)]},
 ]
-const BOSS_SKINS = {4: "fruits", 9: "space"}
+const BOSS_SKINS = {4: "fruits", 9: "space", 14: "gems", 19: "music"}
 
 var font: Font
 var rng = RandomNumberGenerator.new()
@@ -73,6 +82,10 @@ var spout_tx = 360.0
 var drop_t = 0.0
 var boosts = 0
 var only_level = -1
+var bumpers = []
+var jack_t = 0.0
+var jack_i = -1
+var map_world = 1
 var my_song_on = false
 var my_song_ok = false
 var song_player = null
@@ -220,7 +233,11 @@ func is_plinko() -> bool: return L.get("type", "") == "plinko"
 func cost_boost() -> float: return round(15.0 * pow(2.0, boosts) * m())
 func boost_mult() -> float: return pow(1.5, boosts)
 func lvl_label() -> String:
-	return "LEVEL %d" % (li + 1) if L.get("world", 1) == 1 else "LEVEL %d-%d" % [L.world, li - 9]
+	return "LEVEL " + lvl_name(li)
+
+func lvl_name(i: int) -> String:
+	var w = LEVELS[i].get("world", 1) if i < LEVELS.size() else 1
+	return str(i + 1) if w == 1 else "%d-%d" % [w, i - (w - 1) * 10 + 1]
 func target() -> float: return L.get("target", 0.0)
 func cost_ball() -> float: return round(3.0 * pow(1.28, nb) * m())
 func cost_merge() -> float: return round(5.0 * pow(1.42, nm) * m())
@@ -361,9 +378,11 @@ func _ready() -> void:
 	start_level(li)
 	if show_map_only:
 		state = "map"
-		unlocked = 7
-		for k in range(6):
-			best_stars[k] = [3, 2, 3, 1, 3, 2][k]
+		map_world = L.get("world", 1)
+		var mb = (map_world - 1) * 10
+		unlocked = mb + 7
+		for k in range(mb + 6):
+			best_stars[k] = [3, 2, 3, 1, 3, 2][k % 6]
 	if want_screen != "":
 		coins = 640
 		skins = {"candy": true, "fruits": true, "retro": true}
@@ -428,21 +447,43 @@ func start_level(i: int) -> void:
 	for sidx in L.pads:
 		add_pad_slot(sidx, true)
 	pegs.clear(); buckets.clear(); boosts = 0; spout_x = 398.0; spout_tx = 398.0; drop_t = 0.4
+	bumpers.clear(); jack_t = 0.0; jack_i = -1
 	if is_plinko():
+		var mov = L.get("moving", [])
 		for row in range(7):
 			var y = 410.0 + row * 72.0
 			var n = 7 if row % 2 == 0 else 6
 			for k in range(n):
 				var x = 398.0 + (k - (n - 1) / 2.0) * 66.0
-				pegs.append({"p": Vector2(x, y), "row": row, "f": 0.0, "gold": (row == 3 and k == n / 2)})
-		var bw = (630.0 - 166.0) / BUCKET_MULTS.size()
-		for k in range(BUCKET_MULTS.size()):
-			buckets.append({"x0": 166.0 + k * bw, "x1": 166.0 + (k + 1) * bw, "m": BUCKET_MULTS[k], "f": 0.0})
-		banner = {"t": 0.0, "txt": "WORLD 2", "col": "#ffd36b", "big": true}
+				var pp = Vector2(x, y)
+				if is_boss() and absf(pp.x - 398.0) < 125.0 and absf(pp.y - 610.0) < 90.0:
+					continue
+				var skip = false
+				for bp in L.get("bumpers", []):
+					if pp.distance_to(bp) < 60.0:
+						skip = true
+				if skip:
+					continue
+				pegs.append({"p": pp, "bx": x, "row": row, "f": 0.0, "gold": (row == 3 and k == n / 2), "mv": mov.has(row)})
+		var ng = L.get("goldpegs", 0)
+		for k in range(ng):
+			pegs[rng.randi() % pegs.size()].gold = true
+		for bp in L.get("bumpers", []):
+			bumpers.append({"p": bp, "f": 0.0})
+		var ms = L.get("mults", BUCKET_MULTS)
+		var bw = (630.0 - 166.0) / ms.size()
+		for k in range(ms.size()):
+			buckets.append({"x0": 166.0 + k * bw, "x1": 166.0 + (k + 1) * bw, "m": ms[k], "base": ms[k], "f": 0.0})
+		if li == 10:
+			banner = {"t": 0.0, "txt": "WORLD 2", "col": "#ffd36b", "big": true}
 	banner = {"t": 0.0, "txt": "LEVEL %d" % (i + 1), "col": "#ffffff", "big": false}
 	if is_boss():
 		var hp = int(L.boss)
 		boss = {"pos": Vector2(360, 600), "hp": hp, "max": hp, "w": 156.0, "h": 108.0, "wob": 0.0, "t": 0.0, "dead": 0.0}
+		if is_plinko():
+			boss.pos = Vector2(398, 610)
+			boss.w = 150.0
+			boss.h = 96.0
 		banner = {"t": 0.0, "txt": "BOSS!", "col": "#ff4d6d", "big": true}
 	for k in range(int(L.balls)):
 		spawn_ball(1, true)
@@ -538,6 +579,7 @@ func _input(ev: InputEvent) -> void:
 			if CARDS[i].has_point(pos):
 				act(i)
 		if MAPBTN.has_point(pos):
+			map_world = L.get("world", 1)
 			state = "map"; screen_t = 0.0; play("swipe", 1.0, -6.0)
 		elif SKINBTN.has_point(pos):
 			open_skins("play")
@@ -566,11 +608,18 @@ func _input(ev: InputEvent) -> void:
 		if Rect2(30, 1180, 90, 90).has_point(pos):
 			set_from = "map"; state = "settings"; play("swipe", 1.1, -6.0)
 			return
+		var base = (map_world - 1) * 10
+		if Rect2(220, 150, 280, 64).has_point(pos) and unlocked > base + 10 and base + 10 < LEVELS.size():
+			map_world += 1; play("swipe", 1.3, -6.0)
+			return
+		if map_world > 1 and Rect2(40, 1060, 170, 56).has_point(pos):
+			map_world -= 1; play("swipe", 0.9, -6.0)
+			return
 		var nodes = map_nodes()
 		for i in range(nodes.size()):
-			if i < unlocked and pos.distance_to(nodes[i]) < 52.0:
+			if base + i < unlocked and pos.distance_to(nodes[i]) < 52.0:
 				play("swipe", 1.2, -6.0)
-				start_level(i)
+				start_level(base + i)
 				return
 		if Rect2(180, 1170, 360, 86).has_point(pos):
 			start_level(clampi(unlocked - 1, 0, LEVELS.size() - 1))
@@ -699,7 +748,9 @@ func bot(dt: float) -> void:
 	if bot_t > 0.0 or state != "play":
 		return
 	bot_t = 0.45 + rng.randf() * 0.3
-	if is_plinko() and rng.randf() < 0.3:
+	if is_plinko() and jack_i >= 0 and rng.randf() < 0.6:
+		spout_tx = clampf((buckets[jack_i].x0 + buckets[jack_i].x1) / 2.0, 196.0, 600.0)
+	elif is_plinko() and rng.randf() < 0.3:
 		spout_tx = [205.0, 398.0, 590.0][rng.randi() % 3]
 		tut_seen("aim")
 	if can_merge() and cost_merge() < money * 0.95:
@@ -910,7 +961,7 @@ func run_sim() -> void:
 func run_tune() -> void:
 	# For each level: play with the bot up to the wanted duration with an unreachable goal,
 	# and print the median $ earned (or boss damage) at that time = suggested target / boss hp.
-	var want = [24, 34, 45, 45, 65, 45, 65, 100, 30, 90, 60]
+	var want = [24, 34, 45, 45, 65, 45, 65, 100, 30, 90, 60, 50, 70, 65, 85, 60, 75, 105, 38, 100]
 	for i in range(LEVELS.size()):
 		if only_level >= 0 and i != only_level:
 			continue
@@ -1491,6 +1542,16 @@ func draw_tutorial() -> void:
 		target_pos = gift.pos + Vector2(0, 70); msg = "Smash the candy!"
 	elif tut == "aim" and not tut_done.has("aim") and lt > 1.0:
 		target_pos = Vector2(200, 560); msg = "Tap to aim the drop!"
+	elif tut == "edges" and lt < 6.0:
+		msg = "Edges pay x10!"
+	elif tut == "moving" and lt < 6.0:
+		msg = "Watch out: the pegs move!"
+	elif tut == "sour" and lt < 6.0:
+		msg = "Avoid the SOUR buckets!"
+	elif tut == "bumper" and lt < 6.0:
+		msg = "Bumpers double your candy!"
+	elif tut == "jackpot" and lt < 6.0:
+		msg = "Aim for the moving x20 JACKPOT!"
 	elif tut == "stars" and lt < 6.0:
 		msg = "Finish fast for 3 stars!"
 	if msg != "":
@@ -1612,11 +1673,12 @@ func draw_drop() -> void:
 # ---------------------------------------------------------------- map (Candy Crush path)
 func map_nodes() -> Array:
 	var nodes = []
-	for i in range(mini(10, LEVELS.size())):
+	for i in range(clampi(LEVELS.size() - (map_world - 1) * 10, 0, 10)):
 		nodes.append(Vector2(360 + sin(i * 0.95 + 0.4) * 190.0, 1095.0 - i * 86.0))
 	return nodes
 
 func draw_map() -> void:
+	var base = (map_world - 1) * 10
 	var nodes = map_nodes()
 	var ext = nodes.duplicate()
 	ext.insert(0, Vector2(300, 1290))
@@ -1628,7 +1690,7 @@ func draw_map() -> void:
 	for i in range(1, path.size()):
 		acc += path[i].distance_to(path[i - 1])
 		if fmod(acc, 36.0) < 18.0:
-			draw_line(path[i - 1], path[i], C("#ffb3d6"), 8.0, true)
+			draw_line(path[i - 1], path[i], C("#ffb3d6" if map_world == 1 else "#7df0c8"), 8.0, true)
 	for d in [Vector2(110, 1000), Vector2(620, 760), Vector2(95, 520), Vector2(640, 300)]:
 		draw_line(d, d + Vector2(0, 80), INK(), 12.0)
 		draw_line(d, d + Vector2(0, 80), C("#fff1d6"), 6.0)
@@ -1640,17 +1702,23 @@ func draw_map() -> void:
 	var gate = Rect2(220, 150, 280, 64)
 	rrect(gate.grow(4), INK(), 30)
 	rrect(gate, C("#c9b3e6"), 26)
-	text_c(gate.get_center() + Vector2(0, 1), "WORLD 2  🔒" if false else "WORLD 2 - LOCKED", 26, Color(1, 1, 1), 6)
-	var cur = clampi(unlocked - 1, 0, nodes.size() - 1)
+	var next_open = unlocked > base + 10 and base + 10 < LEVELS.size()
+	text_c(gate.get_center() + Vector2(0, 1), ("WORLD %d  >" % (map_world + 1)) if next_open else ("WORLD %d - LOCKED" % (map_world + 1)), 26, Color(1, 1, 1), 6)
+	if map_world > 1:
+		var back = Rect2(40, 1060, 170, 56)
+		rrect(back.grow(4), INK(), 26)
+		rrect(back, C("#ff5fa2"), 22)
+		text_c(back.get_center() + Vector2(0, 1), "< WORLD %d" % (map_world - 1), 24, Color(1, 1, 1), 6)
+	var cur = clampi(unlocked - 1 - base, 0, nodes.size() - 1)
 	for i in range(nodes.size()):
 		var p: Vector2 = nodes[i]
-		var boss_n = LEVELS[i].has("boss")
+		var boss_n = LEVELS[base + i].has("boss")
 		var r = 46.0 if boss_n else 38.0
 		if i == cur:
 			for k in range(5):
 				draw_circle(p, r + 14 + k * 7 + sin(t * 4.0) * 4.0, C("#ffffff", 1.2, 0.08))
 		draw_circle(p + Vector2(0, 6), r + 5, C(INKH, 1.0, 0.35))
-		var open = i < unlocked
+		var open = base + i < unlocked
 		var fill = "#ff5fa2" if i < cur else ("#ffd36b" if i == cur else "#d6c8f0")
 		if boss_n:
 			fill = "#ff4d6d" if open else "#c9b3e6"
@@ -1665,7 +1733,7 @@ func draw_map() -> void:
 			draw_circle(p, r, C(fill))
 			draw_circle(p + Vector2(-r * 0.3, -r * 0.35), r * 0.28, Color(1, 1, 1, 0.6))
 			text_c(p + Vector2(0, 2), str(i + 1), 34, Color(1, 1, 1) if open else C("#8d7aa8"), 7)
-		var st = best_stars.get(i, 0)
+		var st = best_stars.get(base + i, 0)
 		if st > 0:
 			for s2 in range(3):
 				draw_star(p + Vector2((s2 - 1) * 26, r + (14 if boss_n else 8) + (6 if s2 == 1 else 0)), 12.0, C("#ffd36b") if s2 < st else C("#e6dcf5"))
@@ -1675,12 +1743,12 @@ func draw_map() -> void:
 	rrect(Rect2(bn.position + Vector2(0, 7), bn.size), C(INKH, 1.0, 0.35), 28)
 	rrect(bn.grow(5), INK(), 30)
 	rrect(bn, C("#ff5fa2"), 26)
-	text_c(bn.get_center() + Vector2(0, -12), "WORLD 1", 26, C("#ffe3f0"), 6)
-	text_c(bn.get_center() + Vector2(0, 20), "CANDY TUBES", 38, Color(1, 1, 1), 8)
+	text_c(bn.get_center() + Vector2(0, -12), "WORLD %d" % map_world, 26, C("#ffe3f0"), 6)
+	text_c(bn.get_center() + Vector2(0, 20), "CANDY TUBES" if map_world == 1 else "SUGAR PLINKO", 38, Color(1, 1, 1), 8)
 	draw_circle(Vector2(560, 240), 15, INK())
 	draw_circle(Vector2(560, 240), 12, C("#ffd36b"))
 	text_l(Vector2(584, 240), str(coins), 26, Color(1, 1, 1), 6)
-	big_button(Rect2(160, 1170, 360, 86), "PLAY  LEVEL %d" % (cur + 1), "#3fcf9f")
+	big_button(Rect2(160, 1170, 360, 86), "PLAY  " + lvl_name(clampi(unlocked - 1, 0, LEVELS.size() - 1)), "#3fcf9f")
 	img("round", Rect2(600, 1180, 90, 90))
 	img("round", Rect2(30, 1180, 90, 90))
 	draw_gear(Vector2(75, 1220), 24.0)
@@ -2029,7 +2097,7 @@ func draw_skins() -> void:
 		elif owned:
 			st = "OWNED"
 		elif sk.how == "boss":
-			st = "BOSS LV %d" % sk.boss; scol = C("#ff4d6d")
+			st = "BOSS " + lvl_name(sk.boss - 1); scol = C("#ff4d6d")
 		else:
 			st = "%d coins" % sk.price; scol = C("#e0a020")
 		text_c(Vector2(r.get_center().x, r.end.y - 34), st, 24, scol, 0)
@@ -2058,7 +2126,7 @@ func draw_skins() -> void:
 	elif sk2.how == "shop":
 		big_button(Rect2(190, 1150, 340, 90), "BUY  %d" % sk2.price, "#ff5fa2" if coins >= sk2.price else "#b3a7c4")
 	else:
-		big_button(Rect2(190, 1150, 340, 90), "BEAT BOSS LV %d" % sk2.boss, "#ff5fa2")
+		big_button(Rect2(190, 1150, 340, 90), "BEAT BOSS " + lvl_name(sk2.boss - 1), "#ff5fa2")
 
 
 func img_tex_path(path: String):
@@ -2071,7 +2139,7 @@ func img_tex_path(path: String):
 
 # ---------------------------------------------------------------- music + settings
 func update_music() -> void:
-	if autoplay or demo or show_map_only:
+	if sim or demo or show_map_only:
 		return
 	var want = "game2" if li % 2 == 1 else "game"
 	if state in ["map"] or (state == "settings" and set_from == "map"):
@@ -2212,6 +2280,22 @@ func drive_song() -> void:
 func step_plinko(dt: float) -> void:
 	var pts: PackedVector2Array = shp.pts
 	spout_x = move_toward(spout_x, spout_tx, 900.0 * dt)
+	for pg in pegs:
+		if pg.mv:
+			pg.p.x = pg.bx + sin(t * 1.6 + pg.row) * 30.0
+	if L.get("jackpot", false):
+		jack_t -= dt
+		if jack_t <= 0.0:
+			jack_t = 6.0
+			for bk in buckets:
+				bk.m = bk.base
+			jack_i = rng.randi() % buckets.size()
+			buckets[jack_i].m = 20.0
+			buckets[jack_i].f = 1.0
+			if not sim:
+				play("swipe", 1.4, -12.0)
+	if boss != null and boss.hp > 0:
+		boss.pos.x = 398.0 + sin(boss.t * 0.7) * 90.0
 	# drop the next queued candy
 	drop_t -= dt
 	if drop_t <= 0.0 and ending < 0:
@@ -2283,18 +2367,40 @@ func step_plinko(dt: float) -> void:
 						if not sim:
 							floats.append({"p": pg.p + Vector2(0, -18), "txt": "+$" + fmt(small), "col": "#ffd36b" if pg.gold else "#ffffff", "t": 0.0, "big": false})
 						snd_bounce(12 - pg.row * 2 + rng.randi() % 2)
+		# bumpers: big candy bumpers that kick hard and charge the candy (x2 in the bucket)
+		for bm in bumpers:
+			var db = b.p.distance_to(bm.p)
+			var mb = r + 28.0
+			if db < mb and db > 0.001:
+				var nb3: Vector2 = (b.p - bm.p) / db
+				b.p = bm.p + nb3 * mb
+				b.v = nb3 * 760.0 + Vector2(0, -120)
+				bm.f = 1.0
+				b.charged = true
+				b.sq = 1.0
+				if b.cd <= 0.0:
+					b.cd = 0.05
+					play("pad", 1.4, -12.0)
+		if boss != null and boss.hp > 0:
+			hit_box(b, boss, boss.w, boss.h, true)
 		# landing in a bucket
 		if b.p.y > BUCKET_Y:
 			var bi = clampi(int((b.p.x - 166.0) / ((630.0 - 166.0) / buckets.size())), 0, buckets.size() - 1)
 			var bk = buckets[bi]
-			var v = val(b.lv) * bk.m * boost_mult() * (10.0 if b.gold else 1.0)
+			var v = val(b.lv) * bk.m * boost_mult() * (10.0 if b.gold else 1.0) * (2.0 if b.get("charged", false) else 1.0)
+			b.charged = false
 			money += v; earned += v
 			hist.append([t, v])
 			bk.f = 1.0
 			if not sim:
 				floats.append({"p": Vector2((bk.x0 + bk.x1) / 2.0, BUCKET_Y - 30), "txt": "+$" + fmt(v), "col": "#5cff4a" if bk.m >= 8 else "#ffffff", "t": 0.0, "big": bk.m >= 8})
 				burst(Vector2((bk.x0 + bk.x1) / 2.0, BUCKET_Y + 20), C("#ffd36b" if bk.m >= 8 else "#ffffff", 1.6), 14 if bk.m >= 8 else 6, 260.0, 3.5, 0.5)
-			if bk.m >= 8:
+			if bk.m <= 0.0:
+				if not sim:
+					floats[floats.size() - 1].txt = "SOUR!"
+					floats[floats.size() - 1].col = "#ff4d6d"
+				play("fail", 1.3, -14.0)
+			elif bk.m >= 8:
 				play("cash", 1.2, -10.0)
 				shake = maxf(shake, 3.0)
 			else:
@@ -2321,6 +2427,8 @@ func step_plinko(dt: float) -> void:
 			save_game()
 	for pg in pegs:
 		pg.f = maxf(0.0, pg.f - dt * 5.0)
+	for bm in bumpers:
+		bm.f = maxf(0.0, bm.f - dt * 4.0)
 	for bk in buckets:
 		bk.f = maxf(0.0, bk.f - dt * 3.0)
 
@@ -2358,11 +2466,23 @@ func draw_plinko() -> void:
 		var x1: float = bk.x1
 		var hot = bk.m >= 8.0
 		var base = C("#ff5fa2") if hot else (C("#9b7bff") if bk.m >= 3.0 else C("#8fd8ff"))
+		if bk.m <= 0.0:
+			base = C("#8bd63a")
+		if bk.m >= 20.0:
+			base = C("#ffd36b", 1.0 + 0.4 * sin(t * 10.0))
 		rrect(Rect2(x0 + 4, BUCKET_Y + 6, x1 - x0 - 8, 56), base.lightened(bk.f * 0.6), 10)
-		text_c(Vector2((x0 + x1) / 2.0, BUCKET_Y + 34), "x" + (str(int(bk.m * boost_mult())) if bk.m * boost_mult() >= 10 else ("%.1f" % (bk.m * boost_mult())).trim_suffix(".0")), 24, Color(1, 1, 1), 6)
+		var lbl = "SOUR" if bk.m <= 0.0 else "x" + (fmt(bk.m * boost_mult()) if bk.m * boost_mult() >= 10 else ("%.1f" % (bk.m * boost_mult())).trim_suffix(".0"))
+		text_c(Vector2((x0 + x1) / 2.0, BUCKET_Y + 34), lbl, 20 if bk.m <= 0.0 else 24, Color(1, 1, 1), 6)
 		if i > 0:
 			draw_line(Vector2(x0, BUCKET_Y - 4), Vector2(x0, BUCKET_Y + 62), INK(), 10.0)
 			draw_line(Vector2(x0, BUCKET_Y - 4), Vector2(x0, BUCKET_Y + 62), C("#fff1d6"), 5.0)
+	for bm in bumpers:
+		var f: float = bm.f
+		draw_circle(bm.p, 32.0 + f * 5.0, INK())
+		draw_circle(bm.p, 28.0 + f * 5.0, C("#ff5fa2", 1.0 + f))
+		draw_circle(bm.p, 18.0, C("#ffd36b"))
+		draw_circle(bm.p + Vector2(-8, -9), 6.0, Color(1, 1, 1, 0.8))
+		text_c(bm.p + Vector2(0, 2), "x2", 18, Color(1, 1, 1), 5)
 	# dispenser that follows your aim + queued candies
 	var sx = spout_x
 	draw_colored_polygon(PackedVector2Array([Vector2(sx - 44, 196), Vector2(sx + 44, 196), Vector2(sx + 24, 252), Vector2(sx - 24, 252)]), INK())
