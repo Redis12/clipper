@@ -277,3 +277,7 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
   2. **Pays** (Countryballs, guerre de territoires façon Domain War, marble race de pays) : énormément de vues, drapeaux libres, mais RPM très bas et concurrence forte.
   3. **Animaux** (« Lion vs Gorilla » en simulation) : pas de format simulation repéré parmi les Shorts animaux qui percent (surtout sauvetages, zoos) → trou à tester, mais public jeune (RPM bas).
   4. Football : public énorme, mais images de joueurs = droits → seulement avatars dessinés.
+
+## Décision (05/11) : Domain War en pause
+- Les gens quittent les Domain War avant la moitié (< 50 % regardé) et c'est le format le plus long à produire → on n'en fait plus pour l'instant.
+- On mise sur : Transformations (meilleur format YouTube), Power Up (débat « injuste mais crédible »), Gauntlet, Hydraulic Press (test dimanche 08/11).

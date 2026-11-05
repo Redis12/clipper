@@ -40,6 +40,7 @@ Les idées de vidéos sont dans `IDEES.md` ; le fonctionnement de Clipper est da
 - **DA qui ne fait pas « généré »** (05/11, retour de l'utilisateur : « ça fait trop Claude ») : le texte est bien, c'est le STYLE qui fait template (même police grasse partout, fond noir uni, pilules arrondies, vert/rouge/jaune de base). À faire : polices façon titres de jeux anime (gras penché, gros contour), fonds texturés (trame manga, lignes de vitesse, couleurs de la franchise), texte qui claque/arrive en biais, palette par franchise. Valider sur un avant/après avant de changer les vidéos. Le Short doit accrocher en 1 seconde, voire moins.
 - **Séries numérotées** (« DOMAIN WAR #6 ») et « part 2 » quand une vidéo marche.
 - **Musique** : continue et en fond, jamais rejouée à chaque événement. Volume autour de −24 LUFS (les gens trouvaient −6 LUFS beaucoup trop fort).
+- **Domain War mis en pause (05/11)** : rétention < 50 % et format le plus long à produire. Garder les formats courts et lisibles en 1 seconde.
 - **Les formats qui marchent sur YouTube** : Transformations (fusion façon Suika, environ 30 s, avec un easter egg), Power Up.
 
 ## 3. YouTube Shorts (ce qui marche le mieux)
