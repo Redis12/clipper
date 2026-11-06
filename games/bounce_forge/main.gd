@@ -3106,7 +3106,7 @@ func draw_settings() -> void:
 		img("check" if rows[i][1] else "uncheck", Rect2(500, y + 6, 88, 92))
 	text_c(Vector2(360, 990), "Every bounce plays the next bit of your song", 22, C("#9b7bff"), 0)
 	big_button(Rect2(150, 1022, 420, 80), "CHOOSE A SONG" if not my_song_ok else "CHANGE SONG", "#ff5fa2")
-	text_c(Vector2(360, 1118), "Bounce Forge  v0.1", 18, C("#9b7bff"), 0)
+	text_c(Vector2(360, 1118), "Sugar Bounce  v0.1", 18, C("#9b7bff"), 0)
 
 
 # ---------------------------------------------------------------- "my song": the player's own music, advanced by bounces

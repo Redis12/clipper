@@ -1,4 +1,4 @@
-# Bounce Forge : conception (05/11/2026)
+# Sugar Bounce : Merge & Pop (nom de code : Bounce Forge) : conception (05/11/2026)
 
 Jeu mobile (Godot 4.4, rendu Compatibility + glow HDR 2D), inspiré de « Balls Bounce - Merge & Bounce » (Moonee, 1 M+ téléchargements) mais à notre sauce.
 Avis négatifs du concurrent à corriger : trop de pubs forcées, fini en ~14 h, tout repart à zéro.
