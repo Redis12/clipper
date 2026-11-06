@@ -25,9 +25,17 @@ const SKINS = [
 	{"id": "clouds", "name": "COTTON CLOUDS", "how": "boss", "boss": 50, "col": "#ff9fd0", "objs": ["Puff", "Pink Puff", "Blue Puff", "Swirl", "Rain Cloud", "Rainbow", "Storm", "Big Fluff", "Dream Cloud", "Golden Cloud"]},
 	{"id": "gumballs", "name": "GUMBALLS", "how": "boss", "boss": 55, "col": "#ff4d6d", "objs": ["Mini Gum", "Red Gum", "Blue Gum", "Green Gum", "Yellow Gum", "Purple Gum", "Striped Gum", "Galaxy Gum", "Mega Gum", "Golden Gum"]},
 	{"id": "crown", "name": "ROYAL", "how": "boss", "boss": 60, "col": "#ffd36b", "objs": ["Copper Coin", "Silver Coin", "Gold Coin", "Ruby Ring", "Sapphire Ring", "Scepter Gem", "Royal Orb", "Crown Jewel", "Golden Crown", "Sugar Throne"]},
+	{"id": "star1", "name": "STAR CANDY", "how": "stars", "world": 1, "base": "candy", "col": "#ffd36b"},
+	{"id": "star2", "name": "STAR GEMS", "how": "stars", "world": 2, "base": "gems", "col": "#8fd8ff"},
+	{"id": "star3", "name": "STAR DONUTS", "how": "stars", "world": 3, "base": "donuts", "col": "#ff8fc6"},
+	{"id": "star4", "name": "STAR BEANS", "how": "stars", "world": 4, "base": "jellybeans", "col": "#7df0c8"},
+	{"id": "star5", "name": "STAR PLANETS", "how": "stars", "world": 5, "base": "planets", "col": "#c06bff"},
 	{"id": "retro", "name": "RETRO", "how": "shop", "price": 800, "col": "#3fcf5f", "objs": ["Berries", "Plum", "Strawberry", "Orange", "Apple", "Peach", "Mango", "Pineapple", "Banana", "Golden Pear"]},
 	{"id": "music", "name": "MUSIC", "how": "boss", "boss": 20, "col": "#ffb21e", "objs": ["Note", "Double Note", "Drum", "Maracas", "Trumpet", "Guitar", "Saxophone", "Piano", "Harp", "Gold Record"]},
 ]
+const MILE10 = [5, 10, 16, 23, 30]
+const MILE20 = [8, 16, 26, 38, 50, 60]
+const TRAILS = ["rainbow", "stars", "hearts", "bubbles", "comet"]
 const MELODY = [0, 4, 7, 12, 11, 7, 4, 5, 9, 12, 14, 12, 9, 7, 5, 4, 2, 4, 7, 4]
 const INKH = "#4a1f52"
 
@@ -124,6 +132,17 @@ var sel_skin = 0
 var skins_from = "play"
 var mel_i = 0
 var tex = {}
+var claimed = {}
+var boost_gold = 0
+var boost_time = 0
+var trail_style = ""
+var skin_page = 0
+var map_scroll = 0.0
+var map_drag = false
+var map_moved = false
+var map_last = 0.0
+var prev_state = ""
+var base_off = Vector2.ZERO
 var mus_on = true
 var sfx_on = true
 var vib_on = true
@@ -462,6 +481,8 @@ func _ready() -> void:
 		unlocked = mb + 7
 		for k in range(mb + 6):
 			best_stars[k] = [3, 2, 3, 1, 3, 2][k % 6]
+		claimed = {"%d:0" % map_world: true}
+		prev_state = "x"
 	if want_screen != "":
 		coins = 640
 		skins = {"candy": true, "fruits": true, "retro": true}
@@ -495,6 +516,10 @@ func load_save() -> void:
 		sfx_on = cf.get_value("p", "sfx", true)
 		vib_on = cf.get_value("p", "vib", true)
 		my_song_on = cf.get_value("p", "mysong", false)
+		claimed = cf.get_value("p", "claimed", {})
+		boost_gold = cf.get_value("p", "bgold", 0)
+		boost_time = cf.get_value("p", "btime", 0)
+		trail_style = cf.get_value("p", "trail", "")
 		if FileAccess.file_exists("user://my_song.mp3") or FileAccess.file_exists("user://my_song.ogg"):
 			load_my_song()
 
@@ -513,6 +538,10 @@ func save_game() -> void:
 	cf.set_value("p", "sfx", sfx_on)
 	cf.set_value("p", "vib", vib_on)
 	cf.set_value("p", "mysong", my_song_on)
+	cf.set_value("p", "claimed", claimed)
+	cf.set_value("p", "bgold", boost_gold)
+	cf.set_value("p", "btime", boost_time)
+	cf.set_value("p", "trail", trail_style)
 	cf.save("user://save.cfg")
 
 func start_level(i: int) -> void:
@@ -596,6 +625,11 @@ func start_level(i: int) -> void:
 		banner = {"t": 0.0, "txt": BOSS_NAMES[kind] + "!", "col": "#ff4d6d", "big": false}
 	for k in range(int(L.balls)):
 		spawn_ball(1, true)
+	if boost_gold > 0 and not autoplay and not demo:
+		boost_gold -= 1
+		balls[balls.size() - 1].gold = true
+		banner = {"t": 0.0, "txt": "BOOSTER: GOLDEN CANDY!", "col": "#ffd36b", "big": false}
+		save_game()
 
 func add_pad_slot(sidx: int, quiet = false) -> void:
 	var mid: float = SLOTS[sidx] * shp.len
@@ -692,6 +726,36 @@ func tut_seen(k: String) -> void:
 	tut_done[k] = true
 
 func _input(ev: InputEvent) -> void:
+	if state == "map":
+		if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT:
+			if ev.pressed:
+				map_drag = true; map_moved = false; map_last = get_global_mouse_position().y
+				return
+			else:
+				map_drag = false
+				if not map_moved:
+					map_click(get_global_mouse_position())
+				map_moved = false
+				return
+		if ev is InputEventMouseMotion and map_drag:
+			var y = get_global_mouse_position().y
+			if absf(y - map_last) > 2.0 or map_moved:
+				map_scroll = clampf(map_scroll + (y - map_last), 0.0, map_max_scroll())
+				if absf(y - map_last) > 6.0:
+					map_moved = true
+			map_last = y
+			return
+		return
+	_input_click(ev)
+
+func map_click(pos: Vector2) -> void:
+	var ev = InputEventMouseButton.new()
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.pressed = true
+	ev.position = pos
+	_input_click(ev, pos)
+
+func _input_click(ev: InputEvent, forced = null) -> void:
 	if state == "play" and is_flipper():
 		var pp = null
 		var down = false
@@ -712,7 +776,7 @@ func _input(ev: InputEvent) -> void:
 			flips[1].hold = false
 	if not (ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT):
 		return
-	var pos: Vector2 = get_global_mouse_position()
+	var pos: Vector2 = get_global_mouse_position() if forced == null else forced
 	if state == "play":
 		for i in range(3):
 			if CARDS[i].has_point(pos):
@@ -734,29 +798,44 @@ func _input(ev: InputEvent) -> void:
 			elif Rect2(250, 950, 220, 64).has_point(pos):
 				state = "map"; screen_t = 0.0; play("swipe", 1.0, -6.0)
 	elif state == "fail":
-		if Rect2(190, 830, 340, 92).has_point(pos):
+		if boost_time > 0 and Rect2(190, 700, 340, 84).has_point(pos):
+			boost_time -= 1
+			L = L.duplicate()
+			L.limit = L.limit + 15.0
+			state = "play"
+			banner = {"t": 0.0, "txt": "+15 s!", "col": "#7df0c8", "big": true}
+			play("pad", 1.2, -4.0)
+			save_game()
+		elif Rect2(190, 830, 340, 92).has_point(pos):
 			start_level(li)
 	elif state == "skins":
 		skins_input(pos)
 	elif state == "settings":
 		settings_input(pos)
 	elif state == "map":
+		if map_moved:
+			return
 		if Rect2(600, 1180, 90, 90).has_point(pos):
 			open_skins("map")
 			return
 		if Rect2(30, 1180, 90, 90).has_point(pos):
 			set_from = "map"; state = "settings"; play("swipe", 1.1, -6.0)
 			return
+		for k in range(miles(map_world).size()):
+			if pos.distance_to(chest_pos(map_world, k)) < 36.0:
+				claim_chest(map_world, k)
+				return
 		var base = (map_world - 1) * 10
-		if Rect2(220, 150, 280, 64).has_point(pos) and unlocked > base + 10 and base + 10 < LEVELS.size():
-			map_world += 1; play("swipe", 1.3, -6.0)
-			return
-		if map_world > 1 and Rect2(40, 1060, 170, 56).has_point(pos):
-			map_world -= 1; play("swipe", 0.9, -6.0)
-			return
 		var nodes = map_nodes()
+		var cpos = pos - Vector2(0, map_scroll)
+		if pos.y > 316 and pos.y < 1120 and Rect2(220, nodes[nodes.size() - 1].y - 200.0, 280, 64).has_point(cpos) and unlocked > base + 10 and base + 10 < LEVELS.size():
+			map_world += 1; play("swipe", 1.3, -6.0); focus_map()
+			return
+		if map_world > 1 and Rect2(520, 1124, 170, 50).has_point(pos):
+			map_world -= 1; play("swipe", 0.9, -6.0); focus_map()
+			return
 		for i in range(nodes.size()):
-			if base + i < unlocked and pos.distance_to(nodes[i]) < 52.0:
+			if pos.y > 316 and pos.y < 1120 and base + i < unlocked and cpos.distance_to(nodes[i]) < 52.0:
 				play("swipe", 1.2, -6.0)
 				start_level(base + i)
 				return
@@ -765,6 +844,9 @@ func _input(ev: InputEvent) -> void:
 	elif state == "newcandy" or state == "drop":
 		if popup != null and popup.t > 0.5:
 			close_popup()
+	elif state == "chest":
+		if popup != null and popup.t > 0.5:
+			state = "map"; popup = null
 
 func next_level() -> void:
 	if li + 1 < LEVELS.size():
@@ -776,6 +858,9 @@ func next_level() -> void:
 func _process(dt: float) -> void:
 	dt = minf(dt, 1.0 / 30.0)
 	tick(dt)
+	if state == "map" and prev_state != "map" and prev_state != "chest":
+		focus_map()
+	prev_state = state
 	if not sim:
 		update_music()
 		drive_song()
@@ -800,6 +885,10 @@ func tick(dt: float) -> void:
 				next_level()
 			else:
 				start_level(li)
+		return
+	if state == "chest":
+		popup.t += dt
+		fx(dt)
 		return
 	if state == "map" or state == "skins" or state == "settings":
 		fx(dt)
@@ -1229,6 +1318,10 @@ func _draw() -> void:
 	if state == "map":
 		draw_map()
 		return
+	if state == "chest":
+		draw_map()
+		draw_chest_popup()
+		return
 	if state == "skins":
 		draw_skins()
 		return
@@ -1238,6 +1331,7 @@ func _draw() -> void:
 		draw_settings()
 		return
 	var off = Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * shake
+	base_off = off
 	draw_set_transform(off)
 	if L.get("space_bg", false) or is_space():
 		draw_space_bg()
@@ -1259,6 +1353,7 @@ func _draw() -> void:
 		draw_boss()
 	draw_balls()
 	draw_parts()
+	base_off = Vector2.ZERO
 	draw_set_transform(Vector2.ZERO)
 	draw_hud()
 	draw_cards()
@@ -1385,6 +1480,15 @@ func candy_col(lv: int) -> String:
 
 func draw_candy(lv: int, p: Vector2, r: float, sq = 0.0, rot = 0.0, gold = false, skin = "") -> void:
 	var sk = equip if skin == "" else skin
+	var sd = skin_by_id(sk)
+	if sd.has("base") and sd.id == sk:
+		draw_candy(lv, p, r, sq, rot, gold, sd.base)
+		var sc2 = C(sd.col, 1.8, 0.85)
+		draw_arc(p, r + 5, t * 2.0, t * 2.0 + 4.2, 24, sc2, 3.0, true)
+		for k in range(3):
+			var an = t * 2.4 + k * TAU / 3.0
+			draw_star(p + Vector2(cos(an), sin(an)) * (r + 8), 4.0 + 1.5 * sin(t * 6.0 + k), C("#fff6c8", 1.8))
+		return
 	if sk == "candy":
 		draw_candy_base(lv, p, r, sq, rot, gold)
 	else:
@@ -1392,7 +1496,7 @@ func draw_candy(lv: int, p: Vector2, r: float, sq = 0.0, rot = 0.0, gold = false
 
 func draw_candy_base(lv: int, p: Vector2, r: float, sq = 0.0, rot = 0.0, gold = false) -> void:
 	draw_circle(p + Vector2(0, r * 0.25), r + 3, Color(0.2, 0.05, 0.25, 0.25))
-	draw_set_transform(p, rot, Vector2(1.0 + sq * 0.16, 1.0 - sq * 0.16))
+	draw_set_transform(p + base_off, rot, Vector2(1.0 + sq * 0.16, 1.0 - sq * 0.16))
 	var ink = INK()
 	match lv:
 		1: # dragee: glossy oval
@@ -1473,7 +1577,7 @@ func draw_candy_base(lv: int, p: Vector2, r: float, sq = 0.0, rot = 0.0, gold = 
 			ell(Vector2(-r * 0.3, -r * 0.25), r * 0.35, r * 0.15, Color(1.6, 1.6, 1.6, 0.9))
 	if gold:
 		draw_arc(Vector2.ZERO, r + 6, 0, TAU, 32, C("#ffd36b", 2.2, 0.9), 4.0, true)
-	draw_set_transform(Vector2.ZERO)
+	draw_set_transform(base_off)
 
 func ell(c: Vector2, rx: float, ry: float, col: Color) -> void:
 	var pts = PackedVector2Array()
@@ -1492,7 +1596,10 @@ func draw_balls() -> void:
 		var tr: Array = b.tr
 		for i in range(1, tr.size()):
 			var a = float(i) / tr.size()
-			draw_line(tr[i - 1], tr[i], C("#ffd36b" if b.gold else "#ffffff", 1.0, a * 0.5), maxf(1.5, b.r * 0.35 * a), true)
+			if trail_style != "" and not b.gold:
+				trail_dot(tr[i], a, b.r * 1.1, i + int(t * 20.0), trail_style)
+			else:
+				draw_line(tr[i - 1], tr[i], C("#ffd36b" if b.gold else "#ffffff", 1.0, a * 0.5), maxf(1.5, b.r * 0.35 * a), true)
 	for b in balls:
 		if hidden_ball(b):
 			continue
@@ -1502,7 +1609,7 @@ func draw_bonbon(c: Vector2, s: float, wob: float, label: String) -> void:
 	var sway = sin(t * 2.2) * 0.12 + wob * 0.25 * sin(t * 40.0)
 	for i in range(7):
 		draw_circle(c, (46 + i * 9) * s, C("#ffffff", 1.3, 0.06))
-	draw_set_transform(c, sway, Vector2(s, s))
+	draw_set_transform(c + base_off, sway, Vector2(s, s))
 	var w = 46.0
 	var h = 34.0
 	for sg in [-1, 1]:
@@ -1524,7 +1631,7 @@ func draw_bonbon(c: Vector2, s: float, wob: float, label: String) -> void:
 		var yl = h * sqrt(maxf(0.0, 1.0 - pow(x0 / w, 2))) * 0.9
 		draw_line(Vector2(x0 - 9, -yl), Vector2(x0 + 9, yl), C("#ffffff", 1.0, 0.55), 7.0, true)
 	draw_circle(Vector2(-w * 0.45, -h * 0.4), 9, Color(1, 1, 1, 0.75))
-	draw_set_transform(Vector2.ZERO)
+	draw_set_transform(base_off)
 	text_c(c + Vector2(0, 3), label, int(32 * s), Color(1, 1, 1), 8)
 
 func draw_boss() -> void:
@@ -1773,7 +1880,7 @@ func draw_boss_body(kind: String, c: Vector2, s: float, ratio: float, shield: bo
 				boss_eyes(q + Vector2(0, -2) * s, 12.0, s * 0.5, tgt, locked)
 			boss_crown(c + Vector2(0, -62) * s, s * 0.6, locked)
 		"donut":
-			draw_set_transform(c, rot)
+			draw_set_transform(c + base_off, rot)
 			draw_arc(Vector2.ZERO, 44 * s, 0, TAU, 48, ink, 52 * s + 8, true)
 			draw_arc(Vector2.ZERO, 44 * s, 0, TAU, 48, bcol("#e8b273", locked), 52 * s, true)
 			draw_arc(Vector2(0, -4 * s), 44 * s, 0, TAU, 48, bcol("#ff8fc6", locked), 40 * s, true)
@@ -1782,7 +1889,7 @@ func draw_boss_body(kind: String, c: Vector2, s: float, ratio: float, shield: bo
 				var an = k * TAU / 16.0 + 0.2
 				var q = Vector2(cos(an), sin(an)) * (40.0 + (k % 3) * 6.0) * s
 				draw_line(q - Vector2(cos(an + 1.2), sin(an + 1.2)) * 5 * s, q + Vector2(cos(an + 1.2), sin(an + 1.2)) * 5 * s, bcol(spc[k % 5], locked), 4.0 * s, true)
-			draw_set_transform(Vector2.ZERO)
+			draw_set_transform(base_off)
 			boss_eyes(c + Vector2(0, -44) * s, 22.0, s * 0.7, tgt, locked)
 			boss_crown(c + Vector2(0, -96) * s, s * 0.75, locked)
 			draw_arc(c + Vector2(0, 50) * s, 12 * s, PI * 1.15, PI * 1.85, 10, ink, 5.0 * s, true)
@@ -1871,9 +1978,9 @@ func draw_parts() -> void:
 			var rr: float = 8.0 + (p.r - 8.0) * (1.0 - a * a)
 			draw_arc(p.p, rr, 0, TAU, 48, Color(col.r, col.g, col.b, a), 6.0 * a + 1.0, true)
 		elif p.has("conf"):
-			draw_set_transform(p.p, p.rot)
+			draw_set_transform(p.p + base_off, p.rot)
 			draw_rect(Rect2(-6, -3, 12, 6), Color(col.r, col.g, col.b, minf(1.0, a * 2.0)))
-			draw_set_transform(Vector2.ZERO)
+			draw_set_transform(base_off)
 		else:
 			draw_circle(p.p, p.size * (0.4 + 0.6 * a), Color(col.r, col.g, col.b, a))
 	for f in floats:
@@ -1928,12 +2035,12 @@ func draw_hud() -> void:
 	# money pill
 	var mp = Rect2(430, 40, 256, 58)
 	rrect(mp, C(INKH, 1.0, 0.75), 29)
-	draw_set_transform(Vector2(451, 69), -0.35)
+	draw_set_transform(Vector2(451, 69) + base_off, -0.35)
 	rrect(Rect2(-31, -19, 62, 38), INK(), 8)
 	rrect(Rect2(-28, -16, 56, 32), C("#3fd94a"), 6)
 	draw_circle(Vector2.ZERO, 9, C("#1f8a2a"))
 	text_c(Vector2(0, 1), "$", 16, C("#d9ffd9"), 0)
-	draw_set_transform(Vector2.ZERO)
+	draw_set_transform(base_off)
 	text_l(Vector2(676, 69), fmt(money), 34, Color(1, 1, 1), 7, true)
 	text_l(Vector2(684, 120), "$%s / sec" % fmt(rate()), 20, Color(1, 1, 1), 5, true)
 	# coins
@@ -2081,14 +2188,14 @@ func draw_tutorial() -> void:
 
 func draw_hand(p: Vector2) -> void:
 	# simple cartoon pointing hand (finger up-left)
-	draw_set_transform(p, -0.45)
+	draw_set_transform(p + base_off, -0.45)
 	rrect(Rect2(-24, -6, 48, 54), INK(), 18)
 	rrect(Rect2(-20, -2, 40, 46), C("#ffffff"), 15)
 	rrect(Rect2(-11, -52, 22, 56), INK(), 11)
 	rrect(Rect2(-7, -48, 14, 50), C("#ffffff"), 7)
 	for k in range(3):
 		draw_line(Vector2(-12 + k * 10, 6), Vector2(-12 + k * 10, 20), C("#d6c8f0"), 3.0)
-	draw_set_transform(Vector2.ZERO)
+	draw_set_transform(base_off)
 
 func draw_banner() -> void:
 	var k: float = banner.t
@@ -2152,6 +2259,8 @@ func draw_fail() -> void:
 	rrect(Rect2(bar.position, Vector2(bar.size.x * p, bar.size.y)), C("#3fcf9f"), 20)
 	text_c(bar.get_center() + Vector2(0, 1), "%d%%" % int(p * 100), 30, Color(1, 1, 1), 7)
 	big_button(Rect2(190, 830, 340, 92), "RETRY", "#ff5fa2")
+	if boost_time > 0:
+		big_button(Rect2(190, 700, 340, 84), "+15 s  (x%d)" % boost_time, "#3fcf9f")
 
 func draw_newcandy() -> void:
 	var k: float = popup.t
@@ -2189,11 +2298,18 @@ func map_nodes() -> Array:
 	var nodes = []
 	var n = clampi(LEVELS.size() - (map_world - 1) * 10, 0, 20 if map_world == 5 else 10)
 	for i in range(n):
-		if n > 10:
-			nodes.append(Vector2(360 + sin(i * 1.25 + 0.4) * 210.0, 1110.0 - i * 44.0))
-		else:
-			nodes.append(Vector2(360 + sin(i * 0.95 + 0.4) * 190.0, 1120.0 - i * 95.0))
+		nodes.append(Vector2(360 + sin(i * 0.95 + 0.4) * 190.0, 1050.0 - i * 118.0))
 	return nodes
+
+func map_max_scroll() -> float:
+	var nodes = map_nodes()
+	return maxf(0.0, 470.0 - (nodes[nodes.size() - 1].y - 150.0))
+
+func focus_map() -> void:
+	var nodes = map_nodes()
+	var base = (map_world - 1) * 10
+	var cur = clampi(unlocked - 1 - base, 0, nodes.size() - 1)
+	map_scroll = clampf(700.0 - nodes[cur].y, 0.0, map_max_scroll())
 
 func draw_map() -> void:
 	var base = (map_world - 1) * 10
@@ -2203,10 +2319,18 @@ func draw_map() -> void:
 	var road_l = ["#ffb3d6", "#a8f5dc", "#9fb6ff", "#ffd08a", "#d0c0ff"][clampi(map_world - 1, 0, 4)]
 	var ext = nodes.duplicate()
 	ext.insert(0, Vector2(300, 1290))
-	ext.append(Vector2(360, 200))
+	ext.append(Vector2(360, nodes[nodes.size() - 1].y - 170.0))
 	var path = catmull(ext, 6.0)
-	# decorations behind the road
-	map_decor(w2)
+	base_off = Vector2(0, map_scroll)
+	draw_set_transform(base_off)
+	# decorations behind the road (repeated up the map)
+	for off in [0.0, -900.0, -1800.0]:
+		if nodes[nodes.size() - 1].y - 300.0 < 1000.0 + off:
+			base_off = Vector2(0, map_scroll + off)
+			draw_set_transform(base_off)
+			map_decor(w2)
+	base_off = Vector2(0, map_scroll)
+	draw_set_transform(base_off)
 	# the road: soft shadow, thick outline, candy road with diagonal stripes and a shiny edge
 	cap_line(shifted(path, Vector2(0, 10)), C(INKH, 1.0, 0.25), 74.0)
 	cap_line(path, INK(), 70.0)
@@ -2220,14 +2344,10 @@ func draw_map() -> void:
 			draw_line(path[i] - nn * 26.0 - tg * 8.0, path[i] + nn * 26.0 + tg * 8.0, C(road_l), 9.0, true)
 	cap_line(shifted(path, Vector2(-3, -8)), Color(1, 1, 1, 0.28), 10.0)
 	# the gate to the next world
-	var gate = Rect2(220, 150, 280, 64)
+	var gate = Rect2(220, nodes[nodes.size() - 1].y - 200.0, 280, 64)
 	var next_open = unlocked > base + 10 and base + 10 < LEVELS.size()
 	nine("pill_w" if next_open else "pill", gate.grow(10), 70, 60, 70, 70)
 	text_c(gate.get_center() + Vector2(0, -2), "FINAL WORLD" if map_world == 5 else (("WORLD %d  >" % (map_world + 1)) if next_open else ("WORLD %d  LOCKED" % (map_world + 1))), 26, Color(1, 1, 1) if next_open else C("#9b7bff"), 6 if next_open else 0)
-	if map_world > 1:
-		var back = Rect2(40, 1060, 170, 56)
-		nine("pill_w", back.grow(8), 70, 60, 70, 70)
-		text_c(back.get_center() + Vector2(0, -2), "< WORLD %d" % (map_world - 1), 24, Color(1, 1, 1), 6)
 	var cur = clampi(unlocked - 1 - base, 0, nodes.size() - 1)
 	for i in range(nodes.size()):
 		var p: Vector2 = nodes[i]
@@ -2247,14 +2367,26 @@ func draw_map() -> void:
 	var cp: Vector2 = nodes[cur] + Vector2(0, -78 - hop * 18.0)
 	ell(nodes[cur] + Vector2(0, -50), 20.0 - hop * 6.0, 6.0, C(INKH, 1.0, 0.25))
 	draw_candy(2, cp, 26.0, (1.0 - hop) * 0.6)
+	base_off = Vector2.ZERO
+	draw_set_transform(Vector2.ZERO)
+	# fixed bands (header + bottom bar) so the scrolling path slides under them
+	draw_texture_rect_region(bgtex, Rect2(0, 0, 720, 316), Rect2(0, 0, 64, 256.0 * 316.0 / 1280.0))
+	draw_line(Vector2(0, 316), Vector2(720, 316), C(INKH, 1.0, 0.15), 6.0)
+	draw_texture_rect_region(bgtex, Rect2(0, 1120, 720, 160), Rect2(0, 256.0 * 1120.0 / 1280.0, 64, 256.0 * 160.0 / 1280.0))
+	draw_line(Vector2(0, 1120), Vector2(720, 1120), C(INKH, 1.0, 0.15), 6.0)
+	if map_world > 1:
+		var back = Rect2(520, 1124, 170, 50)
+		nine("pill_w", back.grow(6), 70, 60, 70, 70)
+		text_c(back.get_center() + Vector2(0, -2), "< WORLD %d" % (map_world - 1), 22, Color(1, 1, 1), 6)
 	# header
 	var bn = Rect2(110, 40, 500, 92)
 	nine("card", bn.grow(10), 46, 60, 46, 46)
 	text_c(bn.get_center() + Vector2(0, -16), "WORLD %d" % map_world, 24, Color(1, 1, 1), 6)
 	text_c(bn.get_center() + Vector2(0, 22), WORLD_NAMES[clampi(map_world - 1, 0, 4)], 38, C("#ff5fa2"), 0)
-	draw_circle(Vector2(560, 246), 15, INK())
-	draw_circle(Vector2(560, 246), 12, C("#ffd36b"))
-	text_l(Vector2(584, 246), str(coins), 26, Color(1, 1, 1), 6)
+	draw_circle(Vector2(58, 1140), 15, INK())
+	draw_circle(Vector2(58, 1140), 12, C("#ffd36b"))
+	text_l(Vector2(82, 1140), str(coins), 26, Color(1, 1, 1), 6)
+	draw_star_bar(map_world)
 	big_button(Rect2(160, 1170, 360, 86), "PLAY  " + lvl_name(clampi(unlocked - 1, 0, LEVELS.size() - 1)), "#3fcf9f")
 	img("round", Rect2(600, 1180, 90, 90))
 	img("round", Rect2(30, 1180, 90, 90))
@@ -2372,7 +2504,13 @@ func skin_by_id(id: String) -> Dictionary:
 	return SKINS[0]
 
 func obj_name(lv: int) -> String:
-	return skin_by_id(equip).objs[clampi(lv - 1, 0, 9)]
+	var sk = skin_by_id(equip)
+	if sk.has("base"):
+		return "Star " + skin_by_id(sk.base).objs[clampi(lv - 1, 0, 9)]
+	return sk.objs[clampi(lv - 1, 0, 9)]
+
+func skin_objs(sk: Dictionary) -> Array:
+	return skin_by_id(sk.base).objs if sk.has("base") else sk.objs
 
 func lv_icon() -> int:
 	return 2
@@ -2447,7 +2585,7 @@ func draw_obj(sk: String, lv: int, p: Vector2, r: float, sq: float, rot: float, 
 	equip = keep
 	var ink = INK()
 	draw_circle(p + Vector2(0, r * 0.25), r + 3, Color(0.2, 0.05, 0.25, 0.25))
-	draw_set_transform(p, rot if sk != "music" else 0.0, Vector2(1.0 + sq * 0.16, 1.0 - sq * 0.16))
+	draw_set_transform(p + base_off, rot if sk != "music" else 0.0, Vector2(1.0 + sq * 0.16, 1.0 - sq * 0.16))
 	match sk:
 		"fruits":
 			fruit(lv, r, C(col))
@@ -2505,7 +2643,7 @@ func draw_obj(sk: String, lv: int, p: Vector2, r: float, sq: float, rot: float, 
 				draw_texture_rect(tt, Rect2(-r * 1.25, -r * 1.25, r * 2.5, r * 2.5), false)
 	if gold:
 		draw_arc(Vector2.ZERO, r + 6, 0, TAU, 32, C("#ffd36b", 2.2, 0.9), 4.0, true)
-	draw_set_transform(Vector2.ZERO)
+	draw_set_transform(base_off)
 
 func gloss(r: float) -> void:
 	ell(Vector2(-r * 0.35, -r * 0.38), r * 0.3, r * 0.16, Color(1, 1, 1, 0.75))
@@ -2671,9 +2809,11 @@ func open_skins(from: String) -> void:
 	for i in range(SKINS.size()):
 		if SKINS[i].id == equip:
 			sel_skin = i
+			skin_page = i / 6
 	play("swipe", 1.1, -6.0)
 
 func skin_card_rect(i: int) -> Rect2:
+	i = i % 6
 	var col = i % 3
 	var row = i / 3
 	return Rect2(42 + col * 218, 170 + row * 254, 200, 236)
@@ -2683,7 +2823,16 @@ func skins_input(pos: Vector2) -> void:
 		state = skins_from
 		play("swipe", 0.9, -6.0)
 		return
-	for i in range(SKINS.size()):
+	var pages = int(ceil(SKINS.size() / 6.0))
+	if Rect2(36, 664, 110, 40).has_point(pos):
+		skin_page = (skin_page - 1 + pages) % pages
+		play("swipe", 1.2, -8.0)
+		return
+	if Rect2(574, 664, 110, 40).has_point(pos):
+		skin_page = (skin_page + 1) % pages
+		play("swipe", 1.2, -8.0)
+		return
+	for i in range(skin_page * 6, mini(SKINS.size(), skin_page * 6 + 6)):
 		if skin_card_rect(i).has_point(pos):
 			sel_skin = i
 			play("pop2", 1.2, -8.0)
@@ -2708,7 +2857,11 @@ func draw_skins() -> void:
 	draw_circle(Vector2(70, 82), 18, INK())
 	draw_circle(Vector2(70, 82), 15, C("#ffd36b"))
 	text_l(Vector2(96, 82), str(coins), 30, Color(1, 1, 1), 7)
-	for i in range(SKINS.size()):
+	var pages = int(ceil(SKINS.size() / 6.0))
+	text_c(Vector2(360, 684), "%d / %d" % [skin_page + 1, pages], 24, Color(1, 1, 1), 6)
+	text_c(Vector2(90, 684), "<  PREV", 24, Color(1, 1, 1), 6)
+	text_c(Vector2(630, 684), "NEXT  >", 24, Color(1, 1, 1), 6)
+	for i in range(skin_page * 6, mini(SKINS.size(), skin_page * 6 + 6)):
 		var sk = SKINS[i]
 		var r = skin_card_rect(i)
 		var owned = skins.has(sk.id)
@@ -2723,6 +2876,8 @@ func draw_skins() -> void:
 			st = "OWNED"
 		elif sk.how == "boss":
 			st = "BOSS " + lvl_name(sk.boss - 1); scol = C("#ff4d6d")
+		elif sk.how == "stars":
+			st = "%d STARS W%d" % [miles(sk.world)[miles(sk.world).size() - 1], sk.world]; scol = C("#e0a020")
 		else:
 			st = "%d coins" % sk.price; scol = C("#e0a020")
 		text_c(Vector2(r.get_center().x, r.end.y - 34), st, 24, scol, 0)
@@ -2750,6 +2905,8 @@ func draw_skins() -> void:
 		big_button(Rect2(190, 1150, 340, 90), "EQUIP", "#3fcf9f")
 	elif sk2.how == "shop":
 		big_button(Rect2(190, 1150, 340, 90), "BUY  %d" % sk2.price, "#ff5fa2" if coins >= sk2.price else "#b3a7c4")
+	elif sk2.how == "stars":
+		big_button(Rect2(190, 1150, 340, 90), "ALL STARS W%d" % sk2.world, "#ff5fa2")
 	else:
 		big_button(Rect2(190, 1150, 340, 90), "BEAT BOSS " + lvl_name(sk2.boss - 1), "#ff5fa2")
 
@@ -3600,3 +3757,149 @@ func draw_space() -> void:
 			draw_circle(comet.p - comet.v.normalized() * k * 12.0, 16.0 - k * 1.3, C("#ffd36b", 1.6, 0.8 - k * 0.07))
 		draw_circle(comet.p, 18.0, INK())
 		draw_circle(comet.p, 15.0, C("#fff1d6", 1.5))
+
+
+# ================================================================ star chests (rewards per world)
+func world_range(w: int) -> Array:
+	var a = (w - 1) * 10
+	var n = 20 if w == 5 else 10
+	return [a, mini(a + n, LEVELS.size())]
+
+func world_stars(w: int) -> int:
+	var rg = world_range(w)
+	var n = 0
+	for i in range(rg[0], rg[1]):
+		n += best_stars.get(i, 0)
+	return n
+
+func miles(w: int) -> Array:
+	return MILE20 if w == 5 else MILE10
+
+func chest_reward(w: int, k: int) -> Dictionary:
+	var last = miles(w).size() - 1
+	if k == last:
+		return {"kind": "skin", "id": "star%d" % w, "txt": "STAR SKIN"}
+	if w == 5:
+		return [{"kind": "coins", "n": 150, "txt": "150 COINS"}, {"kind": "gold", "txt": "GOLDEN CANDY BOOSTER"}, {"kind": "trail", "id": TRAILS[w - 1], "txt": "COMET TRAIL"}, {"kind": "time", "txt": "+15 s BOOSTER"}, {"kind": "coins", "n": 1000, "txt": "1000 COINS"}][k]
+	return [{"kind": "coins", "n": 100, "txt": "100 COINS"}, {"kind": "gold", "txt": "GOLDEN CANDY BOOSTER"}, {"kind": "trail", "id": TRAILS[w - 1], "txt": TRAILS[w - 1].to_upper() + " TRAIL"}, {"kind": "coins_time", "n": 500, "txt": "500 COINS + 15 s BOOSTER"}][k]
+
+func claim_chest(w: int, k: int) -> void:
+	var key = "%d:%d" % [w, k]
+	if claimed.has(key) or world_stars(w) < miles(w)[k]:
+		return
+	claimed[key] = true
+	var rw = chest_reward(w, k)
+	match rw.kind:
+		"coins":
+			coins += rw.n
+		"gold":
+			boost_gold += 1
+		"time":
+			boost_time += 1
+		"coins_time":
+			coins += rw.n
+			boost_time += 1
+		"trail":
+			trail_style = rw.id
+		"skin":
+			skins[rw.id] = true
+			equip = rw.id
+	popup = {"t": 0.0, "kind": "chest", "rw": rw, "w": w}
+	state = "chest"
+	play("cash", 1.0, -4.0)
+	buzz(40)
+	save_game()
+
+func chest_pos(w: int, k: int) -> Vector2:
+	var m = miles(w)
+	return Vector2(150 + 420.0 * float(m[k]) / m[m.size() - 1], 262)
+
+func draw_star_bar(w: int) -> void:
+	var m = miles(w)
+	var total = m[m.size() - 1]
+	var have = world_stars(w)
+	var bar = Rect2(150, 250, 420, 24)
+	rrect(bar.grow(5), INK(), 16)
+	rrect(bar, C("#ffffff", 1.0, 0.7), 12)
+	var k0 = clampf(float(have) / total, 0.0, 1.0)
+	if k0 > 0.0:
+		rrect(Rect2(bar.position, Vector2(maxf(24.0, bar.size.x * k0), bar.size.y)), C("#ffd36b"), 12)
+	draw_star(Vector2(112, 262), 20.0, C("#ffd36b"))
+	text_c(Vector2(112, 296), "%d/%d" % [have, total], 20, Color(1, 1, 1), 5)
+	for k in range(m.size()):
+		var p = chest_pos(w, k)
+		var got = claimed.has("%d:%d" % [w, k])
+		var ready = have >= m[k] and not got
+		draw_chest(p + Vector2(0, -4), got, ready, k == m.size() - 1)
+		text_c(p + Vector2(0, 38), str(m[k]), 18, Color(1, 1, 1), 5)
+
+func draw_chest(p: Vector2, open: bool, ready: bool, big: bool) -> void:
+	var s = 1.25 if big else 1.0
+	if ready:
+		for k in range(3):
+			draw_circle(p, (30 + k * 8 + sin(t * 5.0) * 3.0) * s, C("#ffd36b", 1.4, 0.12))
+	var bob = sin(t * 6.0) * 3.0 if ready else 0.0
+	var r = Rect2(p + Vector2(-20, -8 + bob) * s, Vector2(40, 26) * s)
+	rrect(r.grow(4), INK(), 8)
+	rrect(r, C("#ff5fa2") if not open else C("#d6c8f0"), 6)
+	draw_rect(Rect2(r.position + Vector2(r.size.x / 2 - 4 * s, 0), Vector2(8 * s, r.size.y)), C("#ffd36b") if not open else C("#ece4f8"))
+	if open:
+		draw_colored_polygon(PackedVector2Array([r.position + Vector2(-2, 0), r.position + Vector2(r.size.x + 2, 0), r.position + Vector2(r.size.x - 4, -14 * s), r.position + Vector2(4, -14 * s)]), INK())
+	else:
+		var lid = Rect2(r.position + Vector2(-2, -12 * s), Vector2(r.size.x + 4, 14 * s))
+		rrect(lid.grow(3), INK(), 8)
+		rrect(lid, C("#ff7ab8"), 7)
+		draw_circle(Vector2(r.get_center().x, r.position.y + 1), 4 * s, C("#ffd36b"))
+
+func draw_chest_popup() -> void:
+	var k: float = popup.t
+	draw_rect(Rect2(0, 0, 720, 1280), C(INKH, 1.0, 0.6 * minf(1.0, k / 0.2)))
+	var sc = minf(1.0, k / 0.3)
+	for i in range(12):
+		var an = t * 0.6 + i * TAU / 12.0
+		draw_line(Vector2(360, 600), Vector2(360, 600) + Vector2(cos(an), sin(an)) * 420.0 * sc, C("#ffd36b", 1.2, 0.14), 32.0)
+	text_c(Vector2(360, 380), "STAR CHEST!", int(64 * (0.5 + 0.5 * sc)), C("#ffd36b"), 12)
+	var rw = popup.rw
+	match rw.kind:
+		"skin":
+			for j in range(5):
+				draw_candy(1 + j * 2, Vector2(360 + (j - 2) * 120, 620 + absf(j - 2) * 30), (34.0 + (2 - absf(j - 2)) * 14.0) * sc, 0.0, 0.0, false, rw.id)
+		"trail":
+			var c0 = Vector2(360, 610)
+			for j in range(14):
+				var q = c0 + Vector2(-180 + j * 18, sin(j * 0.6 + t * 4.0) * 30)
+				trail_dot(q, 1.0 - j / 14.0, 18.0, j, rw.id)
+			draw_candy(2, c0 + Vector2(80, sin(14 * 0.6 + t * 4.0) * 30), 34.0)
+		"gold", "time":
+			draw_circle(Vector2(360, 610), 90 * sc, INK())
+			draw_circle(Vector2(360, 610), 84 * sc, C("#ffd36b"))
+			text_c(Vector2(360, 612), "x10" if rw.kind == "gold" else "+15s", int(56 * sc), Color(1, 1, 1), 9)
+		_:
+			draw_circle(Vector2(360, 610), 90 * sc, INK())
+			draw_circle(Vector2(360, 610), 84 * sc, C("#ffd36b"))
+			draw_circle(Vector2(338, 585), 22 * sc, Color(1, 1, 1, 0.6))
+	text_c(Vector2(360, 800), rw.txt, 46, Color(1, 1, 1), 10)
+	if k > 0.6:
+		text_c(Vector2(360, 1000), "Tap to continue", 28, C("#ffffff", 1.0, 0.6 + 0.4 * sin(t * 4.0)), 6)
+
+# cosmetic trails
+func trail_dot(q: Vector2, a: float, w: float, i: int, style: String) -> void:
+	match style:
+		"rainbow":
+			var hue = fmod(i * 0.08 + t * 0.5, 1.0)
+			draw_circle(q, w * 0.5 * a, Color.from_hsv(hue, 0.55, 1.0, a * 0.8))
+		"stars":
+			if i % 2 == 0:
+				draw_star(q, w * 0.45 * a + 2.0, C("#ffd36b", 1.4, a))
+		"hearts":
+			if i % 2 == 0:
+				var hs = w * 0.3 * a + 2.0
+				draw_circle(q + Vector2(-hs * 0.5, 0), hs * 0.6, C("#ff5fa2", 1.0, a))
+				draw_circle(q + Vector2(hs * 0.5, 0), hs * 0.6, C("#ff5fa2", 1.0, a))
+				draw_colored_polygon(PackedVector2Array([q + Vector2(-hs * 1.05, hs * 0.2), q + Vector2(hs * 1.05, hs * 0.2), q + Vector2(0, hs * 1.3)]), C("#ff5fa2", 1.0, a))
+		"bubbles":
+			if i % 2 == 0:
+				draw_arc(q, w * 0.35 * a + 2.0, 0, TAU, 12, C("#8fd8ff", 1.3, a), 2.0, true)
+		"comet":
+			draw_circle(q, w * 0.55 * a, C("#ff9a2e", 1.8, a * 0.7))
+			draw_circle(q, w * 0.25 * a, C("#fff1d6", 1.8, a))
