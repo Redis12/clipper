@@ -152,6 +152,8 @@ def main():
                                 stdin=subprocess.PIPE)
     proc = ffmpeg()
     trails = {}
+    row_y = [None] * len(chars)
+    cur_lead, lead_t, lead_times = [None], [None], []
     for fi in range(n_total):
         t = fi / FPS
         f = frames[min(fi, len(frames) - 1)]
@@ -182,13 +184,33 @@ def main():
         d.text((W / 2, 40), "WHO HITS", font=fT1, fill="white", anchor="mt", stroke_width=5, stroke_fill=(60, 10, 70))
         d.text((W / 2, 128), "1,000,000 FIRST?", font=fT2, fill=(255, 210, 60), anchor="mt", stroke_width=6,
                stroke_fill=(60, 10, 70))
-        # lignes de score
-        lead = max(range(len(chars)), key=lambda i: f["power"][i])
-        for i, (name, _) in enumerate(chars):
-            y = 300 + i * 70
-            if i == lead and t > 0.8:
-                d.rounded_rectangle((40, y - 6, W - 40, y + 62), 16, fill=COLS[i] + (40,), outline=COLS[i] + (180,),
-                                    width=3)
+        # lignes de score : liste dynamique, le nouveau 1er remonte en haut (demandé le 06/11)
+        p_ = f["power"]
+        best = max(range(len(chars)), key=lambda i: p_[i])
+        if cur_lead[0] is None:
+            cur_lead[0] = best
+        elif best != cur_lead[0] and p_[best] > p_[cur_lead[0]] * 1.02 and t > 0.8:
+            cur_lead[0] = best
+            lead_t[0] = t
+            lead_times.append(t)
+        lead = cur_lead[0]
+        order = [lead] + [i for i in range(len(chars)) if i != lead]
+        for rank, i in enumerate(order):
+            target = 300 + rank * 70
+            row_y[i] = target if row_y[i] is None else row_y[i] + (target - row_y[i]) * 0.28
+        fl = max(0.0, 1 - (t - lead_t[0]) / 0.45) if lead_t[0] is not None else 0.0
+        for i in sorted(range(len(chars)), key=lambda i: (i == lead, -row_y[i])):
+            name = chars[i][0]
+            y = row_y[i]
+            is_lead = i == lead and t > 0.8
+            if is_lead:
+                mix = 0.35 + 0.4 * fl
+                fillc = tuple(int(30 * (1 - mix) + c * mix) for c in COLS[i]) + (255,)
+                d.rounded_rectangle((40, y - 6, W - 40, y + 62), 16, fill=fillc,
+                                    outline=(255, 255, 255, int(180 + 75 * fl)) if fl > 0 else COLS[i] + (200,),
+                                    width=3 + int(3 * fl))
+            elif abs(row_y[i] - (300 + order.index(i) * 70)) > 3:      # en train de descendre
+                d.rounded_rectangle((40, y - 6, W - 40, y + 62), 16, fill=(52, 22, 92, 255))
             PASTE(img, icons_row[i], (52, y - 6))
             d.text((128, y + 28), name.upper(), font=fName, fill="white", anchor="lm")
             x0, x1 = 330, 840
@@ -197,8 +219,8 @@ def main():
             if fr > 0.01:
                 d.rounded_rectangle((x0, y + 14, x0 + max(28, (x1 - x0) * fr), y + 42), 14, fill=COLS[i] + (255,))
             d.text((W - 54, y + 28), compact(disp[i]), font=fVal, fill="white", anchor="rm")
-            if i == lead and t > 0.8:                                # couronne
-                cx, cy = 84, y - 12
+            if is_lead:                                              # couronne qui rebondit au changement
+                cx, cy = 84, y - 12 - 14 * math.sin(min(1.0, 1 - fl) * math.pi) * (fl > 0)
                 d.polygon([(cx - 22, cy + 12), (cx - 22, cy - 6), (cx - 11, cy + 3), (cx, cy - 12), (cx + 11, cy + 3),
                            (cx + 22, cy - 6), (cx + 22, cy + 12)], fill=(255, 205, 50), outline=(120, 70, 0))
         # clous
@@ -324,7 +346,7 @@ def main():
     proc.wait()
     dur = n_total / FPS
     wav = out.with_suffix(".wav")
-    audio(events, T, dur, wav, len(chars), song=SONG[0], song_start=SONG[1])
+    audio(events, T, dur, wav, len(chars), song=SONG[0], song_start=SONG[1], lead_times=lead_times)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(out.with_suffix(".video.mp4")), "-i", str(wav),
                     "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-af", "loudnorm=I=-16:TP=-1.5", "-shortest",
                     str(out.with_suffix(".raw.mp4"))], check=True)
@@ -349,7 +371,7 @@ def pitch(x, semis):
     return np.interp(idx, np.arange(len(x)), x)
 
 
-def audio(events, T, dur, out, n_chars, song=None, song_start=0.0, per_hit=0.045, song_mode="bg"):
+def audio(events, T, dur, out, n_chars, song=None, song_start=0.0, per_hit=0.045, song_mode="bg", lead_times=()):
     snd = ROOT / "games/bounce_forge/snd"
     K = ROOT / "clipper/assets/sfx"
     mar = load(snd / "marimba.wav", 0.6)
@@ -428,6 +450,14 @@ def audio(events, T, dur, out, n_chars, song=None, song_start=0.0, per_hit=0.045
                 fr = 330 * 2 ** (-tt * 1.6)
                 s = np.sin(2 * np.pi * np.cumsum(fr) / SR) * np.exp(-tt * 3) * (0.6 + 0.4 * np.sign(np.sin(2 * np.pi * 7 * tt)))
                 put(s, t, 0.35)
+    # changement de leader : souffle + petit « ding » qui monte
+    nz = np.random.default_rng(1).standard_normal(int(0.3 * SR))
+    wenv = np.sin(np.linspace(0, np.pi, len(nz))) ** 2
+    whoosh = np.convolve(nz, np.ones(30) / 30, "same") * wenv
+    for lt in lead_times:
+        if lt < T - 0.1:
+            put(whoosh, lt, 0.25)
+            put(pitch(gpop, 7), lt + 0.05, 0.3)
     # victoire : cloche + boum + accord
     put(bell, T, 0.8)
     put(boom, T, 0.6)
