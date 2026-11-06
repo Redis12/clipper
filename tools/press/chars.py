@@ -2,7 +2,7 @@ import os, difflib, re
 LIB = "/home/claude/clipper/library/_fusion/"
 FINAL = {"Goku": "ULTRA INSTINCT GOKU", "Vegeta": "ULTRA EGO VEGETA", "Gohan": "BEAST GOHAN", "Frieza": "BLACK FRIEZA",
          "Cell": "CELL MAX", "Buu": "KID BUU", "Ichigo": "TRUE BANKAI ICHIGO", "Luffy": "GEAR 5 LUFFY",
-         "Naruto": "BARYON MODE NARUTO", "Sasuke": "BORUTO SASUKE"}
+         "Naruto": "BARYON MODE NARUTO", "Sasuke": "BORUTO SASUKE", "Madara": "SIX PATHS MADARA"}
 DB = {"Goku", "Vegeta", "Gohan", "Frieza", "Cell", "Buu"}
 PALETTE = [(255, 140, 40), (70, 120, 255), (255, 215, 60), (255, 90, 120), (60, 210, 255), (180, 110, 255), (120, 230, 140), (230, 230, 255)]
 def tiers(name):
@@ -17,6 +17,7 @@ def tiers(name):
     KEEP = {"Goku": ["Kid Goku", "Base", "SSJ1", "SSJ3", "SSJ Blue", "Ultra Instinct"],
             "Frieza": ["First Form", "Third Form", "Final Form", "Mecha Frieza", "Golden Frieza", "Black Frieza"],
             "Naruto": ["Kid Naruto", "Base", "Sage Mode", "Nine-Tails Chakra Mode", "Kurama Mode", "Baryon Mode"],
+            "Madara": ["Kid Madara", "Young Madara", "Mangekyō Sharingan", "Perfect Susanoo", "Rinnegan", "Six Paths Madara"],
             "Sasuke": ["Kid Sasuke", "Curse Mark", "Mangekyo Sharingan", "Perfect Susanoo", "Rinnegan", "Boruto Sasuke"]}
     if name in KEEP:
         rows = [r for r in rows if r[1] in KEEP[name]]
