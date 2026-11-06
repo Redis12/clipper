@@ -4185,7 +4185,80 @@ func face(p: Vector2, r: float) -> void:
 		draw_circle(p + Vector2(sg * r * 0.52, r * 0.16), r * 0.1, C("#ff9fbf", 1.0, 0.8))
 	draw_arc(p + Vector2(0, r * 0.12), r * 0.16, 0.2, PI - 0.2, 12, INK(), r * 0.07, true)
 
+func radial_bg(sq: Rect2, c0: String, c1: String, key: String) -> void:
+	if not tex.has(key):
+		var gr = Gradient.new()
+		gr.set_color(0, C(c0))
+		gr.set_color(1, C(c1))
+		var gt = GradientTexture2D.new()
+		gt.gradient = gr
+		gt.fill = GradientTexture2D.FILL_RADIAL
+		gt.fill_from = Vector2(0.5, 0.45)
+		gt.fill_to = Vector2(1.05, 1.05)
+		gt.width = 256
+		gt.height = 256
+		tex[key] = gt
+	draw_texture_rect(tex[key], sq, false)
+
+# big glossy mascot: hard candy with a face; mood 0 = wow (open mouth), 1 = happy, 2 = cheeky wink
+func draw_mascot(p: Vector2, r: float, mood: int, sq: float, base = "#ff3d6e") -> void:
+	var sx = 1.0 + sq * 0.12
+	var sy = 1.0 - sq * 0.12
+	# shadow
+	ell(p + Vector2(0, r * 1.02), r * 0.8, r * 0.16, C("#3a0a3a", 1.0, 0.35))
+	draw_set_transform(p + base_off, 0.0, Vector2(sx, sy))
+	var ink = INK()
+	draw_circle(Vector2.ZERO, r + r * 0.07, ink)
+	# body shading: dark edge -> base -> light center-top
+	draw_circle(Vector2.ZERO, r, C(base, 0.62))
+	draw_circle(Vector2(-r * 0.04, -r * 0.05), r * 0.93, C(base))
+	draw_circle(Vector2(-r * 0.12, -r * 0.16), r * 0.72, C(base, 1.12))
+	# candy swirl
+	for k in range(3):
+		var rr = r * (0.38 + k * 0.2)
+		draw_arc(Vector2(r * 0.05, r * 0.05), rr, -1.9 + k * 0.6, 0.9 + k * 0.6, 24, Color(1, 1, 1, 0.55), r * 0.07, true)
+	# rim light + big specular
+	draw_arc(Vector2.ZERO, r * 0.9, 0.3, 1.6, 24, C("#ffb3c8", 1.2, 0.8), r * 0.06, true)
+	ell(Vector2(-r * 0.42, -r * 0.5), r * 0.3, r * 0.17, Color(1, 1, 1, 0.92))
+	draw_circle(Vector2(-r * 0.12, -r * 0.66), r * 0.06, Color(1, 1, 1, 0.9))
+	# face
+	for sg in [-1, 1]:
+		var e = Vector2(sg * r * 0.33, -r * 0.02)
+		var ey = r * (0.22 if mood == 0 else 0.19)
+		if mood == 2 and sg == 1:
+			draw_arc(e + Vector2(0, r * 0.04), r * 0.13, PI + 0.3, TAU - 0.3, 12, ink, r * 0.07, true)
+		else:
+			ell(e, r * 0.155, ey, ink)
+			ell(e + Vector2(0, r * 0.02), r * 0.12, ey * 0.8, C("#2a1a4a"))
+			draw_circle(e + Vector2(-r * 0.05, -ey * 0.4), r * 0.06, Color(1, 1, 1))
+			draw_circle(e + Vector2(r * 0.05, ey * 0.25), r * 0.028, Color(1, 1, 1))
+		# brows
+		draw_line(e + Vector2(-r * 0.12, -r * 0.3 - (r * 0.04 if mood == 0 else 0.0)), e + Vector2(r * 0.12, -r * 0.33 - (r * 0.04 if mood == 0 else 0.0)), ink, r * 0.06, true)
+		ell(Vector2(sg * r * 0.56, r * 0.24), r * 0.13, r * 0.08, C("#ff9fbf", 1.1, 0.85))
+	if mood == 0:
+		# open "wow" mouth with tongue
+		ell(Vector2(0, r * 0.36), r * 0.2, r * 0.22, ink)
+		ell(Vector2(0, r * 0.38), r * 0.16, r * 0.18, C("#5a0a2a"))
+		ell(Vector2(0, r * 0.48), r * 0.11, r * 0.07, C("#ff7aa0"))
+	else:
+		var mouth = PackedVector2Array()
+		for k in range(13):
+			var a = lerpf(0.15, PI - 0.15, k / 12.0)
+			mouth.append(Vector2(cos(a) * r * 0.24, r * 0.2 + sin(a) * r * 0.2))
+		mouth.append(Vector2(r * 0.24, r * 0.2))
+		draw_colored_polygon(mouth, ink)
+		ell(Vector2(0, r * 0.34), r * 0.1, r * 0.05, C("#ff7aa0"))
+	draw_set_transform(base_off)
+
+func burst_rays(c: Vector2, n: int, len: float, col: Color, w: float, rot = 0.0) -> void:
+	for k in range(n):
+		var a0 = rot + k * TAU / n
+		draw_colored_polygon(PackedVector2Array([c, c + Vector2(cos(a0 - w), sin(a0 - w)) * len, c + Vector2(cos(a0 + w), sin(a0 + w)) * len]), col)
+
 func draw_icon_art(v: int) -> void:
+	if v >= 3:
+		draw_icon_art2(v)
+		return
 	var sq = Rect2(0, 280, 720, 720)
 	var c = sq.get_center()
 	if not tex.has("icon_bg"):
@@ -4254,3 +4327,50 @@ func draw_icon_art(v: int) -> void:
 		draw_candy(1, c + Vector2(225, -200), 52.0, 0.0, 0.3, false, "candy")
 	for q in [Vector2(-250, -40), Vector2(250, -60), Vector2(170, -250)]:
 		draw_star(c + q, 20.0, C("#fff6c8"))
+
+
+func draw_icon_art2(v: int) -> void:
+	var sq = Rect2(0, 280, 720, 720)
+	var c = sq.get_center()
+	if v == 3:
+		# D: mascot close-up, "wow" face, mid-bounce, hot pink -> violet, rays + coins
+		radial_bg(sq, "#ff8ac6", "#6a2cff", "bgD")
+		burst_rays(c + Vector2(0, -30), 16, 620.0, C("#ffffff", 1.0, 0.12), 0.09)
+		for q in [[Vector2(-250, -230), 46.0], [Vector2(265, -170), 40.0], [Vector2(240, 230), 34.0]]:
+			draw_coin(c + q[0], q[1])
+		draw_candy(10, c + Vector2(-255, 200), 62.0, 0.0, -0.5, false, "candy")
+		draw_mascot(c + Vector2(0, -10), 235.0, 0, 0.18)
+		for q in [Vector2(-300, -20), Vector2(300, 40), Vector2(-120, -300), Vector2(160, -305)]:
+			draw_star(c + q, 22.0, C("#fff6c8", 1.3))
+	elif v == 4:
+		# E: mascot framed by the striped tube ring, happy, mint pad below
+		radial_bg(sq, "#ffe08a", "#ff4f9a", "bgE")
+		burst_rays(c, 18, 620.0, C("#ffffff", 1.0, 0.16), 0.08, 0.1)
+		var ring = PackedVector2Array()
+		for k in range(97):
+			var a = k * TAU / 96.0
+			ring.append(c + Vector2(cos(a), sin(a)) * 300.0)
+		cap_line(ring, INK(), 104.0)
+		cap_line(ring, C("#7b3cff", 0.7), 88.0)
+		cap_line(shifted(ring, Vector2(-6, -10)), C("#9b6bff"), 66.0)
+		for k in range(1, ring.size(), 3):
+			var tg = (ring[k] - ring[k - 1]).normalized()
+			var nn = Vector2(-tg.y, tg.x)
+			draw_line(ring[k] - nn * 38.0 - tg * 12.0, ring[k] + nn * 38.0 + tg * 12.0, Color(1, 1, 1, 0.45), 15.0, true)
+		draw_arc(c, 300, PI * 0.35, PI * 0.65, 20, INK(), 46.0)
+		draw_arc(c, 300, PI * 0.36, PI * 0.64, 20, C("#7df0c8", 1.2), 32.0)
+		draw_mascot(c + Vector2(0, -6), 200.0, 1, 0.1)
+		for q in [Vector2(-170, -170), Vector2(185, -150)]:
+			draw_star(c + q, 20.0, C("#fff6c8", 1.3))
+	else:
+		# F: cheeky wink, mascot bursting out of the frame (bigger than the icon), golden bonbon trail
+		radial_bg(sq, "#7ff0d0", "#3a6cff", "bgF")
+		burst_rays(c + Vector2(40, 40), 14, 620.0, C("#ffffff", 1.0, 0.14), 0.1, 0.2)
+		for k in range(5):
+			var q = c + Vector2(-260 + k * 40, 260 - k * 40)
+			draw_circle(q, 34.0 - k * 4.0, C("#ffffff", 1.0, 0.25 + k * 0.1))
+		draw_coin(c + Vector2(255, -250), 44.0)
+		draw_coin(c + Vector2(285, -150), 30.0)
+		draw_mascot(c + Vector2(25, 35), 262.0, 2, 0.0)
+		draw_star(c + Vector2(-270, -250), 26.0, C("#fff6c8", 1.3))
+		draw_star(c + Vector2(-210, -300), 16.0, C("#fff6c8", 1.3))
