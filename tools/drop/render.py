@@ -349,7 +349,7 @@ def pitch(x, semis):
     return np.interp(idx, np.arange(len(x)), x)
 
 
-def audio(events, T, dur, out, n_chars, song=None, song_start=0.0, per_hit=0.045):
+def audio(events, T, dur, out, n_chars, song=None, song_start=0.0, per_hit=0.045, song_mode="bg"):
     snd = ROOT / "games/bounce_forge/snd"
     K = ROOT / "clipper/assets/sfx"
     mar = load(snd / "marimba.wav", 0.6)
@@ -371,7 +371,16 @@ def audio(events, T, dur, out, n_chars, song=None, song_start=0.0, per_hit=0.045
     PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31]
     cache = {}
     last_peg = -1
-    if song:                                                  # « Ma chanson » : chaque clou fait avancer le morceau
+    if song and song_mode == "bg":                            # musique de fond continue (choix du 06/11)
+        sg = load(song, 400)[int(song_start * SR):][:n]
+        env = np.ones(len(sg))
+        fi_, fo_ = int(0.3 * SR), int(1.2 * SR)
+        env[:fi_] = np.linspace(0, 1, fi_)
+        end_i = min(len(sg), int(dur * SR))
+        env[max(0, end_i - fo_):end_i] *= np.linspace(1, 0, end_i - max(0, end_i - fo_))
+        env[end_i:] = 0
+        a[:len(sg)] += 0.28 * sg * env
+    elif song:                                                  # « Ma chanson » : chaque clou fait avancer le morceau
         sg = load(song, 400)
         sg = sg[int(song_start * SR):]
         blk = int(0.01 * SR)
@@ -392,7 +401,7 @@ def audio(events, T, dur, out, n_chars, song=None, song_start=0.0, per_hit=0.045
             budget = max(0.0, budget - 0.01)
     for t, kind, d in events:
         if kind == "peg":
-            if song:
+            if song and song_mode != "bg":
                 continue
             if t - last_peg < 0.025:                          # pas 2 notes collées
                 continue
