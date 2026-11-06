@@ -4256,6 +4256,9 @@ func burst_rays(c: Vector2, n: int, len: float, col: Color, w: float, rot = 0.0)
 		draw_colored_polygon(PackedVector2Array([c, c + Vector2(cos(a0 - w), sin(a0 - w)) * len, c + Vector2(cos(a0 + w), sin(a0 + w)) * len]), col)
 
 func draw_icon_art(v: int) -> void:
+	if v >= 6:
+		draw_icon_art3(v)
+		return
 	if v >= 3:
 		draw_icon_art2(v)
 		return
@@ -4374,3 +4377,72 @@ func draw_icon_art2(v: int) -> void:
 		draw_mascot(c + Vector2(25, 35), 262.0, 2, 0.0)
 		draw_star(c + Vector2(-270, -250), 26.0, C("#fff6c8", 1.3))
 		draw_star(c + Vector2(-210, -300), 16.0, C("#fff6c8", 1.3))
+
+
+# thick gummy pad seen in close-up (like the reference: big rounded bar with ink outline + shine)
+func icon_pad(a: Vector2, b: Vector2, w: float, col: String) -> void:
+	var l = PackedVector2Array([a, b])
+	cap_line(l, INK(), w + 16.0)
+	cap_line(l, C(col, 0.7), w)
+	cap_line(shifted(l, Vector2(-4, -8)), C(col), w * 0.72)
+	cap_line(shifted(l, Vector2(-10, -w * 0.28)), Color(1, 1, 1, 0.5), w * 0.16)
+
+func glossy_ball(p: Vector2, r: float, col: String, sq: float, ang: float) -> void:
+	ell(p + Vector2(r * 0.15, r * 0.95), r * 0.75, r * 0.14, C("#1a0a3a", 1.0, 0.3))
+	draw_set_transform(p + base_off, ang, Vector2(1.0 - sq * 0.18, 1.0 + sq * 0.12))
+	draw_circle(Vector2.ZERO, r + 9.0, INK())
+	draw_circle(Vector2.ZERO, r, C(col, 0.6))
+	draw_circle(Vector2(-r * 0.05, -r * 0.06), r * 0.9, C(col))
+	draw_circle(Vector2(-r * 0.16, -r * 0.2), r * 0.62, C(col, 1.15))
+	for k in range(3):
+		draw_arc(Vector2(r * 0.05, r * 0.05), r * (0.36 + k * 0.2), -1.9 + k * 0.6, 0.9 + k * 0.6, 24, Color(1, 1, 1, 0.5), r * 0.07, true)
+	draw_arc(Vector2.ZERO, r * 0.88, 0.3, 1.6, 24, C("#ffffff", 1.0, 0.45), r * 0.05, true)
+	ell(Vector2(-r * 0.4, -r * 0.48), r * 0.28, r * 0.16, Color(1, 1, 1, 0.92))
+	draw_circle(Vector2(-r * 0.1, -r * 0.64), r * 0.06, Color(1, 1, 1, 0.9))
+	draw_set_transform(base_off)
+
+func impact_flash(c: Vector2, n: int, len: float) -> void:
+	for k in range(n):
+		var a = k * TAU / n + 0.13 * (k % 3)
+		var l = len * (0.55 + 0.45 * ((k * 7) % 5) / 4.0)
+		draw_colored_polygon(PackedVector2Array([c + Vector2(cos(a - 0.12), sin(a - 0.12)) * 22.0, c + Vector2(cos(a), sin(a)) * l, c + Vector2(cos(a + 0.12), sin(a + 0.12)) * 22.0]), Color(1, 1, 1, 0.85))
+	draw_circle(c, 46.0, Color(1, 1, 1, 0.35))
+	draw_circle(c, 30.0, Color(1, 1, 1, 0.95))
+
+func draw_icon_art3(v: int) -> void:
+	var sq = Rect2(0, 280, 720, 720)
+	var c = sq.get_center()
+	if v == 6:
+		# G: like the reference, our way: candy ball smashing into the corner of two gummy pads
+		radial_bg(sq, "#c79bff", "#3b1a8a", "bgG")
+		burst_rays(c + Vector2(-150, 120), 14, 900.0, C("#ffffff", 1.0, 0.1), 0.08, 0.3)
+		# motion streaks behind the ball
+		for k in range(4):
+			var o = Vector2(140 + k * 46, -150 - k * 46)
+			draw_line(c + o + Vector2(-60, 0), c + o + Vector2(60, -60), Color(1, 1, 1, 0.35 - k * 0.07), 18.0 - k * 2.0, true)
+		icon_pad(c + Vector2(-330, -420), c + Vector2(-290, 150), 120.0, "#3fe0a8")
+		icon_pad(c + Vector2(-260, 370), c + Vector2(420, 250), 120.0, "#ff6fb0")
+		impact_flash(c + Vector2(-210, 250), 18, 300.0)
+		glossy_ball(c + Vector2(-40, 60), 205.0, "#ffb02e", 0.35, -0.75)
+	elif v == 7:
+		# H: same scene but the ball is our mascot squashing on the pad
+		radial_bg(sq, "#8fdcff", "#2a4cd8", "bgH")
+		burst_rays(c + Vector2(-150, 120), 14, 900.0, C("#ffffff", 1.0, 0.12), 0.08, 0.3)
+		for k in range(4):
+			var o = Vector2(160 + k * 46, -160 - k * 46)
+			draw_line(c + o + Vector2(-60, 0), c + o + Vector2(60, -60), Color(1, 1, 1, 0.4 - k * 0.08), 14.0 - k * 2.0, true)
+		icon_pad(c + Vector2(-330, -420), c + Vector2(-290, 150), 120.0, "#3fe0a8")
+		icon_pad(c + Vector2(-260, 370), c + Vector2(420, 250), 120.0, "#3fe0a8")
+		impact_flash(c + Vector2(-210, 250), 18, 300.0)
+		draw_mascot(c + Vector2(-30, 50), 200.0, 0, 0.3)
+		draw_coin(c + Vector2(250, 250), 40.0)
+	else:
+		# I: the merge moment: two candies smash together, a bigger one pops out
+		radial_bg(sq, "#ffb0dc", "#7a2cc8", "bgI")
+		burst_rays(c, 18, 900.0, C("#ffffff", 1.0, 0.13), 0.07)
+		impact_flash(c + Vector2(0, -10), 20, 330.0)
+		glossy_ball(c + Vector2(-230, 110), 130.0, "#ff3d6e", 0.3, 0.6)
+		glossy_ball(c + Vector2(230, 110), 130.0, "#ff3d6e", 0.3, -0.6)
+		glossy_ball(c + Vector2(0, -90), 175.0, "#ffb02e", 0.0, 0.0)
+		for q in [Vector2(-250, -230), Vector2(260, -240), Vector2(0, 260)]:
+			draw_star(c + q, 26.0, C("#fff6c8", 1.3))
