@@ -1617,12 +1617,26 @@ func draw_candy_base(lv: int, p: Vector2, r: float, sq = 0.0, rot = 0.0, gold = 
 			draw_circle(Vector2(0, 0), r * 0.3 + 2, ink)
 			draw_circle(Vector2(0, 0), r * 0.3, C("#ff4d6d"))
 			draw_circle(Vector2(-r * 0.08, -r * 0.1), r * 0.07, Color(1, 1, 1, 0.8))
-		_: # golden candy
-			ell(Vector2.ZERO, r * 0.9 + 3, r * 0.7 + 3, ink)
+		_: # golden candy: a wrapped bonbon in gold foil
+			var w = r * 0.78
+			var h = r * 0.6
 			for sg in [-1, 1]:
-				draw_colored_polygon(PackedVector2Array([Vector2(sg * r * 0.7, -r * 0.25), Vector2(sg * r * 1.35, -r * 0.6), Vector2(sg * r * 1.35, r * 0.6), Vector2(sg * r * 0.7, r * 0.25)]), C("#f2b230", 1.3))
-			ell(Vector2.ZERO, r * 0.9, r * 0.7, C("#ffd36b", 1.4))
-			ell(Vector2(-r * 0.3, -r * 0.25), r * 0.35, r * 0.15, Color(1.6, 1.6, 1.6, 0.9))
+				var base = Vector2(sg * w * 0.85, 0)
+				var fan = PackedVector2Array([base + Vector2(0, -h * 0.28), base + Vector2(sg * r * 0.55, -h * 0.95), base + Vector2(sg * r * 0.42, -h * 0.3), base + Vector2(sg * r * 0.62, 0), base + Vector2(sg * r * 0.42, h * 0.3), base + Vector2(sg * r * 0.55, h * 0.95), base + Vector2(0, h * 0.28)])
+				var fano = PackedVector2Array()
+				for q in fan:
+					fano.append(q + (q - base).normalized() * 3.0)
+				draw_colored_polygon(fano, ink)
+				draw_colored_polygon(fan, C("#ffcf4a", 1.25))
+				draw_line(base + Vector2(sg * r * 0.08, -h * 0.15), base + Vector2(sg * r * 0.45, -h * 0.7), C("#fff6c8", 1.4, 0.8), 2.0, true)
+				draw_circle(base, h * 0.32 + 2, ink)
+				draw_circle(base, h * 0.32, C("#e0a020", 1.2))
+			ell(Vector2.ZERO, w + 3, h + 3, ink)
+			ell(Vector2.ZERO, w, h, C("#ffd36b", 1.35))
+			ell(Vector2(0, h * 0.25), w * 0.9, h * 0.55, C("#f2b230", 1.25))
+			for k in range(-1, 2):
+				draw_line(Vector2(k * w * 0.45 - w * 0.12, -h * 0.85), Vector2(k * w * 0.45 + w * 0.12, h * 0.85), C("#fff6c8", 1.4, 0.55), 3.0, true)
+			ell(Vector2(-w * 0.35, -h * 0.4), w * 0.28, h * 0.16, Color(1.7, 1.7, 1.7, 0.9))
 	if gold:
 		draw_arc(Vector2.ZERO, r + 6, 0, TAU, 32, C("#ffd36b", 2.2, 0.9), 4.0, true)
 	draw_set_transform(base_off)
@@ -2092,8 +2106,7 @@ func draw_hud() -> void:
 	text_l(Vector2(676, 69), fmt(money), 34, Color(1, 1, 1), 7, true)
 	text_l(Vector2(684, 120), "$%s / sec" % fmt(rate()), 20, Color(1, 1, 1), 5, true)
 	# coins
-	draw_circle(Vector2(560, 160), 15, INK())
-	draw_circle(Vector2(560, 160), 12, C("#ffd36b"))
+	draw_coin(Vector2(560, 160), 15.0)
 	text_l(Vector2(584, 160), str(coins), 24, Color(1, 1, 1), 6)
 
 func draw_cards() -> void:
@@ -2288,8 +2301,7 @@ func draw_end() -> void:
 		if got and absf(screen_t - appear) < 0.03 and not autoplay:
 			pass
 	text_c(Vector2(360, 590), "Time  " + ftime(endinfo.time), 34, C("#9b7bff"), 0)
-	draw_circle(Vector2(300, 668), 24, INK())
-	draw_circle(Vector2(300, 668), 20, C("#ffd36b"))
+	draw_coin(Vector2(300, 668), 24.0)
 	text_l(Vector2(336, 668), "+%d" % endinfo.coins, 46, Color(1, 1, 1), 8)
 	big_button(Rect2(190, 830, 340, 92), "NEXT", "#3fcf9f")
 	text_c(Vector2(360, 982), "Map", 30, C("#9b7bff"), 0)
@@ -2431,8 +2443,7 @@ func draw_map() -> void:
 	nine("card", bn.grow(10), 46, 60, 46, 46)
 	text_c(bn.get_center() + Vector2(0, -16), "WORLD %d" % map_world, 24, Color(1, 1, 1), 6)
 	text_c(bn.get_center() + Vector2(0, 22), WORLD_NAMES[clampi(map_world - 1, 0, 4)], 38, C("#ff5fa2"), 0)
-	draw_circle(Vector2(58, 1140), 15, INK())
-	draw_circle(Vector2(58, 1140), 12, C("#ffd36b"))
+	draw_coin(Vector2(58, 1140), 16.0)
 	text_l(Vector2(82, 1140), str(coins), 26, Color(1, 1, 1), 6)
 	draw_star_bar(map_world)
 	big_button(Rect2(160, 1170, 360, 86), "PLAY  " + lvl_name(clampi(unlocked - 1, 0, LEVELS.size() - 1)), "#3fcf9f")
@@ -2949,8 +2960,7 @@ func draw_skins() -> void:
 	draw_rect(Rect2(0, 0, 720, 1280), C(INKH, 1.0, 0.35))
 	text_c(Vector2(360, 82), "SKINS", 64, Color(1, 1, 1), 12)
 	img("close", Rect2(620, 40, 80, 80))
-	draw_circle(Vector2(316, 136), 15, INK())
-	draw_circle(Vector2(316, 136), 12, C("#ffd36b"))
+	draw_coin(Vector2(316, 136), 16.0)
 	text_l(Vector2(340, 136), str(coins), 26, Color(1, 1, 1), 6)
 	nine("pill_w", Rect2(20, 44, 150, 72), 70, 60, 70, 70)
 	text_c(Vector2(95, 76), "BOOK", 30, Color(1, 1, 1), 7)
@@ -3967,14 +3977,14 @@ func draw_chest_popup() -> void:
 				var q = c0 + Vector2(-180 + j * 18, sin(j * 0.6 + t * 4.0) * 30)
 				trail_dot(q, 1.0 - j / 14.0, 18.0, j, rw.id)
 			draw_candy(2, c0 + Vector2(80, sin(14 * 0.6 + t * 4.0) * 30), 34.0)
-		"gold", "time":
-			draw_circle(Vector2(360, 610), 90 * sc, INK())
-			draw_circle(Vector2(360, 610), 84 * sc, C("#ffd36b"))
-			text_c(Vector2(360, 612), "x10" if rw.kind == "gold" else "+15s", int(56 * sc), Color(1, 1, 1), 9)
+		"gold":
+			draw_candy(10, Vector2(360, 610), 90.0 * sc, 0.0, 0.0, false, "candy")
+		"time":
+			draw_clock(Vector2(360, 610), 84.0 * sc)
+			text_c(Vector2(360, 720), "+15 s", int(48 * sc), Color(1, 1, 1), 9)
 		_:
-			draw_circle(Vector2(360, 610), 90 * sc, INK())
-			draw_circle(Vector2(360, 610), 84 * sc, C("#ffd36b"))
-			draw_circle(Vector2(338, 585), 22 * sc, Color(1, 1, 1, 0.6))
+			draw_coin(Vector2(330, 630), 70.0 * sc)
+			draw_coin(Vector2(400, 600), 70.0 * sc)
 	text_c(Vector2(360, 800), rw.txt, 46, Color(1, 1, 1), 10)
 	if k > 0.6:
 		text_c(Vector2(360, 1000), "Tap to continue", 28, C("#ffffff", 1.0, 0.6 + 0.4 * sin(t * 4.0)), 6)
@@ -4061,13 +4071,11 @@ func draw_daily() -> void:
 		var c = r.get_center() + Vector2(0, 8)
 		if d.kind in ["coins", "big"]:
 			for j in range(3 if d.kind == "big" else 1):
-				draw_circle(c + Vector2((j - (1 if d.kind == "big" else 0)) * 14, -j * 4), 20, INK())
-				draw_circle(c + Vector2((j - (1 if d.kind == "big" else 0)) * 14, -j * 4), 16, C("#ffd36b"))
+				draw_coin(c + Vector2((j - (1 if d.kind == "big" else 0)) * 14, 6 - j * 10), 20.0)
 		elif d.kind == "gold":
 			draw_candy(10, c, 24.0, 0.0, 0.0, false, "candy")
 		else:
-			draw_circle(c, 22, INK())
-			draw_circle(c, 18, C("#7df0c8"))
+			draw_clock(c, 22.0)
 		text_c(Vector2(r.get_center().x, r.end.y - 26), d.txt, 22, Color(1, 1, 1), 5)
 		if done:
 			draw_rect(r, C("#ffffff", 1.0, 0.45))
@@ -4133,3 +4141,31 @@ func draw_book() -> void:
 	big_button(Rect2(36, 1150, 160, 70), "<", "#ff5fa2")
 	big_button(Rect2(524, 1150, 160, 70), ">", "#ff5fa2")
 	text_c(Vector2(360, 1186), "%d / %d" % [book_page + 1, pages], 28, Color(1, 1, 1), 6)
+
+
+# a proper coin: thick rim, inner ring, embossed star, shine
+func draw_coin(p: Vector2, r: float) -> void:
+	draw_circle(p + Vector2(0, r * 0.18), r + 2.5, INK())
+	draw_circle(p + Vector2(0, r * 0.12), r, C("#c8820e"))
+	draw_circle(p, r + 2.5, INK())
+	draw_circle(p, r, C("#ffcf4a"))
+	draw_circle(p, r * 0.74, C("#f2b230"))
+	draw_arc(p, r * 0.74, 0, TAU, 28, C("#fff1a8"), maxf(1.5, r * 0.08), true)
+	var pts = PackedVector2Array()
+	for k in range(10):
+		var an = -PI / 2 + k * PI / 5
+		pts.append(p + Vector2(cos(an), sin(an)) * (r * 0.46 if k % 2 == 0 else r * 0.2))
+	draw_colored_polygon(pts, C("#fff1a8"))
+	ell(p + Vector2(-r * 0.38, -r * 0.42), r * 0.26, r * 0.12, Color(1, 1, 1, 0.75))
+
+
+func draw_clock(p: Vector2, r: float) -> void:
+	rrect(Rect2(p + Vector2(-r * 0.22, -r * 1.32), Vector2(r * 0.44, r * 0.34)), INK(), int(r * 0.12) + 1)
+	rrect(Rect2(p + Vector2(-r * 0.15, -r * 1.26), Vector2(r * 0.3, r * 0.22)), C("#ff5fa2"), int(r * 0.1) + 1)
+	draw_circle(p, r + 3, INK())
+	draw_circle(p, r, C("#7df0c8"))
+	draw_circle(p, r * 0.78, C("#ffffff"))
+	draw_arc(p, r * 0.78, -PI / 2, -PI / 2 + TAU * 0.25, 16, C("#ffd36b"), r * 0.18, false)
+	draw_line(p, p + Vector2(0, -r * 0.55), INK(), maxf(2.0, r * 0.1), true)
+	draw_line(p, p + Vector2(r * 0.42, 0), INK(), maxf(2.0, r * 0.1), true)
+	draw_circle(p, r * 0.1, INK())
