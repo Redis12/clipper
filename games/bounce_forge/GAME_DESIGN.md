@@ -79,3 +79,17 @@ Bonbons (base), Fruits (boss niv 5), Espace (boss niv 10), Gemmes (500 pièces),
 | 4 Portal Pops | tubes du monde 1 + portails (x2, doré x4, mobiles, piège) | ADD PAD | Gingerbread Golem (saute) / Jelly Trio | Cookies / Jelly Beans |
 | 5 Cosmic Candy (20 niv) | apesanteur : planètes qui attirent, lunes x2, trou noir, comètes ; niv 11-19 = remix basse gravité des mondes 1-4 | ADD MOON | Marshmallow Moon / Cotton Cloud / Gumball Machine / Sugar Overlord (final : bouclier + téléportation) | Candy Planets / Cotton Clouds / Gumballs / Royal |
 Chaque nouveauté est annoncée par une bulle au début du niveau. Objectifs et PV réglés avec `--tune` (bot). Niveaux 8 / 18 / 28 / 38 / 48 / 58 = « mur » avec chrono.
+
+## Paliers d'étoiles (à coder)
+Coffre « étoiles » sur chaque carte de monde, barre de progression + coffres sur la barre.
+- Mondes de 10 niveaux (30 ★) : **5 ★ · 10 ★ · 16 ★ · 23 ★ · 30 ★**
+- Monde 5 (20 niveaux, 60 ★) : **8 · 16 · 26 · 38 · 50 · 60 ★**
+Récompenses (de plus en plus fortes) : 1) pièces ; 2) booster (bonbon doré au départ / +15 s) ; 3) traînée de bonbon (cosmétique) ; 4) gros paquet de pièces + couleur de tube ; 5) dernier palier = skin « étoilé » exclusif du monde (impossible à acheter) → donne une raison de refaire les niveaux pour les 3 ★.
+
+## Idées mondes 6 à 10 (pas codés)
+- **6 Gummy Factory** : tapis roulants (toucher = inverser le sens), machines presse x2 / four (bonbon +1 niveau) / emballeur ($). Variantes : aiguillages, machine en panne, bonbons défectueux. Carte ADD MACHINE. Boss Robo Chef, Factory Boss. Skins Robots, Pièces mécaniques.
+- **7 Jelly Pool** : billard vu de dessus, glisser pour tirer, bandes en gelée, trous = gros bonus. Variantes : trous mobiles, tirs limités. Carte EXTRA SHOT. Boss Billiard Bear, Cue King. Skins Boules de billard, Planètes de poche.
+- **8 Frozen Treats** : sol en glace (glisse), bonbons gelés à faire fondre (toucher / pad chauffant), stalactites, vent, blizzard chrono. Carte HEATER. Boss Snow Cone Yeti, Ice Queen Popsicle. Skins Esquimaux, Flocons.
+- **9 Sugar Rush Racetrack** : course de billes contre un rival sur piste en zigzag, 1er = x3, raccourcis à ouvrir, boosters, pièges. Carte BOOSTER. Boss Turbo Taffy, Grand Prix Gobbler. Skins Voitures, Billes en verre.
+- **10 Candy Kingdom** (final) : château à étages, chaque étage = la mécanique d'un monde précédent, objectif par étage. Carte UNLOCK FLOOR. Boss par étage + The Sweet Tooth (dévore le château). Skins Royaume + « Arc-en-ciel » ultra-rare.
+- Après le monde 10 : mode infini Endless Tower (classement), événements du week-end (skin limité), défi du jour (coffre).
