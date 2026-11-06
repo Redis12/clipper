@@ -23,5 +23,12 @@ for k, (t, nc, tier) in enumerate(ev):
     put(rumble, t - 0.6, 0.25)
     put(thud, t, 0.7); put(punch, t, 0.45)
     put(burst if tier < LAST else aura, t + 0.03, 0.35 + min(0.3, nc*0.01))
+import os
+SPECIAL = os.environ.get("PRESS_SPECIAL")          # son d'une forme qui apparaît pour la 1re fois (ex. Mangekyō de Madara)
+if SPECIAL:
+    sp = load(SPECIAL, 2.5); seen = set()
+    for t, nc, tier in ev:
+        if tier not in seen:
+            seen.add(tier); put(sp, t + 0.05, 0.75 if tier < LAST else 0.95)
 a = np.tanh(a*1.1)
 w = wave.open(out, "wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((a*0.85*32767).astype(np.int16).tobytes()); w.close()

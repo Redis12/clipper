@@ -1,0 +1,392 @@
+"""Power Drop : rendu vidéo 1080x1920 + son.
+
+python3 tools/drop/render.py <graine> <sortie.mp4> "Naruto=_fusion/Naruto/3 Base.jpg" "Luffy=..." ...
+(lancer depuis la racine du dépôt clipper)
+"""
+import json
+import math
+import random
+import subprocess
+import sys
+import wave
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+import sim  # noqa: E402
+from clipper.slides import fusion, render  # noqa: E402
+
+W, H, FPS = sim.W, sim.H, 30
+ROOT = Path(__file__).resolve().parents[2]
+FD = ROOT / "tools/money_sim/fonts/"
+F = lambda n, s: ImageFont.truetype(str(FD / n), s)          # noqa: E731
+COLS = [(255, 140, 30), (255, 60, 70), (60, 150, 255), (175, 95, 255)]
+BIN_COL = {10: (255, 200, 40), 5: (255, 120, 40), 2: (255, 70, 140), 1.5: (170, 90, 255), 1: (70, 130, 255),
+           0.5: (230, 40, 50)}
+END_S = 1.7
+SR = 44100
+
+
+def compact(v):
+    if v >= 1e6:
+        return f"{v / 1e6:.2f}M"
+    if v >= 1e4:
+        return f"{v / 1e3:.0f}K"
+    if v >= 1e3:
+        return f"{v / 1e3:.1f}K"
+    return f"{v:.0f}"
+
+
+def glow_dot(r, col, blur):
+    s = int(r * 2 + blur * 4)
+    im = Image.new("RGBA", (s, s), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.ellipse((s / 2 - r, s / 2 - r, s / 2 + r, s / 2 + r), fill=col + (255,))
+    return im.filter(ImageFilter.GaussianBlur(blur))
+
+
+def background():
+    a = np.zeros((H, W, 3), np.float32)
+    y = np.linspace(0, 1, H)[:, None]
+    a[:] = (np.array([10, 9, 22]) * (1 - y) + np.array([24, 10, 40]) * y)[:, None, :] if False else 0
+    top, bot = np.array([10, 9, 22], np.float32), np.array([26, 10, 42], np.float32)
+    a = (top * (1 - y) + bot * y)[:, None, :].repeat(W, 1)
+    bg = Image.fromarray(a.astype(np.uint8)).convert("RGBA")
+    d = ImageDraw.Draw(bg)
+    for gx in range(0, W, 60):
+        d.line((gx, 0, gx, H), fill=(255, 255, 255, 8))
+    for gy in range(0, H, 60):
+        d.line((0, gy, W, gy), fill=(255, 255, 255, 8))
+    # cadre néon de la planche
+    lay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ld = ImageDraw.Draw(lay)
+    top_y = sim.SPAWN[1] - 50
+    pts = [(540 - 70, top_y), (540 + 70, top_y), (sim.BOTTOM_X[-1] + 40, sim.BIN_TOP - 30),
+           (sim.BOTTOM_X[-1] + 40, sim.BIN_BOT + 8), (sim.BOTTOM_X[0] - 40, sim.BIN_BOT + 8),
+           (sim.BOTTOM_X[0] - 40, sim.BIN_TOP - 30)]
+    ld.polygon(pts, fill=(255, 255, 255, 10))
+    for i in range(len(pts)):
+        a0, b0 = pts[i], pts[(i + 1) % len(pts)]
+        hue = i / len(pts)
+        col = tuple(int(c) for c in np.array([120, 255, 160]) * (1 - hue) + np.array([200, 110, 255]) * hue)
+        ld.line((a0, b0), fill=col + (255,), width=6)
+    bg.alpha_composite(lay.filter(ImageFilter.GaussianBlur(10)))
+    bg.alpha_composite(lay)
+    return bg
+
+
+def PASTE(img, im, pos):
+    if img.mode == "RGB" and im.mode == "RGBA":
+        img.paste(im, (int(pos[0]), int(pos[1])), im)
+    else:
+        img.alpha_composite(im, (int(pos[0]), int(pos[1])))
+
+
+def main():
+    seed, out = int(sys.argv[1]), Path(sys.argv[2])
+    chars = []
+    for a in sys.argv[3:]:
+        name, p = a.split("=", 1)
+        chars.append((name, str(ROOT / "library" / p)))
+    gap, pct = 0.75, 0.03
+    res = sim.simulate(seed, gap=gap, peg_pct=pct)
+    frames, events, win = res["frames"], res["events"], res["winner"]
+    T = res["win_t"]
+    n_total = len(frames) + int(END_S * FPS)
+    print("course", round(T, 1), "s, gagnant", chars[win][0], flush=True)
+
+    icons = [fusion.icon(p, int(sim.R * 2.5), COLS[i]) for i, (_, p) in enumerate(chars)]
+    icons_row = [fusion.icon(p, 64, COLS[i]) for i, (_, p) in enumerate(chars)]
+    big = fusion.icon(chars[win][1], 420, COLS[win])
+    bg = background()
+    peg_dot = glow_dot(7, (235, 235, 255), 1)
+    peg_glow = {i: glow_dot(16, COLS[i], 6) for i in range(len(chars))}
+    fT1, fT2 = F("anton.woff2", 92), F("anton.woff2", 128)
+    fName, fVal = F("mont900.woff2", 34), F("anton.woff2", 44)
+    fBin, fFloat, fBig = F("anton.woff2", 40), F("mont900.woff2", 30), F("anton.woff2", 110)
+    fPick = F("mont900.woff2", 52)
+
+    peg_hit = {}           # k -> (t, c)
+    floats = []            # (t0, x, y, txt, col, size)
+    bursts = []            # (t0, x, y, col, n, power)
+    bin_hit = {}           # bin -> (t, c)
+    shakes = []            # (t0, amp)
+    pos = {}               # id -> dernière position
+    ev_i = 0
+    disp = [sim.START] * len(chars)
+    rng = random.Random(seed)
+    pf = None
+
+    def ffmpeg():
+        return subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s",
+                                 f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-preset", "veryfast",
+                                 "-crf", "18", "-pix_fmt", "yuv420p", str(out.with_suffix(".video.mp4"))],
+                                stdin=subprocess.PIPE)
+    proc = ffmpeg()
+    trails = {}
+    for fi in range(n_total):
+        t = fi / FPS
+        f = frames[min(fi, len(frames) - 1)]
+        while ev_i < len(events) and events[ev_i][0] <= t:
+            et, kind, dd = events[ev_i]
+            if kind == "peg":
+                k = dd["k"]
+                px, py = sim.PEGS[k]
+                peg_hit[k] = (et, dd["c"])
+                if dd["n"] % 2 == 1:
+                    floats.append((et, px + rng.uniform(-10, 10), py - 24, "+" + compact(dd["gain"]), COLS[dd["c"]], 0))
+            elif kind == "land":
+                bi, m = dd["bin"], dd["m"]
+                x = (sim.BOTTOM_X[bi] + sim.BOTTOM_X[bi + 1]) / 2
+                bin_hit[bi] = (et, dd["c"])
+                txt = "÷2" if m == 0.5 else f"x{m:g}"
+                floats.append((et, x, sim.BIN_TOP - 30, txt, BIN_COL[m] if m != 1 else (200, 210, 255), 1))
+                bursts.append((et, x, sim.BIN_TOP + 40, BIN_COL[m], 26 if m >= 5 else 14, 1.6 if m >= 5 else 1.0))
+                if m >= 5:
+                    shakes.append((et, 14 if m == 10 else 8))
+            ev_i += 1
+        for i in range(len(chars)):
+            disp[i] += (f["power"][i] - disp[i]) * 0.35
+        # ---- dessin
+        img = bg.convert("RGB")
+        d = ImageDraw.Draw(img, "RGBA")
+        # titre
+        d.text((W / 2, 40), "WHO HITS", font=fT1, fill="white", anchor="mt")
+        d.text((W / 2, 128), "1,000,000 FIRST?", font=fT2, fill=(255, 210, 60), anchor="mt", stroke_width=3,
+               stroke_fill=(90, 40, 0))
+        # lignes de score
+        lead = max(range(len(chars)), key=lambda i: f["power"][i])
+        for i, (name, _) in enumerate(chars):
+            y = 300 + i * 70
+            if i == lead and t > 0.8:
+                d.rounded_rectangle((40, y - 6, W - 40, y + 62), 16, fill=COLS[i] + (40,), outline=COLS[i] + (180,),
+                                    width=3)
+            PASTE(img, icons_row[i], (52, y - 6))
+            d.text((128, y + 28), name.upper(), font=fName, fill="white", anchor="lm")
+            x0, x1 = 330, 840
+            d.rounded_rectangle((x0, y + 14, x1, y + 42), 14, fill=(255, 255, 255, 30))
+            fr = min(1.0, math.log10(max(disp[i], sim.START) / sim.START) / math.log10(sim.GOAL / sim.START))
+            if fr > 0.01:
+                d.rounded_rectangle((x0, y + 14, x0 + max(28, (x1 - x0) * fr), y + 42), 14, fill=COLS[i] + (255,))
+            d.text((W - 54, y + 28), compact(disp[i]), font=fVal, fill="white", anchor="rm")
+            if i == lead and t > 0.8:                                # couronne
+                cx, cy = 84, y - 12
+                d.polygon([(cx - 22, cy + 12), (cx - 22, cy - 6), (cx - 11, cy + 3), (cx, cy - 12), (cx + 11, cy + 3),
+                           (cx + 22, cy - 6), (cx + 22, cy + 12)], fill=(255, 205, 50), outline=(120, 70, 0))
+        # clous
+        for k, (px, py) in enumerate(sim.PEGS):
+            h = peg_hit.get(k)
+            if h and t - h[0] < 0.35:
+                a = 1 - (t - h[0]) / 0.35
+                g = peg_glow[h[1]]
+                gi = g.copy()
+                gi.putalpha(gi.getchannel("A").point(lambda v, a=a: int(v * a)))
+                PASTE(img, gi, (int(px - g.width / 2), int(py - g.height / 2)))
+                rr = 9 + 16 * (1 - a)
+                d.ellipse((px - rr, py - rr, px + rr, py + rr), outline=COLS[h[1]] + (int(220 * a),), width=3)
+            PASTE(img, peg_dot, (int(px - peg_dot.width / 2), int(py - peg_dot.height / 2)))
+        # bacs
+        for bi, m in enumerate(sim.MULTS):
+            xa, xb = sim.BOTTOM_X[bi] + 8, sim.BOTTOM_X[bi + 1] - 8
+            col = BIN_COL[m]
+            h = bin_hit.get(bi)
+            pop = 0.0
+            if h and t - h[0] < 0.3:
+                pop = math.sin((t - h[0]) / 0.3 * math.pi)
+            ya = sim.BIN_TOP + 34 - pop * 12
+            d.rounded_rectangle((xa, ya, xb, sim.BIN_BOT), 12, fill=col + (int(150 + 100 * pop),))
+            d.text(((xa + xb) / 2, (ya + sim.BIN_BOT) / 2), "÷2" if m == 0.5 else f"x{m:g}", font=fBin,
+                   fill="white", anchor="mm", stroke_width=2, stroke_fill=(0, 0, 0))
+        for sx in sim.BOTTOM_X:
+            d.rounded_rectangle((sx - 4, sim.BIN_TOP, sx + 4, sim.BIN_BOT), 4, fill=(230, 230, 255, 220))
+        # balles + traînées
+        alive = set()
+        for c, x, y, bid in f["balls"]:
+            alive.add(bid)
+            tr = trails.setdefault(bid, [])
+            tr.append((x, y))
+            del tr[:-7]
+            for j, (tx, ty) in enumerate(tr[:-1]):
+                rr = sim.R * (0.35 + 0.08 * j)
+                d.ellipse((tx - rr, ty - rr, tx + rr, ty + rr), fill=COLS[c] + (25 + 12 * j,))
+            ic = icons[c]
+            PASTE(img, ic, (int(x - ic.width / 2), int(y - ic.height / 2)))
+        for bid in list(trails):
+            if bid not in alive:
+                del trails[bid]
+        # balle en attente (accroche : on la voit dès l'image 0)
+        if t < T:
+            nxt = int((t - 0.25) / gap) + 1 if t >= 0.25 else 0
+            c = nxt % len(chars)
+            ph = ((t - 0.25) % gap) / gap if t >= 0.25 else 1.0
+            sc = min(1.0, ph * 3)
+            if sc > 0.05:
+                ic = icons[c].resize((max(2, int(icons[c].width * sc)),) * 2)
+                PASTE(img, ic, (int(sim.SPAWN[0] - ic.width / 2), int(sim.SPAWN[1] - 6 - ic.height / 2)))
+        # éclats
+        for (t0, x, y, col, n, pw) in bursts:
+            a = (t - t0) / 0.6
+            if 0 <= a < 1:
+                r2 = random.Random(int(t0 * 1000))
+                for j in range(n):
+                    ang = r2.uniform(math.pi, 2 * math.pi)
+                    sp = r2.uniform(140, 420) * pw
+                    px = x + math.cos(ang) * sp * a
+                    py = y + math.sin(ang) * sp * a + 500 * a * a
+                    rr = (1 - a) * r2.uniform(5, 11)
+                    d.ellipse((px - rr, py - rr, px + rr, py + rr), fill=col + (int(255 * (1 - a)),))
+        # textes flottants
+        for (t0, x, y, txt, col, kind) in floats:
+            a = (t - t0) / (0.6 if kind == 0 else 0.9)
+            if 0 <= a < 1:
+                if kind == 0:
+                    d.text((x, y - 40 * a), txt, font=fFloat, fill=col + (int(255 * (1 - a)),), anchor="mm",
+                           stroke_width=2, stroke_fill=(0, 0, 0, int(200 * (1 - a))))
+                else:
+                    s = 1 + 0.6 * math.sin(min(1, a * 4) * math.pi / 2) - 0.2 * a
+                    fz = F("anton.woff2", int(64 * s))
+                    d.text((x, y - 90 * a), txt, font=fz, fill=col + (int(255 * (1 - a * a)),), anchor="mm",
+                           stroke_width=4, stroke_fill=(0, 0, 0, int(230 * (1 - a * a))))
+        # « Pick one » + Like & Follow (accroche)
+        pa = 1.0 if t < 3 else max(0.0, 1 - (t - 3) / 0.4)
+        pulse = 1 + 0.06 * math.sin(t * 7)
+        fp = F("mont900.woff2", int(52 * (pulse if t < 3 else 1)))
+        img = img.convert("RGBA")
+        render.draw_rich(img, (W / 2, sim.BIN_BOT + 46), "Pick one before the end 👇", fp, (255, 255, 255),
+                         anchor="ma", stroke_width=3, stroke_fill=(0, 0, 0))
+        if t < 3.2:
+            render.like_follow(img, W / 2, sim.BIN_BOT + 130, pa)
+        img = img.convert("RGB")
+        d = ImageDraw.Draw(img, "RGBA")
+        # fin
+        if t >= T:
+            e = t - T
+            d.rectangle((0, 0, W, H), fill=(8, 6, 16, int(min(220, e / 0.15 * 220))))
+            if e < 0.12:
+                d.rectangle((0, 0, W, H), fill=(255, 255, 255, int(255 * (1 - e / 0.12))))
+            dd = ImageDraw.Draw(img, "RGBA")
+            cx, cy = W / 2, H * 0.44
+            for k in range(16):
+                ang = k * math.tau / 16 + e * 0.8
+                dd.polygon([(cx, cy), (cx + math.cos(ang - 0.08) * 1400, cy + math.sin(ang - 0.08) * 1400),
+                            (cx + math.cos(ang + 0.08) * 1400, cy + math.sin(ang + 0.08) * 1400)],
+                           fill=COLS[win] + (40,))
+            s = min(1.0, e / 0.25)
+            s = 1 + 0.15 * math.sin(s * math.pi) if s < 1 else 1
+            bi_ = big.resize((int(big.width * s * min(1, e / 0.2 + 0.3)),) * 2)
+            PASTE(img, bi_, (int(cx - bi_.width / 2), int(cy - bi_.height / 2)))
+            dd.text((cx, cy - 330), chars[win][0].upper(), font=fBig, fill=COLS[win], anchor="mm", stroke_width=5,
+                    stroke_fill=(0, 0, 0))
+            dd.text((cx, cy + 290), "HIT 1,000,000 FIRST", font=F("anton.woff2", 84), fill=(255, 210, 60),
+                    anchor="mm", stroke_width=4, stroke_fill=(0, 0, 0))
+            img = img.convert("RGBA")
+            render.draw_rich(img, (cx, cy + 370), "Did you pick him? 👇", fPick, (255, 255, 255), anchor="ma",
+                             stroke_width=3, stroke_fill=(0, 0, 0))
+        # secousse
+        amp = sum(a * max(0, 1 - (t - t0) / 0.3) for t0, a in shakes if t >= t0)
+        if amp > 0.5:
+            dx, dy = int(rng.uniform(-amp, amp)), int(rng.uniform(-amp, amp))
+            sh = Image.new("RGB", (W, H), (10, 9, 22))
+            sh.paste(img.convert("RGB"), (dx, dy))
+            img = sh
+        proc.stdin.write(img.convert("RGB").tobytes())
+        if fi % 150 == 0:
+            print("image", fi, "/", n_total, flush=True)
+    proc.stdin.close()
+    proc.wait()
+    dur = n_total / FPS
+    wav = out.with_suffix(".wav")
+    audio(events, T, dur, wav, len(chars))
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(out.with_suffix(".video.mp4")), "-i", str(wav),
+                    "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-af", "loudnorm=I=-16:TP=-1.5", "-shortest",
+                    str(out.with_suffix(".raw.mp4"))], check=True)
+    render.stamp_video(out.with_suffix(".raw.mp4"), out)
+    json.dump(dict(kind="powerdrop", seed=seed, chars=[c[0] for c in chars], winner=chars[win][0],
+                   seconds=round(dur, 1)), open(out.with_suffix(".json"), "w"))
+    print("OUT", out, flush=True)
+
+
+# ------------------------------------------------------------------ son
+def load(p, maxs=3.0):
+    r = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", str(p), "-t", str(maxs), "-f", "f32le", "-ac", "1",
+                        "-ar", str(SR), "-"], capture_output=True)
+    x = np.frombuffer(r.stdout, np.float32).astype(float)
+    m = np.abs(x).max() or 1
+    return x / m
+
+
+def pitch(x, semis):
+    f = 2 ** (semis / 12)
+    idx = np.arange(0, len(x) - 1, f)
+    return np.interp(idx, np.arange(len(x)), x)
+
+
+def audio(events, T, dur, out, n_chars):
+    snd = ROOT / "games/bounce_forge/snd"
+    K = ROOT / "clipper/assets/sfx"
+    mar = load(snd / "marimba.wav", 0.6)
+    gpop = load(snd / "gem_pop1.wav", 0.6)
+    gmerge = load(snd / "gem_merge.wav", 1.2)
+    cash = load(snd / "cash.wav", 1.1)
+    cash[-int(0.3 * SR):] *= np.linspace(1, 0, int(0.3 * SR))
+    bell = load(K / "impact_bell_heavy_000.ogg", 2.0)
+    pup = load(K / "powerUp7.ogg", 1.0)
+    boom = load(K / "low_frequency_explosion_000.ogg", 2.0)
+    n = int(dur * SR) + SR
+    a = np.zeros(n)
+
+    def put(s, t, g):
+        i = int(t * SR)
+        j = min(n, i + len(s))
+        if i < n:
+            a[i:j] += g * s[:j - i]
+    PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31]
+    cache = {}
+    last_peg = -1
+    for t, kind, d in events:
+        if kind == "peg":
+            if t - last_peg < 0.025:                          # pas 2 notes collées
+                continue
+            last_peg = t
+            semi = PENTA[min(len(PENTA) - 1, d["n"] // 2)] - 5 + d["c"] * 2
+            if semi not in cache:
+                cache[semi] = pitch(mar, semi)
+            put(cache[semi], t, 0.16)
+        elif kind == "spawn":
+            put(pitch(gpop, -5), t, 0.10)
+        elif kind == "land":
+            m = d["m"]
+            if m >= 5:
+                put(bell, t, 0.55 if m == 10 else 0.4)
+                put(pup, t + 0.02, 0.35)
+                put(cash, t + 0.05, 0.45)
+            elif m >= 1.5:
+                put(pitch(gmerge, 4 if m == 2 else 0), t, 0.35)
+                put(cash, t + 0.03, 0.25)
+            elif m == 1:
+                put(gpop, t, 0.3)
+            else:                                              # ÷2 : « wah wah » qui descend
+                tt = np.arange(int(0.55 * SR)) / SR
+                fr = 330 * 2 ** (-tt * 1.6)
+                s = np.sin(2 * np.pi * np.cumsum(fr) / SR) * np.exp(-tt * 3) * (0.6 + 0.4 * np.sign(np.sin(2 * np.pi * 7 * tt)))
+                put(s, t, 0.35)
+    # victoire : cloche + boum + accord
+    put(bell, T, 0.8)
+    put(boom, T, 0.6)
+    tt = np.arange(int(1.6 * SR)) / SR
+    for k, f0 in enumerate([523.25, 659.25, 783.99, 1046.5]):
+        put(np.sin(2 * np.pi * f0 * tt) * np.exp(-tt * 2.2) * (tt > 0), T + 0.1 + k * 0.07, 0.18)
+    a = np.tanh(a * 1.2)
+    w = wave.open(str(out), "wb")
+    w.setnchannels(1)
+    w.setsampwidth(2)
+    w.setframerate(SR)
+    w.writeframes((a * 0.9 * 32767).astype(np.int16).tobytes())
+    w.close()
+
+
+if __name__ == "__main__":
+    main()
