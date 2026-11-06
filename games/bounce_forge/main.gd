@@ -148,6 +148,7 @@ var gift_day = 0
 var gift_date = ""
 var book_page = 0
 var book_from = "skins"
+var icon_v = 0
 var mus_on = true
 var sfx_on = true
 var vib_on = true
@@ -460,6 +461,8 @@ func _ready() -> void:
 			start = int(a.substr(8)) - 1
 		elif a.begins_with("--only="):
 			only_level = int(a.substr(7)) - 1
+		elif a.begins_with("--iconv="):
+			icon_v = int(a.substr(8))
 		elif a.begins_with("--bookpage="):
 			book_page = int(a.substr(11))
 		elif a.begins_with("--screen="):
@@ -1356,6 +1359,9 @@ func fx(dt: float) -> void:
 
 # ================================================================ drawing
 func _draw() -> void:
+	if want_screen == "icon":
+		draw_icon_art(icon_v)
+		return
 	draw_bg()
 	if state == "map":
 		draw_map()
@@ -4169,3 +4175,82 @@ func draw_clock(p: Vector2, r: float) -> void:
 	draw_line(p, p + Vector2(0, -r * 0.55), INK(), maxf(2.0, r * 0.1), true)
 	draw_line(p, p + Vector2(r * 0.42, 0), INK(), maxf(2.0, r * 0.1), true)
 	draw_circle(p, r * 0.1, INK())
+
+
+# ================================================================ app icon (rendered in a 720x720 square: y 280..1000)
+func face(p: Vector2, r: float) -> void:
+	for sg in [-1, 1]:
+		draw_circle(p + Vector2(sg * r * 0.34, -r * 0.08), r * 0.13, INK())
+		draw_circle(p + Vector2(sg * r * 0.34 - r * 0.04, -r * 0.12), r * 0.045, Color(1, 1, 1))
+		draw_circle(p + Vector2(sg * r * 0.52, r * 0.16), r * 0.1, C("#ff9fbf", 1.0, 0.8))
+	draw_arc(p + Vector2(0, r * 0.12), r * 0.16, 0.2, PI - 0.2, 12, INK(), r * 0.07, true)
+
+func draw_icon_art(v: int) -> void:
+	var sq = Rect2(0, 280, 720, 720)
+	var c = sq.get_center()
+	if not tex.has("icon_bg"):
+		var gr = Gradient.new()
+		gr.set_color(0, C("#ffc2e2"))
+		gr.set_color(1, C("#a98cff"))
+		var gt = GradientTexture2D.new()
+		gt.gradient = gr
+		gt.fill = GradientTexture2D.FILL_RADIAL
+		gt.fill_from = Vector2(0.5, 0.35)
+		gt.fill_to = Vector2(1.1, 1.0)
+		gt.width = 256
+		gt.height = 256
+		tex["icon_bg"] = gt
+	draw_texture_rect(tex["icon_bg"], sq, false)
+	# sprinkles
+	var r2 = RandomNumberGenerator.new()
+	r2.seed = 5
+	var cols = ["#ff5fa2", "#7df0c8", "#ffd36b", "#9b7bff", "#8fd8ff"]
+	for i in range(26):
+		var p = sq.position + Vector2(r2.randf() * 720, r2.randf() * 720)
+		var an = r2.randf() * PI
+		var d = Vector2(cos(an), sin(an)) * 12
+		draw_line(p - d, p + d, C(cols[i % 5], 1.0, 0.55), 9.0, true)
+	if v == 1:
+		# merge moment: two candies smash into a bigger one
+		for k in range(14):
+			var an = k * TAU / 14.0
+			draw_line(c + Vector2(0, 30), c + Vector2(0, 30) + Vector2(cos(an), sin(an)) * 330.0, C("#ffffff", 1.0, 0.18), 30.0)
+		draw_arc(c + Vector2(0, 30), 230, 0, TAU, 64, C("#ffffff", 1.0, 0.7), 14.0, true)
+		draw_candy(2, c + Vector2(-200, 230), 80.0, 0.0, 0.3, false, "candy")
+		draw_candy(2, c + Vector2(200, 230), 80.0, 0.0, -0.3, false, "candy")
+		draw_candy(4, c + Vector2(0, -10), 170.0, 0.0, 0.0, false, "candy")
+		face(c + Vector2(0, -10), 170.0)
+		return
+	# tube arc with a gummy pad at the bottom
+	var arc = PackedVector2Array()
+	var cc = c + Vector2(0, -40)
+	for k in range(61):
+		var a = lerpf(deg_to_rad(20.0), deg_to_rad(160.0), k / 60.0)
+		arc.append(cc + Vector2(cos(a), sin(a)) * 300.0)
+	var TRi = 56.0
+	cap_line(arc, INK(), (TRi + 10) * 2.0)
+	cap_line(arc, C("#ff5fa2", 0.45), TRi * 2.0)
+	cap_line(shifted(arc, Vector2(-8, -14)), C("#ff5fa2"), TRi * 1.55)
+	for k in range(2, arc.size() - 1, 3):
+		var tg = (arc[k] - arc[k - 1]).normalized()
+		var nn = Vector2(-tg.y, tg.x)
+		draw_line(arc[k] - nn * TRi * 0.85 - tg * 14.0, arc[k] + nn * TRi * 0.85 + tg * 14.0, Color(1, 1, 1, 0.45), 18.0, true)
+	cap_line(shifted(arc, Vector2(-14, -26)), Color(1, 1, 1, 0.35), 14.0)
+	var pad = PackedVector2Array()
+	for k in range(22, 39):
+		var a = lerpf(deg_to_rad(20.0), deg_to_rad(160.0), k / 60.0)
+		pad.append(cc + Vector2(cos(a), sin(a)) * (300.0 - TRi * 0.62))
+	cap_line(pad, INK(), 48.0)
+	cap_line(pad, C("#7df0c8", 1.2), 36.0)
+	cap_line(shifted(pad, Vector2(0, -7)), Color(1, 1, 1, 0.6), 9.0)
+	# motion lines + bouncing hero candy with a face
+	var hero = c + Vector2(10, -60)
+	for k in range(3):
+		draw_line(hero + Vector2(-60 + k * 60, 170), hero + Vector2(-60 + k * 60, 230), C("#ffffff", 1.0, 0.75), 14.0, true)
+	draw_candy(2, hero, 150.0, 0.35, 0.0, false, "candy")
+	face(hero, 150.0)
+	if v == 0:
+		draw_candy(10, c + Vector2(-210, -190), 62.0, 0.0, -0.4, false, "candy")
+		draw_candy(1, c + Vector2(225, -200), 52.0, 0.0, 0.3, false, "candy")
+	for q in [Vector2(-250, -40), Vector2(250, -60), Vector2(170, -250)]:
+		draw_star(c + q, 20.0, C("#fff6c8"))
