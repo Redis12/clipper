@@ -49,17 +49,33 @@ def glow_dot(r, col, blur):
 
 
 def background():
-    a = np.zeros((H, W, 3), np.float32)
-    y = np.linspace(0, 1, H)[:, None]
-    a[:] = (np.array([10, 9, 22]) * (1 - y) + np.array([24, 10, 40]) * y)[:, None, :] if False else 0
-    top, bot = np.array([10, 9, 22], np.float32), np.array([26, 10, 42], np.float32)
-    a = (top * (1 - y) + bot * y)[:, None, :].repeat(W, 1)
-    bg = Image.fromarray(a.astype(np.uint8)).convert("RGBA")
-    d = ImageDraw.Draw(bg)
-    for gx in range(0, W, 60):
-        d.line((gx, 0, gx, H), fill=(255, 255, 255, 8))
-    for gy in range(0, H, 60):
-        d.line((0, gy, W, gy), fill=(255, 255, 255, 8))
+    """Fond A (06/11) : dégradé vif façon jeu (rose → violet → bleu), rayons, étoiles, vitre sombre sous la planche."""
+    y = np.linspace(0, 1, H)[:, None, None]
+    x = np.linspace(0, 1, W)[None, :, None]
+    c0, c1, c2 = (np.array(v, np.float32) for v in ((255, 92, 170), (140, 60, 255), (40, 110, 255)))
+    a = np.where(y < 0.5, c0 * (1 - y * 2) + c1 * (y * 2), c1 * (2 - y * 2) + c2 * (y * 2 - 1))
+    a = a * (0.92 + 0.16 * x)
+    bg = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)).convert("RGBA")
+    ray = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    rd = ImageDraw.Draw(ray)
+    cx, cy = W / 2, 250
+    for k in range(20):
+        ang = k * math.tau / 20
+        rd.polygon([(cx, cy), (cx + math.cos(ang - 0.07) * 2600, cy + math.sin(ang - 0.07) * 2600),
+                    (cx + math.cos(ang + 0.07) * 2600, cy + math.sin(ang + 0.07) * 2600)], fill=(255, 255, 255, 26))
+    bg.alpha_composite(ray)
+    st = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(st)
+    r = random.Random(3)
+    for _ in range(70):
+        sx, sy, rr = r.uniform(0, W), r.uniform(0, H), r.uniform(1.5, 4.5)
+        sd.ellipse((sx - rr, sy - rr, sx + rr, sy + rr), fill=(255, 255, 255, r.randint(90, 200)))
+    bg.alpha_composite(st.filter(ImageFilter.GaussianBlur(0.6)))
+    # bandeau sombre sous le titre + les barres (lisibilité)
+    pan = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    pd = ImageDraw.Draw(pan)
+    pd.rounded_rectangle((28, 282, W - 28, 576), 30, fill=(20, 8, 45, 150))
+    bg.alpha_composite(pan)
     # cadre néon de la planche
     lay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     ld = ImageDraw.Draw(lay)
@@ -67,13 +83,15 @@ def background():
     pts = [(540 - 70, top_y), (540 + 70, top_y), (sim.BOTTOM_X[-1] + 40, sim.BIN_TOP - 30),
            (sim.BOTTOM_X[-1] + 40, sim.BIN_BOT + 8), (sim.BOTTOM_X[0] - 40, sim.BIN_BOT + 8),
            (sim.BOTTOM_X[0] - 40, sim.BIN_TOP - 30)]
-    ld.polygon(pts, fill=(255, 255, 255, 10))
+    ld.polygon(pts, fill=(20, 8, 45, 170))
     for i in range(len(pts)):
         a0, b0 = pts[i], pts[(i + 1) % len(pts)]
         hue = i / len(pts)
         col = tuple(int(c) for c in np.array([120, 255, 160]) * (1 - hue) + np.array([200, 110, 255]) * hue)
         ld.line((a0, b0), fill=col + (255,), width=6)
-    bg.alpha_composite(lay.filter(ImageFilter.GaussianBlur(10)))
+    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(glow).line(pts + [pts[0]], fill=(255, 255, 255, 255), width=14)
+    bg.alpha_composite(glow.filter(ImageFilter.GaussianBlur(12)))
     bg.alpha_composite(lay)
     return bg
 
@@ -85,10 +103,17 @@ def PASTE(img, im, pos):
         img.alpha_composite(im, (int(pos[0]), int(pos[1])))
 
 
+SONG = [None, 0.0]
+
+
 def main():
     seed, out = int(sys.argv[1]), Path(sys.argv[2])
     chars = []
     for a in sys.argv[3:]:
+        if a.startswith("song="):
+            p_, _, st_ = a[5:].partition("@")
+            SONG[0], SONG[1] = str(ROOT / "library" / p_), float(st_ or 0)
+            continue
         name, p = a.split("=", 1)
         chars.append((name, str(ROOT / "library" / p)))
     gap, pct = 0.75, 0.03
@@ -154,9 +179,9 @@ def main():
         img = bg.convert("RGB")
         d = ImageDraw.Draw(img, "RGBA")
         # titre
-        d.text((W / 2, 40), "WHO HITS", font=fT1, fill="white", anchor="mt")
-        d.text((W / 2, 128), "1,000,000 FIRST?", font=fT2, fill=(255, 210, 60), anchor="mt", stroke_width=3,
-               stroke_fill=(90, 40, 0))
+        d.text((W / 2, 40), "WHO HITS", font=fT1, fill="white", anchor="mt", stroke_width=5, stroke_fill=(60, 10, 70))
+        d.text((W / 2, 128), "1,000,000 FIRST?", font=fT2, fill=(255, 210, 60), anchor="mt", stroke_width=6,
+               stroke_fill=(60, 10, 70))
         # lignes de score
         lead = max(range(len(chars)), key=lambda i: f["power"][i])
         for i, (name, _) in enumerate(chars):
@@ -299,7 +324,7 @@ def main():
     proc.wait()
     dur = n_total / FPS
     wav = out.with_suffix(".wav")
-    audio(events, T, dur, wav, len(chars))
+    audio(events, T, dur, wav, len(chars), song=SONG[0], song_start=SONG[1])
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(out.with_suffix(".video.mp4")), "-i", str(wav),
                     "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-af", "loudnorm=I=-16:TP=-1.5", "-shortest",
                     str(out.with_suffix(".raw.mp4"))], check=True)
@@ -324,7 +349,7 @@ def pitch(x, semis):
     return np.interp(idx, np.arange(len(x)), x)
 
 
-def audio(events, T, dur, out, n_chars):
+def audio(events, T, dur, out, n_chars, song=None, song_start=0.0, per_hit=0.045):
     snd = ROOT / "games/bounce_forge/snd"
     K = ROOT / "clipper/assets/sfx"
     mar = load(snd / "marimba.wav", 0.6)
@@ -346,8 +371,29 @@ def audio(events, T, dur, out, n_chars):
     PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31]
     cache = {}
     last_peg = -1
+    if song:                                                  # « Ma chanson » : chaque clou fait avancer le morceau
+        sg = load(song, 400)
+        sg = sg[int(song_start * SR):]
+        blk = int(0.01 * SR)
+        hits = sorted(t for t, k, _ in events if k == "peg")
+        budget, sp, hi, g = 0.0, 0, 0, 0.0
+        for bi in range(int(min(T + 0.05, dur) / 0.01)):
+            tb = bi * 0.01
+            while hi < len(hits) and hits[hi] <= tb:
+                budget = min(0.4, budget + per_hit)
+                hi += 1
+            target = 1.0 if budget > 0 else 0.0
+            g0 = g
+            g += (target - g) * 0.5
+            if g > 0.01 and sp + blk < len(sg):
+                env = np.linspace(g0, g, blk)
+                a[bi * blk:(bi + 1) * blk] += 0.8 * sg[sp:sp + blk] * env
+                sp += blk
+            budget = max(0.0, budget - 0.01)
     for t, kind, d in events:
         if kind == "peg":
+            if song:
+                continue
             if t - last_peg < 0.025:                          # pas 2 notes collées
                 continue
             last_peg = t
