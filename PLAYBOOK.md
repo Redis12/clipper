@@ -135,6 +135,14 @@ Les idées de vidéos sont dans `IDEES.md` ; le fonctionnement de Clipper est da
 
 | Date | Test | Résultat |
 |---|---|---|
-| 05/11 | TikTok 1 AM (Sasuke Transformations) vs 6 PM (Kid Sasuke vs Madara) : pays + commentaires | ? |
-| 05/11 | Hashtags ciblés + question à un mot (TikTok) | ? |
+| 05/11 | TikTok 1 AM (Sasuke Transformations) vs 6 PM (Kid Sasuke vs Madara) : pays + commentaires | Sasuke Transformations (00:09) : 271 vues, plafond habituel. Kid Sasuke vs Madara parti finalement le 06/11 à 13:06 : **~2 000 vues en 2 h 30** (1re vidéo à passer le groupe test de ~250). |
+| 05/11 | Hashtags ciblés + question à un mot (TikTok) | Kid Goku vs Beerus 2 avec la même formule : 288 vues → la formule seule ne suffit pas. Ce qui distingue Madara : méchant ultra connu de TikTok + duel injuste (un gamin contre un dieu) + Power Up qui finit en défaite + publié le midi. **À reproduire à l'identique** avant de conclure. |
 | 05/11 | Hashtags crossover + légende courte (Instagram) | ? |
+
+## 8. Première vidéo TikTok qui perce (06/11)
+« Can Kid Sasuke beat Madara in under 60 seconds? » (Power Up, 63 s, défaite) : ~2 000 vues en 2 h 30, contre ~250 pour toutes les autres.
+Légende : titre-question / phrase avec les mots-clés / « Does Kid Sasuke make it? Yes or no 👇 » / 7 hashtags ciblés
+(#sasuke #madara #naruto #narutoshippuden #kidsasuke #madarauchiha #animebattle). Publiée à 13:06 Bruxelles.
+Par rapport à Kid Naruto vs Sasuke (même format, 268 vues) : nouvelle légende + Madara. Par rapport à Kid Goku vs Beerus 2
+(même légende, 288 vues) : Naruto/Madara + défaite. → Hypothèse : format Power Up + méchant culte + légende à un mot.
+Prochaines vidéos pour vérifier : même formule, autres méchants cultes (une seule chose change à chaque fois).
