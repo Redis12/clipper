@@ -143,6 +143,11 @@ var map_moved = false
 var map_last = 0.0
 var prev_state = ""
 var base_off = Vector2.ZERO
+var overtime = false
+var gift_day = 0
+var gift_date = ""
+var book_page = 0
+var book_from = "skins"
 var mus_on = true
 var sfx_on = true
 var vib_on = true
@@ -455,6 +460,8 @@ func _ready() -> void:
 			start = int(a.substr(8)) - 1
 		elif a.begins_with("--only="):
 			only_level = int(a.substr(7)) - 1
+		elif a.begins_with("--bookpage="):
+			book_page = int(a.substr(11))
 		elif a.begins_with("--screen="):
 			want_screen = a.substr(9)
 		elif a.begins_with("--song="):
@@ -469,6 +476,8 @@ func _ready() -> void:
 	if tune_mode:
 		run_tune()
 		return
+	var today = Time.get_date_string_from_system()
+	var daily_due = not autoplay and not demo and not show_map_only and gift_date != today
 	if sim:
 		run_sim()
 		return
@@ -483,6 +492,17 @@ func _ready() -> void:
 			best_stars[k] = [3, 2, 3, 1, 3, 2][k % 6]
 		claimed = {"%d:0" % map_world: true}
 		prev_state = "x"
+	if daily_due:
+		state = "daily"
+		popup = {"t": 0.0}
+	if want_screen == "daily":
+		gift_day = 2
+		popup = {"t": 0.0}
+	if want_screen == "book":
+		for sk in SKINS:
+			skins[sk.id] = true
+			for lv in range(1, 11):
+				seen["%s:%d" % [sk.id, lv]] = true
 	if want_screen != "":
 		coins = 640
 		skins = {"candy": true, "fruits": true, "retro": true}
@@ -520,6 +540,8 @@ func load_save() -> void:
 		boost_gold = cf.get_value("p", "bgold", 0)
 		boost_time = cf.get_value("p", "btime", 0)
 		trail_style = cf.get_value("p", "trail", "")
+		gift_day = cf.get_value("p", "gday", 0)
+		gift_date = cf.get_value("p", "gdate", "")
 		if FileAccess.file_exists("user://my_song.mp3") or FileAccess.file_exists("user://my_song.ogg"):
 			load_my_song()
 
@@ -542,6 +564,8 @@ func save_game() -> void:
 	cf.set_value("p", "bgold", boost_gold)
 	cf.set_value("p", "btime", boost_time)
 	cf.set_value("p", "trail", trail_style)
+	cf.set_value("p", "gday", gift_day)
+	cf.set_value("p", "gdate", gift_date)
 	cf.save("user://save.cfg")
 
 func start_level(i: int) -> void:
@@ -549,6 +573,7 @@ func start_level(i: int) -> void:
 	L = LEVELS[i]
 	shp = make_shape(L.shape)
 	balls.clear(); pads.clear(); parts.clear(); floats.clear(); hist.clear()
+	overtime = false
 	money = L.get("money", 0.0); earned = 0.0; nb = 0; nm = 0; np = 0; lt = 0.0
 	ending = -1.0; state = "play"; popup = null; endinfo = {}
 	gift = null; gift_timer = 5.0 if L.get("tut", "") == "candy" else 9.0; boss = null
@@ -847,6 +872,11 @@ func _input_click(ev: InputEvent, forced = null) -> void:
 	elif state == "chest":
 		if popup != null and popup.t > 0.5:
 			state = "map"; popup = null
+	elif state == "daily":
+		if popup != null and popup.t > 0.4 and Rect2(190, 960, 340, 92).has_point(pos):
+			claim_daily()
+	elif state == "book":
+		book_input(pos)
 
 func next_level() -> void:
 	if li + 1 < LEVELS.size():
@@ -886,11 +916,11 @@ func tick(dt: float) -> void:
 			else:
 				start_level(li)
 		return
-	if state == "chest":
+	if state == "chest" or state == "daily":
 		popup.t += dt
 		fx(dt)
 		return
-	if state == "map" or state == "skins" or state == "settings":
+	if state == "map" or state == "skins" or state == "settings" or state == "book":
 		fx(dt)
 		return
 	if hitstop > 0.0:
@@ -928,8 +958,18 @@ func tick(dt: float) -> void:
 				banner = {"t": 0.0, "txt": "SWEET!", "col": "#ff5fa2", "big": true}
 				play("clear", 1.0, -3.0)
 				confetti()
-		elif L.has("limit") and lt >= L.limit:
-			state = "fail"; screen_t = 0.0; play("fail", 1.0, -2.0)
+		elif L.has("limit") and lt >= L.limit and not overtime:
+			if boost_time > 0:
+				boost_time -= 1
+				L = L.duplicate()
+				L.limit = L.limit + 15.0
+				banner = {"t": 0.0, "txt": "+15 s BOOSTER!", "col": "#7df0c8", "big": false}
+				play("pad", 1.2, -4.0)
+				save_game()
+			else:
+				overtime = true
+				banner = {"t": 0.0, "txt": "Time's up! Keep going", "col": "#ffffff", "big": false}
+				play("swipe", 0.8, -8.0)
 	else:
 		ending -= dt
 		if ending <= 0.0:
@@ -944,7 +984,9 @@ func tick(dt: float) -> void:
 
 func finish_level() -> void:
 	var st = 1
-	if lt <= L.stars[0]:
+	if overtime:
+		st = 1
+	elif lt <= L.stars[0]:
 		st = 3
 	elif lt <= L.stars[1]:
 		st = 2
@@ -1321,6 +1363,12 @@ func _draw() -> void:
 	if state == "chest":
 		draw_map()
 		draw_chest_popup()
+		return
+	if state == "daily":
+		draw_daily()
+		return
+	if state == "book":
+		draw_book()
 		return
 	if state == "skins":
 		draw_skins()
@@ -2009,7 +2057,7 @@ func draw_hud() -> void:
 	rrect(pill, Color(0, 0, 0, 0), 24, 4, INK(), false)
 	text_c(pill.get_center() + Vector2(0, 1), label, 24, Color(1, 1, 1), 6)
 	# timer + stars
-	var tl = L.get("limit", 0.0)
+	var tl = L.get("limit", 0.0) if not overtime else 0.0
 	var tstr = ftime(tl - lt) if tl > 0.0 else ftime(lt)
 	var tcol = C("#ff4d6d") if (tl > 0.0 and tl - lt < 15.0) else Color(1, 1, 1)
 	text_l(Vector2(328, 106), tstr, 28 if tl == 0.0 else int(30 + (6 if tl - lt < 15.0 and fmod(t, 0.5) < 0.25 else 0)), tcol, 7)
@@ -2637,6 +2685,49 @@ func draw_obj(sk: String, lv: int, p: Vector2, r: float, sq: float, rot: float, 
 				draw_circle(Vector2(0, -r * 0.75), r * 0.5 + 3, INK())
 				draw_circle(Vector2(0, -r * 0.75), r * 0.5, C("#ff9fd0"))
 			gloss(r)
+		"planets":
+			planet(clampi(lv, 1, 10), r, C(["#cfe8ff", "#7df0c8", "#ff5fa2", "#d9944a", "#ff7ab8", "#8fd8ff", "#e8c890", "#ff4d6d", "#ffd36b", "#ffb21e"][clampi(lv - 1, 0, 9)]))
+		"clouds":
+			var cc3 = C(["#ffffff", "#ffb3d6", "#9fd8ff", "#e0c8ff", "#c8d0e0", "#ffe3a0", "#a0a8c0", "#fff0f6", "#d9c8ff", "#ffd36b"][clampi(lv - 1, 0, 9)], 1.3 if lv == 10 else 1.0)
+			for q in [Vector2(-0.45, 0.15), Vector2(0, -0.2), Vector2(0.45, 0.15), Vector2(0, 0.25)]:
+				draw_circle(q * r, r * 0.62 + 3, INK())
+			for q in [Vector2(-0.45, 0.15), Vector2(0, -0.2), Vector2(0.45, 0.15), Vector2(0, 0.25)]:
+				draw_circle(q * r, r * 0.62, cc3)
+			if lv == 6:
+				for k in range(4):
+					draw_arc(Vector2(0, r * 0.4), r * (0.9 - k * 0.15), PI, TAU, 12, C(["#ff5fa2", "#ffd36b", "#7df0c8", "#8fd8ff"][k]), 3.0, true)
+			if lv in [5, 7]:
+				for k in range(3):
+					draw_line(Vector2(-r * 0.4 + k * r * 0.4, r * 0.7), Vector2(-r * 0.5 + k * r * 0.4, r * 1.0), C("#8fd8ff"), 3.0)
+			ell(Vector2(-r * 0.2, -r * 0.4), r * 0.25, r * 0.12, Color(1, 1, 1, 0.8))
+		"gumballs":
+			var gc = C(["#ffb3d6", "#ff4d6d", "#4fa3ff", "#3fcf5f", "#ffd23a", "#9b4dff", "#ff9a2e", "#2a1650", "#ff5fa2", "#ffd36b"][clampi(lv - 1, 0, 9)], 1.3 if lv == 10 else 1.0)
+			draw_circle(Vector2.ZERO, r + 3, INK())
+			draw_circle(Vector2.ZERO, r, gc)
+			if lv == 7:
+				draw_line(Vector2(-r, 0), Vector2(r, 0), Color(1, 1, 1, 0.8), r * 0.3)
+			if lv == 8:
+				for k in range(6):
+					draw_circle(Vector2(cos(k * 2.1), sin(k * 2.1)) * r * 0.5, 2.0, Color(1.4, 1.4, 1.6))
+			gloss(r)
+		"crown":
+			if lv <= 3:
+				var cn = C(["#d9944a", "#d9dbe6", "#ffd36b"][lv - 1])
+				draw_circle(Vector2.ZERO, r + 3, INK())
+				draw_circle(Vector2.ZERO, r, cn)
+				draw_arc(Vector2.ZERO, r * 0.7, 0, TAU, 24, cn.darkened(0.2), 3.0, true)
+				text_c(Vector2(0, 2), "$", int(r), Color(1, 1, 1), 0)
+			elif lv <= 5:
+				draw_arc(Vector2(0, r * 0.15), r * 0.7, 0, TAU, 28, INK(), r * 0.38 + 6, true)
+				draw_arc(Vector2(0, r * 0.15), r * 0.7, 0, TAU, 28, C("#ffd36b"), r * 0.38, true)
+				draw_circle(Vector2(0, -r * 0.6), r * 0.35 + 3, INK())
+				draw_circle(Vector2(0, -r * 0.6), r * 0.35, C("#ff3a5a" if lv == 4 else "#3a7bff"))
+			elif lv <= 8:
+				gem([0, 0, 0, 0, 0, 6, 0, 8][lv - 1], r, C(["", "", "", "", "", "#ff3a5a", "#9b4dff", "#3fcf9f"][lv - 1]))
+			else:
+				boss_crown(Vector2(0, 0), r / 32.0, false)
+				if lv == 10:
+					draw_arc(Vector2.ZERO, r + 4, 0, TAU, 24, C("#ffd36b", 2.0), 3.0, true)
 		"retro":
 			var tt = img_tex_path("res://pixel/%d.png" % lv)
 			if tt != null:
@@ -2819,6 +2910,10 @@ func skin_card_rect(i: int) -> Rect2:
 	return Rect2(42 + col * 218, 170 + row * 254, 200, 236)
 
 func skins_input(pos: Vector2) -> void:
+	if Rect2(20, 44, 150, 72).has_point(pos):
+		state = "book"; book_page = 0
+		play("swipe", 1.2, -6.0)
+		return
 	if Rect2(620, 40, 80, 80).has_point(pos):
 		state = skins_from
 		play("swipe", 0.9, -6.0)
@@ -2854,9 +2949,11 @@ func draw_skins() -> void:
 	draw_rect(Rect2(0, 0, 720, 1280), C(INKH, 1.0, 0.35))
 	text_c(Vector2(360, 82), "SKINS", 64, Color(1, 1, 1), 12)
 	img("close", Rect2(620, 40, 80, 80))
-	draw_circle(Vector2(70, 82), 18, INK())
-	draw_circle(Vector2(70, 82), 15, C("#ffd36b"))
-	text_l(Vector2(96, 82), str(coins), 30, Color(1, 1, 1), 7)
+	draw_circle(Vector2(316, 136), 15, INK())
+	draw_circle(Vector2(316, 136), 12, C("#ffd36b"))
+	text_l(Vector2(340, 136), str(coins), 26, Color(1, 1, 1), 6)
+	nine("pill_w", Rect2(20, 44, 150, 72), 70, 60, 70, 70)
+	text_c(Vector2(95, 76), "BOOK", 30, Color(1, 1, 1), 7)
 	var pages = int(ceil(SKINS.size() / 6.0))
 	text_c(Vector2(360, 684), "%d / %d" % [skin_page + 1, pages], 24, Color(1, 1, 1), 6)
 	text_c(Vector2(90, 684), "<  PREV", 24, Color(1, 1, 1), 6)
@@ -3903,3 +4000,136 @@ func trail_dot(q: Vector2, a: float, w: float, i: int, style: String) -> void:
 		"comet":
 			draw_circle(q, w * 0.55 * a, C("#ff9a2e", 1.8, a * 0.7))
 			draw_circle(q, w * 0.25 * a, C("#fff1d6", 1.8, a))
+
+
+# ================================================================ daily gift (cozy: the streak never resets, it just waits)
+const DAILY = [
+	{"kind": "coins", "n": 50, "txt": "50"},
+	{"kind": "coins", "n": 80, "txt": "80"},
+	{"kind": "gold", "txt": "GOLD"},
+	{"kind": "coins", "n": 120, "txt": "120"},
+	{"kind": "time", "txt": "+15s"},
+	{"kind": "coins", "n": 200, "txt": "200"},
+	{"kind": "big", "n": 400, "txt": "400+"},
+]
+
+func claim_daily() -> void:
+	var d = DAILY[gift_day % 7]
+	match d.kind:
+		"coins":
+			coins += d.n
+		"gold":
+			boost_gold += 1
+		"time":
+			boost_time += 1
+		"big":
+			coins += d.n
+			boost_gold += 1
+	gift_day += 1
+	gift_date = Time.get_date_string_from_system()
+	play("cash", 1.0, -4.0)
+	buzz(40)
+	confetti()
+	save_game()
+	popup = null
+	state = "play"
+
+func draw_daily() -> void:
+	var k: float = popup.t if popup != null else 1.0
+	draw_rect(Rect2(0, 0, 720, 1280), C(INKH, 1.0, 0.45))
+	var sc = minf(1.0, k / 0.3)
+	nine("card", Rect2(50, 300, 620, 800).grow(10 * sc), 46, 70, 46, 46)
+	text_c(Vector2(360, 344), "DAILY GIFT", 44, Color(1, 1, 1), 9)
+	text_c(Vector2(360, 420), "Welcome back!", 34, C("#ff5fa2"), 0)
+	var today = gift_day % 7
+	for i in range(7):
+		var col = i % 4
+		var row = i / 4
+		var w = 120.0
+		var x0 = 360.0 - (2.0 if row == 0 else 1.5) * (w + 14.0) + col * (w + 14.0)
+		var r = Rect2(x0, 470 + row * 210, w, 180)
+		if i == 6:
+			r = Rect2(x0, 470 + row * 210, w * 1.0, 180)
+		var done = i < today
+		var now = i == today
+		if now:
+			for j in range(3):
+				rrect(r.grow(8 + j * 6 + sin(t * 5.0) * 2.0), C("#ffd36b", 1.3, 0.15), 22)
+		img("slot_sel" if now else "slot", r)
+		text_c(Vector2(r.get_center().x, r.position.y + 26), "DAY %d" % (i + 1), 20, C(INKH), 0)
+		var d = DAILY[i]
+		var c = r.get_center() + Vector2(0, 8)
+		if d.kind in ["coins", "big"]:
+			for j in range(3 if d.kind == "big" else 1):
+				draw_circle(c + Vector2((j - (1 if d.kind == "big" else 0)) * 14, -j * 4), 20, INK())
+				draw_circle(c + Vector2((j - (1 if d.kind == "big" else 0)) * 14, -j * 4), 16, C("#ffd36b"))
+		elif d.kind == "gold":
+			draw_candy(10, c, 24.0, 0.0, 0.0, false, "candy")
+		else:
+			draw_circle(c, 22, INK())
+			draw_circle(c, 18, C("#7df0c8"))
+		text_c(Vector2(r.get_center().x, r.end.y - 26), d.txt, 22, Color(1, 1, 1), 5)
+		if done:
+			draw_rect(r, C("#ffffff", 1.0, 0.45))
+			text_c(r.get_center(), "OK", 34, C("#3fcf9f"), 6)
+	text_c(Vector2(360, 925), "Missed a day? No stress, your streak waits for you.", 22, C("#9b7bff"), 0)
+	big_button(Rect2(190, 960, 340, 92), "CLAIM", "#ff5fa2")
+
+# ================================================================ Candy Book: every object of every skin
+func book_input(pos: Vector2) -> void:
+	if Rect2(620, 40, 80, 80).has_point(pos):
+		state = "skins"; play("swipe", 0.9, -6.0)
+		return
+	var pages = int(ceil(SKINS.size() / 5.0))
+	if Rect2(36, 1150, 160, 70).has_point(pos):
+		book_page = (book_page - 1 + pages) % pages; play("swipe", 1.2, -8.0)
+	elif Rect2(524, 1150, 160, 70).has_point(pos):
+		book_page = (book_page + 1) % pages; play("swipe", 1.2, -8.0)
+
+func found(sk: Dictionary, lv: int) -> bool:
+	if lv == 1 and skins.has(sk.id):
+		return true
+	return seen.has("%s:%d" % [sk.id, lv])
+
+func draw_book() -> void:
+	draw_rect(Rect2(0, 0, 720, 1280), C(INKH, 1.0, 0.35))
+	text_c(Vector2(360, 82), "CANDY BOOK", 56, Color(1, 1, 1), 12)
+	img("close", Rect2(620, 40, 80, 80))
+	var total = 0
+	var have = 0
+	for sk in SKINS:
+		for lv in range(1, 11):
+			total += 1
+			if found(sk, lv):
+				have += 1
+	var bar = Rect2(160, 140, 400, 30)
+	rrect(bar.grow(5), INK(), 18)
+	rrect(bar, C("#ffffff", 1.0, 0.7), 14)
+	rrect(Rect2(bar.position, Vector2(maxf(30.0, bar.size.x * float(have) / total), bar.size.y)), C("#7df0c8"), 14)
+	text_c(bar.get_center() + Vector2(0, 1), "%d / %d found" % [have, total], 22, Color(1, 1, 1), 6)
+	var pages = int(ceil(SKINS.size() / 5.0))
+	for row in range(5):
+		var i = book_page * 5 + row
+		if i >= SKINS.size():
+			break
+		var sk = SKINS[i]
+		var y = 200 + row * 188
+		nine("panel_b", Rect2(30, y, 660, 176), 50, 50, 50, 50)
+		var n = 0
+		for lv in range(1, 11):
+			if found(sk, lv):
+				n += 1
+		draw_circle(Vector2(70, y + 36), 11, INK())
+		draw_circle(Vector2(70, y + 36), 8, C(sk.col))
+		text_l(Vector2(90, y + 34), sk.name, 28, C("#ff5fa2"), 0)
+		text_l(Vector2(656, y + 34), "%d/10" % n, 24, C(INKH), 0, true)
+		for lv in range(1, 11):
+			var c = Vector2(84 + (lv - 1) * 61, y + 112)
+			if found(sk, lv):
+				draw_candy(lv, c, 22.0, 0.0, 0.0, false, sk.id)
+			else:
+				draw_circle(c, 22, C("#d8cce6"))
+				text_c(c + Vector2(0, 2), "?", 26, Color(1, 1, 1), 4)
+	big_button(Rect2(36, 1150, 160, 70), "<", "#ff5fa2")
+	big_button(Rect2(524, 1150, 160, 70), ">", "#ff5fa2")
+	text_c(Vector2(360, 1186), "%d / %d" % [book_page + 1, pages], 28, Color(1, 1, 1), 6)
