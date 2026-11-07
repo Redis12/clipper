@@ -150,8 +150,25 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
 def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Path | None = None,
              seed: int | None = None, base_hits: int = 3, step_hits: int = 2, dmg: int = 9001,
              lose_at: int | None = None, lose_after: float = 3.0, title: tuple | None = None,
-             lose_move: str | None = None) -> Path:
+             lose_move: str | None = None, theme: dict | None = None, music: str | None = None,
+             music_start: float = 0.0, music_gain: float = 0.35) -> Path:
+    """theme (07/11, JJK) : hero / boss / accent (couleurs), bg (haut, bas), grid, font (police des titres)."""
+    global HERO_COL, BOSS_COL, YELLOW
+    saved = (HERO_COL, BOSS_COL, YELLOW)
+    th = theme or {}
+    HERO_COL, BOSS_COL, YELLOW = th.get("hero", HERO_COL), th.get("boss", BOSS_COL), th.get("accent", YELLOW)
+    try:
+        return _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_at, lose_after, title,
+                         lose_move, th, music, music_start, music_gain)
+    finally:
+        HERO_COL, BOSS_COL, YELLOW = saved
+
+
+def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_at, lose_after, title, lose_move,
+              th, music, music_start, music_gain) -> Path:
+    from PIL import ImageFont
     from . import fxengine, vfxgen
+    tfont = (lambda sz: ImageFont.truetype(th["font"], sz)) if th.get("font") else render.font
     k = W / 1080
     n = len(foes)
     S = W * 0.86
@@ -170,18 +187,33 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
     foe_icons = [fusion.icon(f["image_path"], 512, BOSS_COL) for f in foes]
     hero_icon = fusion.icon(hero["image_path"], 256, HERO_COL)
     small = [fusion.icon(f["image_path"], 96, (90, 90, 110)) for f in foes]
-    bg = Image.new("RGBA", (W, H), (12, 14, 22, 255))
-    bd = ImageDraw.Draw(bg)
+    if th.get("bg"):
+        import numpy as np
+        c0, c1 = (np.array(c, np.float32) for c in th["bg"])
+        yy = np.linspace(0, 1, H)[:, None, None]
+        grad = (c0 * (1 - yy) + c1 * yy).repeat(W, 1)
+        bg = Image.fromarray(grad.clip(0, 255).astype(np.uint8)).convert("RGBA")
+        glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        gd = ImageDraw.Draw(glow)
+        for (gx, gy, gr, gc) in th.get("glows", []):
+            gd.ellipse((gx * W - gr, gy * H - gr, gx * W + gr, gy * H + gr), fill=tuple(gc) + (110,))
+        bg.alpha_composite(glow.filter(ImageFilter.GaussianBlur(120)))
+    else:
+        bg = Image.new("RGBA", (W, H), (12, 14, 22, 255))
+    bd = ImageDraw.Draw(bg, "RGBA")
     stp = S / 24
+    gcol = tuple(th.get("grid", (32, 36, 52)))
+    if th.get("bg"):
+        bd.rectangle((ox, oy, ox + S, oy + S), fill=(6, 4, 14, 170))
     for i in range(25):
-        bd.line((ox + i * stp, oy, ox + i * stp, oy + S), fill=(32, 36, 52), width=1)
-        bd.line((ox, oy + i * stp, ox + S, oy + i * stp), fill=(32, 36, 52), width=1)
+        bd.line((ox + i * stp, oy, ox + i * stp, oy + S), fill=gcol, width=1)
+        bd.line((ox, oy + i * stp, ox + S, oy + i * stp), fill=gcol, width=1)
     fl = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     ImageDraw.Draw(fl).rectangle((ox - 6 * k, oy - 6 * k, ox + S + 6 * k, oy + S + 6 * k), outline=YELLOW + (255,),
                                  width=int(8 * k))
     bg.alpha_composite(fl.resize((W // 4, H // 4)).filter(ImageFilter.GaussianBlur(4)).resize((W, H)))
     bg.alpha_composite(fl)
-    tf = render.font(int(62 * k))
+    tf = tfont(int((84 if th.get('font') else 62) * k))
     explo = list(vfxgen.frames("explosion", 256, BOSS_COL))
     parts = fxengine.Particles(seed)
     out = out or config.data_dir() / "fusions" / f"gauntlet_{seed}.mp4"
@@ -200,11 +232,11 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
             return
         s_ = 1 + 0.35 * max(0.0, 1 - age / 0.15)
         yb_ = oy + 70 * k if by_[0] > S * 0.4 else oy + S - 70 * k      # loin du perso (pas sur son nom)
-        ImageDraw.Draw(img_).text((W / 2, yb_), text, font=render.font(int(64 * k * s_)), anchor="mm",
+        ImageDraw.Draw(img_).text((W / 2, yb_), text, font=tfont(int(64 * k * s_)), anchor="mm",
                                   fill=col, stroke_width=int(6 * k), stroke_fill=(0, 0, 0))
 
     def bubble(img_, x, y, text):
-        f_ = render.font(int(40 * k))
+        f_ = tfont(int(40 * k))
         dd = ImageDraw.Draw(img_)
         lines = render.wrap(text, f_, int(W * 0.6), dd) or [text]
         lh = int(48 * k)
@@ -245,13 +277,13 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
             render.draw_rich(img, (W / 2, H * 0.04), t1, tf, (255, 255, 255), "ma",
                              int(4 * k), (0, 0, 0))
             d = ImageDraw.Draw(img)
-            f2 = render.font(int(70 * k))
+            f2 = tfont(int((96 if th.get('font') else 70) * k))
             while f2.size > 30 and render.text_width(d, t2, f2) > W * 0.94:
-                f2 = render.font(f2.size - 3)
-            d.text((W / 2, H * 0.04 + 76 * k), t2, font=f2,
-                   anchor="ma", fill=BOSS_COL, stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
+                f2 = tfont(f2.size - 3)
+            d.text((W / 2, H * 0.04 + (100 if th.get('font') else 76) * k), t2, font=f2,
+                   anchor="ma", fill=tuple(th.get("title2", BOSS_COL)), stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
             kills = sum(1 for x in ko_at)
-            d.text((W / 2, oy - 34 * k), f"KILLS {kills}/{n}", font=render.font(int(44 * k)), anchor="mm",
+            d.text((W / 2, oy - 34 * k), f"KILLS {kills}/{n}", font=tfont(int(44 * k)), anchor="mm",
                    fill=YELLOW, stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
             # adversaire du moment (pas pendant le K.O.)
             if not ended and not paused:
@@ -288,7 +320,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                     d.rectangle((x0 - 3, y0 - 3, x0 + bw + 3, y0 + 16 * k + 3), fill=(0, 0, 0))
                     d.rectangle((x0, y0, x0 + bw * hp, y0 + 16 * k), fill=(235, 60, 70))
                 if not hide:
-                  d.text((ox + bx + dx_, y0 - 8 * k), foes[foe]["name"].upper(), font=render.font(int(30 * k)), anchor="md",
+                  d.text((ox + bx + dx_, y0 - 8 * k), foes[foe]["name"].upper(), font=tfont(int(30 * k)), anchor="md",
                        fill=(255, 255, 255), stroke_width=int(3 * k), stroke_fill=(0, 0, 0))
             # héros
             hs = int(rh * 2)
@@ -311,7 +343,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                         dl.line((ox + x0_, oy + y0_, ox + x1_, oy + y1_), fill=(255, 230, 90), width=int(14 * k))
                     banner(img, foes[ef].get("tp_name", "FLYING RAIJIN!"), age, (255, 225, 80))
                     if age < 0.6:
-                        dl.text((ox + hx, oy + hy - 70 * k), "MISS!", font=render.font(int(44 * k)), anchor="mm",
+                        dl.text((ox + hx, oy + hy - 70 * k), "MISS!", font=tfont(int(44 * k)), anchor="mm",
                                 fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
                 elif kind == "kamui" and 0 <= age < 1.1:
                     dl = ImageDraw.Draw(img)
@@ -322,7 +354,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                                fill=(150, 80, 230), width=int(6 * k))
                     banner(img, foes[ef].get("kamui_name", "KAMUI!"), age, (175, 110, 255))
                     if age < 0.7:
-                        dl.text((ox + hx, oy + hy - 70 * k), "MISS!", font=render.font(int(44 * k)), anchor="mm",
+                        dl.text((ox + hx, oy + hy - 70 * k), "MISS!", font=tfont(int(44 * k)), anchor="mm",
                                 fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
                 elif kind == "fake" and t0 <= t < ev[3] + 0.4:   # genjutsu : corbeaux, écran rouge, il revient
                     q = age / (ev[3] - t0)
@@ -340,11 +372,11 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                             dl.polygon([(cx_ - w_, cy_), (cx_, cy_ - w_ * 0.4), (cx_ + w_, cy_), (cx_, cy_ + w_ * 0.25)],
                                        fill=(10, 10, 14))
                     if q < 0.45:
-                        dl.text((ox + ev[4], oy + ev[5]), "K.O.?", font=render.font(int(90 * k)), anchor="mm",
+                        dl.text((ox + ev[4], oy + ev[5]), "K.O.?", font=tfont(int(90 * k)), anchor="mm",
                                 fill=YELLOW, stroke_width=int(6 * k), stroke_fill=(0, 0, 0))
                     else:
                         banner(img, foes[ef].get("fake_label", "GENJUTSU!"), age - (ev[3] - t0) * 0.45, (230, 40, 40))
-                        dl.text((ox + bx, max(oy + 40 * k, oy + by - RB - 70 * k)), "Behind you.", font=render.font(int(44 * k)), anchor="mm",
+                        dl.text((ox + bx, max(oy + 40 * k, oy + by - RB - 70 * k)), "Behind you.", font=tfont(int(44 * k)), anchor="mm",
                                 fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
                 elif kind == "gag" and t0 <= t < ev[3] and foes[ef].get("fx") == "strings":
                     dl = ImageDraw.Draw(img)                     # Doflamingo : fils de marionnette qui ratent
@@ -391,7 +423,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                     keep.append((ft, fx_, fy_))
                     lay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
                     al = int(255 * (1 - a))
-                    ImageDraw.Draw(lay).text((fx_, fy_ - 60 * k * a), f"-{dmg:,}", font=render.font(int(38 * k)),
+                    ImageDraw.Draw(lay).text((fx_, fy_ - 60 * k * a), f"-{dmg:,}", font=tfont(int(38 * k)),
                                              anchor="mm", fill=(255, 230, 120, al), stroke_width=int(3 * k),
                                              stroke_fill=(0, 0, 0, al))
                     img.alpha_composite(lay)
@@ -405,9 +437,9 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                     img.alpha_composite(f_.resize((sz, sz)), (int(kx - sz / 2), int(ky - sz / 2)))
                     d = ImageDraw.Draw(img)
                     s = 1 + 0.4 * max(0.0, 1 - a / 0.2)
-                    d.text((W / 2, oy + S * 0.5), "K.O.!", font=render.font(int(150 * k * s)), anchor="mm",
+                    d.text((W / 2, oy + S * 0.5), "K.O.!", font=tfont(int(150 * k * s)), anchor="mm",
                            fill=YELLOW, stroke_width=int(7 * k), stroke_fill=(0, 0, 0))
-                    d.text((W / 2, oy + S * 0.5 + 110 * k), foes[kf]["name"].upper(), font=render.font(int(54 * k)),
+                    d.text((W / 2, oy + S * 0.5 + 110 * k), foes[kf]["name"].upper(), font=tfont(int(54 * k)),
                            anchor="mm", fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
             en = Image.new("RGBA", (W, H), (0, 0, 0, 0))
             parts.draw(en, 1.0)
@@ -448,7 +480,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                 img.alpha_composite(g, (int(ox + lost[3] - hs / 2 + sh_), int(oy + lost[4] - hs / 2)))
                 d = ImageDraw.Draw(img)
                 banner(img, lose_move or f"{foes[lost[1]]['name'].upper()}!", e, (255, 60, 60))
-                d.text((ox + lost[3], oy + lost[4] - hs), "DOWN!", font=render.font(int(60 * k)), anchor="mm",
+                d.text((ox + lost[3], oy + lost[4] - hs), "DOWN!", font=tfont(int(60 * k)), anchor="mm",
                        fill=(255, 255, 255), stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
             elif ended and lost:                                  # écran de défaite
                 e = t - len(frames) / FPS - 1.4
@@ -457,13 +489,13 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                 img.alpha_composite(foe_icons[lost[1]].resize((big, big), Image.LANCZOS),
                                     (int(W / 2 - big / 2), int(H * 0.36)))
                 d = ImageDraw.Draw(img)
-                d.text((W / 2, H * 0.24), f"SURVIVED {lost[1]}/{n}", font=render.font(int(86 * k)), anchor="mm",
+                d.text((W / 2, H * 0.24), f"SURVIVED {lost[1]}/{n}", font=tfont(int(86 * k)), anchor="mm",
                        fill=YELLOW, stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
                 d.text((W / 2, H * 0.24 + 92 * k), f"STOPPED BY {foes[lost[1]]['name'].upper()}",
-                       font=render.font(int(58 * k)), anchor="mm", fill=(255, 80, 80), stroke_width=int(5 * k),
+                       font=tfont(int(58 * k)), anchor="mm", fill=(255, 80, 80), stroke_width=int(5 * k),
                        stroke_fill=(0, 0, 0))
                 render.draw_rich(img, (W / 2, H * 0.36 + big + 40 * k), "Did he deserve to lose? Comment 👇",
-                                 render.font(int(46 * k)), (255, 255, 255), "ma", int(3 * k), (0, 0, 0))
+                                 tfont(int(46 * k)), (255, 255, 255), "ma", int(3 * k), (0, 0, 0))
             elif ended:                                           # écran de fin
                 e = t - len(frames) / FPS
                 dim = Image.new("RGBA", (W, H), (0, 0, 0, int(205 * min(1.0, e / 0.3))))
@@ -471,12 +503,12 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                 big = int(W * 0.46)
                 img.alpha_composite(hero_icon.resize((big, big), Image.LANCZOS), (int(W / 2 - big / 2), int(H * 0.36)))
                 d = ImageDraw.Draw(img)
-                d.text((W / 2, H * 0.27), f"{hero['name'].upper()} CLEARED", font=render.font(int(80 * k)), anchor="mm",
+                d.text((W / 2, H * 0.27), f"{hero['name'].upper()} CLEARED", font=tfont(int(80 * k)), anchor="mm",
                        fill=HERO_COL, stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
-                d.text((W / 2, H * 0.27 + 90 * k), "THE GAUNTLET", font=render.font(int(80 * k)), anchor="mm",
+                d.text((W / 2, H * 0.27 + 90 * k), "THE GAUNTLET", font=tfont(int(80 * k)), anchor="mm",
                        fill=YELLOW, stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
                 render.draw_rich(img, (W / 2, H * 0.36 + big + 40 * k), "Who should he face next? Comment 👇",
-                                 render.font(int(46 * k)), (255, 255, 255), "ma", int(3 * k), (0, 0, 0))
+                                 tfont(int(46 * k)), (255, 255, 255), "ma", int(3 * k), (0, 0, 0))
             proc.stdin.write(img.convert("RGB").tobytes())
         proc.stdin.close()
         if proc.wait() != 0:
@@ -517,6 +549,19 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
     put(len(frames) / FPS + (1.4 if lost else 0), domain.sfx("win"), 0.8)
     lvl = float(np.percentile(np.abs(audio), 99.7)) or 1.0
     audio = audio * min(1.0, 0.75 / lvl)
+    if music:                                            # musique de fond continue (07/11 : thème JJK)
+        r_ = subprocess.run([ffmpeg, "-loglevel", "error", "-ss", str(music_start), "-i", str(music), "-t", str(dur + 1),
+                             "-f", "f32le", "-ac", "1", "-ar", str(rate), "-"], capture_output=True)
+        mu = np.frombuffer(r_.stdout, np.float32)[:na].astype(np.float32)
+        if len(mu):
+            mu = mu / (float(np.percentile(np.abs(mu), 99.7)) or 1.0)
+            env = np.ones(len(mu), np.float32)
+            fi, fo = int(0.4 * rate), int(1.5 * rate)
+            env[:fi] = np.linspace(0, 1, fi)
+            e_ = min(len(mu), int(dur * rate))
+            env[max(0, e_ - fo):e_] *= np.linspace(1, 0, e_ - max(0, e_ - fo))
+            env[e_:] = 0
+            audio[:len(mu)] += mu * env * music_gain
     wav = out.with_suffix(".wav")
     fusion.write_wav(wav, np.tanh(audio * 1.1) / math.tanh(1.1) * 0.24)   # ≈ −24 LUFS comme les autres formats
     subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(tmp), "-i", str(wav), "-c:v", "copy", "-c:a", "aac",
