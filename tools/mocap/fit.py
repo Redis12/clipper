@@ -66,6 +66,11 @@ LIMITS = [("thigh_f", "shin_f", -170, 5), ("thigh_b", "shin_b", -170, 5),      #
           ("chest", "neck", -45, 45), ("neck", "head", -40, 40)]
 
 
+import os  # noqa: E402
+if os.environ.get("FIT_FREE_KNEES"):                       # vue de face (fente latérale) : le genou peut partir des 2 côtés
+    LIMITS = [x for x in LIMITS if not x[0].startswith("thigh")]
+
+
 def anat(p):
     """pénalité anatomique (degrés hors des limites) : sans elle, le fit trouve des poses tordues qui « passent »
     à l'image (jambe repliée cachée par le pantalon) mais inutilisables pour rejouer le mouvement."""
@@ -170,15 +175,16 @@ for i in range(a0, a1):
         prev, prev_m = None, None
         continue
     p, lv = fit(tgt, m, prev, prev_m)
-    if TEMPLATE is not None:
+    for TP in ([] if TEMPLATE is None else (TEMPLATE if isinstance(TEMPLATE, list) else [TEMPLATE])):
         ys_, xs_ = np.nonzero(m)
-        tp = dict(TEMPLATE)
-        tp["x"] = float(xs_.mean()) + TEMPLATE.get("_dx", 0.0)
-        tp["y"] = float(ys_.max()) - TEMPLATE.get("_foot", 0.0)
-        tp.pop("_dx", None), tp.pop("_foot", None)
-        p2, l2 = fit(tgt, m, tp, None)
-        if l2 < lv:
-            p, lv = p2, l2
+        for fl in ((TP["flip"],) if "flip" in TP and not TP.get("_both") else (False, True)):
+            tp = {k: v for k, v in TP.items() if not k.startswith("_")}
+            tp["flip"] = fl
+            tp["x"] = float(xs_.mean()) + TP.get("_dx", 0.0)
+            tp["y"] = float(ys_.max()) - TP.get("_foot", 0.0)
+            p2, l2 = fit(tgt, m, tp, None)
+            if l2 < lv:
+                p, lv = p2, l2
     p["loss"] = lv
     res[str(i)] = p
     prev, prev_m = {k: v for k, v in p.items() if k != "loss"}, m
