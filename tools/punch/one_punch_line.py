@@ -28,8 +28,8 @@ from clipper.slides import fusion, render, vfxgen  # noqa: E402
 N = 1000
 GAP = 52                         # écart entre 2 stickmen de la file
 SH = 165                         # taille d'un stickman
-OFF = 1.6                        # la file arrive pendant que Goku attend
-TP = T_HIT + OFF                 # le coup
+TP = 1.4                         # le coup arrive vite (demandé : « ça prend trop de temps »)
+K = T_HIT / TP                   # l'animation de stick_punch est accélérée d'autant
 FREEZE = 0.22
 WA, WB = 500.0, 900.0            # onde : x = WB·a + WA·a² (accélère)
 GRAV = 2000.0
@@ -88,7 +88,7 @@ def main():
     ring = list(vfxgen.frames("ring", 900, (255, 240, 180)))
     bolt = list(vfxgen.frames("lightning", 260, (255, 240, 120)))
     fT, fS = F("anton.woff2", 112), F("mont900.woff2", 30)
-    debris, launches = [], []
+    debris, launches, puffs = [], [], []
     proc = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s",
                              f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-preset", "veryfast", "-crf",
                              "18", "-pix_fmt", "yuv420p", str(out.with_suffix(".video.mp4"))], stdin=subprocess.PIPE)
@@ -123,7 +123,7 @@ def main():
                                     outline=(40, 40, 50), width=4)
                 d.text((bx, GROUND - 142), f"#{min(N, j * 50)}", font=F("anton.woff2", 36), fill=(40, 40, 50), anchor="mm")
         # ------------------------------------------------ Goku
-        gt = t - OFF
+        gt = t * K if t < TP else t - TP + T_HIT
         if t < TP:
             pose = pose_at(max(0.0, gt))
             gx_ = GX + (DASH * ease((gt - T_SWING) / (T_HIT - T_SWING)) if gt >= T_SWING else 0)
@@ -273,14 +273,48 @@ def main():
                                    -rnd.uniform(300, 1100), t, rnd.uniform(8, 18), 1.8])
         if a >= 0 and t < T_END + 0.3:
             sx = wx - cx
-            for j in range(4):
-                rr = 210 + j * 36
-                d.arc((sx - rr * 0.45, GROUND - rr * 1.5, sx + rr * 0.45, GROUND + rr * 0.3), 280, 80,
-                      fill=(255, 255, 255, 210), width=11 - j * 2)
-            d.rectangle((max(0, sx - 700), GROUND - 4, sx, GROUND + 8), fill=(255, 250, 200, 150))
-            for _ in range(5):                                         # poussière soulevée
-                debris.append([wx + rnd.uniform(-20, 20), GROUND - 4, rnd.uniform(-200, 200), -rnd.uniform(200, 700), t,
-                               rnd.uniform(5, 11), 0.8])
+            fade = 1.0 if t < T_END else max(0.0, 1 - (t - T_END) / 0.3)
+            # nuages de poussière qui roulent derrière l'onde
+            if fi % 2 == 0:
+                for _ in range(2):
+                    puffs.append([wx - rnd.uniform(0, 60), GROUND - rnd.uniform(0, 60), rnd.uniform(40, 80), t])
+            # onde d'énergie : mur lumineux en croissant + halo flou + traînée au sol
+            lay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+            ld = ImageDraw.Draw(lay)
+            hh = SH * 2.3
+            for j, (wd, col, al) in enumerate(((150, (255, 200, 60), 150), (95, (255, 235, 130), 200), (45, (255, 255, 240), 255))):
+                ld.ellipse((sx - wd, GROUND - hh, sx + wd * 0.35, GROUND + 40), fill=col + (int(al * fade),))
+            ld.ellipse((sx - 260, GROUND - hh * 0.9, sx - 40, GROUND + 50), fill=(0, 0, 0, 0))   # creux du croissant
+            for j in range(28):                                        # traînée au sol qui s'éteint
+                x0_ = sx - 40 - j * 30
+                ld.rectangle((x0_ - 30, GROUND - 14, x0_, GROUND + 10), fill=(255, 220, 110, int(200 * (1 - j / 28) * fade)))
+            for _ in range(10):                                        # lignes de vitesse
+                yy = GROUND - rnd.uniform(10, hh)
+                ln = rnd.uniform(120, 420)
+                ld.line((sx - 60 - ln, yy, sx - 60, yy), fill=(255, 250, 220, int(180 * fade)), width=rnd.randint(3, 7))
+            glow = lay.filter(ImageFilter.GaussianBlur(22))
+            img.paste(glow, (0, 0), glow)
+            img.paste(lay, (0, 0), lay)
+            d = ImageDraw.Draw(img, "RGBA")
+            for _ in range(int(6 * fade)):                             # étincelles
+                ang = rnd.uniform(-1.4, 0.4)
+                ln = rnd.uniform(30, 90)
+                x1, y1 = sx + rnd.uniform(-20, 30), GROUND - rnd.uniform(0, hh * 0.9)
+                d.line((x1, y1, x1 + math.cos(ang) * ln, y1 + math.sin(ang) * ln), fill=(255, 255, 210), width=4)
+            for _ in range(4):                                         # cailloux soulevés
+                debris.append([wx + rnd.uniform(-20, 20), GROUND - 4, rnd.uniform(-200, 300), -rnd.uniform(400, 1000), t,
+                               rnd.uniform(6, 13), 0.9])
+        if puffs:
+            keep_p = []
+            for pf in puffs:
+                aa = t - pf[3]
+                if aa < 1.1:
+                    r = pf[2] * (1 + aa * 2.2)
+                    x, y = pf[0] - cx - aa * 60, pf[1] - aa * 70
+                    if -r < x < W + r:
+                        d.ellipse((x - r, y - r * 0.8, x + r, y + r * 0.8), fill=(205, 165, 120, int(150 * (1 - aa / 1.1))))
+                    keep_p.append(pf)
+            puffs[:] = keep_p
         if 0 <= ee - FREEZE < 1.0:
             k = (ee - FREEZE) / 1.0
             ex = explo[min(len(explo) - 1, int(k * len(explo)))]
@@ -381,9 +415,8 @@ def main():
     S = lambda fam, seed=0: domain.sfx(fam, mode="anime", seed=seed, franchise="dragon ball")  # noqa: E731
     for k in range(6):                                                 # la file qui arrive
         put(k * 0.3, S("hit", 20 + k % 4), 0.08)
-    put(OFF + T_CHARGE, S("bomb", 5), 0.25)
-    put(OFF + T_SSJ - 0.05, S("transform"), 0.9)
-    put(OFF + T_SWING, S("teleport"), 0.5)
+    put(T_SSJ / K - 0.05, S("transform"), 0.9)
+    put(T_SWING / K, S("teleport"), 0.5)
     put(TP, S("hit", 1), 1.0)
     put(TP + FREEZE, S("bomb", 2), 1.0)
     put(TP + FREEZE + 0.1, S("ko"), 0.6)
