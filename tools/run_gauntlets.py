@@ -73,3 +73,23 @@ if "gojo" in sys.argv:                                # 07/11 : Gojo tombe contr
                             base_hits=1, step_hits=0, lose_at=10, lose_after=3.0, lose_move="WORLD CUTTING SLASH!",
                             title=("CAN GOJO", "SURVIVE THE JJK GAUNTLET?"), theme=JJK_THEME, music=JJK_MUSIC, music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")),
                             out=OUT / "Gauntlet - Gojo survive.mp4"))
+if "sukuna" in sys.argv:                              # 07/11 : Sukuna (Shibuya, 15 doigts) tombe contre Itachi
+    import os
+    SUK = {"name": "Sukuna", "image_path": L + "Jujutsu Kaisen/Sukuna/sukuna.jpg"}
+    SUK_THEME = {"hero": (230, 40, 60), "boss": (255, 140, 30), "accent": (255, 200, 60), "title2": (255, 150, 60),
+                 "bg": ((40, 6, 10), (8, 4, 6)), "grid": (110, 40, 30),
+                 "glows": [(0.15, 0.2, 380, (220, 30, 40)), (0.9, 0.55, 420, (255, 130, 20)), (0.4, 0.95, 360, (120, 10, 30))],
+                 "font": "tools/money_sim/fonts/anton.woff2"}
+    foes = [{"name": n, "image_path": N + p} for n, p in [
+        ("TenTen", "TenTen/TenTen.jpg"), ("Sakura", "Sakura/Sakura.jpg"), ("Tsunade", "Tsunade/Tsunade.png"),
+        ("Orochimaru", "Orochimaru/Orochimaru.jpg"), ("Jiraiya", "Jiraya/Jiraya.png"), ("Raikage", "Raikage/Raikage.jpg"),
+        ("Itachi", "Itachi/Itachi.jpg")]]
+    foes[1].update(gag=True, gag_s=1.3, say="SHANNAROOO! 👊")
+    foes[3].update(gag=True, gag_s=1.5, say="What a fine vessel... I want that body 🐍")
+    foes[6].update(gag=True, gag_s=1.5, say="You're already in my genjutsu.", gag_label="SHARINGAN")
+    music = os.environ.get("GAUNTLET_MUSIC") or "library/_music/Naruto Shippuden OST 1 - Track 26 - Keisei Gyakuten ( Reverse Situation ).mp3"
+    print(gauntlet.generate(SUK, foes, universe="Naruto", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
+                            base_hits=1, step_hits=0, lose_at=6, lose_after=3.0, lose_move="TSUKUYOMI!",
+                            title=("CAN SHIBUYA SUKUNA", "SURVIVE THE NARUTO GAUNTLET?"), theme=SUK_THEME, music=music,
+                            music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.22,
+                            out=OUT / "Gauntlet - Sukuna vs Naruto.mp4"))
