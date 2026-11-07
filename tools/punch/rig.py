@@ -38,29 +38,37 @@ def _limb(d, a, b, w, col):
         d.ellipse((p[0] - w / 2, p[1] - w / 2, p[0] + w / 2, p[1] + w / 2), fill=col)
 
 
+# Coiffure de Goku dessinée à la main (07/11, d'après la référence) : repère de la tête, rayon 1, x vers l'avant
+# (droite), y vers le bas. Grosses mèches vers le haut et l'arrière, mèches devant sur le front.
+GOKU_HAIR = [(0.78, -0.30), (1.50, -0.52), (0.95, -0.72), (1.35, -1.40), (0.55, -1.02), (0.30, -2.05), (0.02, -1.15),
+             (-0.70, -1.85), (-0.48, -0.98), (-1.95, -1.20), (-0.98, -0.52), (-2.15, -0.30), (-1.02, -0.06),
+             (-1.75, 0.42), (-0.90, 0.30), (-0.72, 0.66), (-0.30, 0.22), (0.12, -0.12), (0.50, -0.26)]
+BANG = [(0.48, -0.40), (0.98, 0.10), (0.80, -0.38), (1.10, -0.20), (0.92, -0.50)]
+
+
 def _hair(d, c, r, spikes, col, tilt):
-    """Mèches = triangles autour du crâne (côté arrière + dessus), plus longues en SSJ3."""
-    ln = {"base": 1.0, "up": 1.15, "long": 1.15}[spikes]
-    # (angle depuis le haut, sens horaire ; 0 = haut, -90 = arrière), longueur relative
-    sp = {"base": [(-150, .9), (-120, 1.1), (-85, 1.2), (-50, 1.1), (-15, .95), (20, .8), (55, .55)],
-          "up": [(-140, .8), (-105, 1.0), (-70, 1.25), (-35, 1.35), (0, 1.3), (30, 1.05), (60, .6)],
-          "long": [(-160, 1.0), (-120, 1.2), (-80, 1.3), (-40, 1.3), (0, 1.15), (35, .9), (65, .55)]}[spikes]
-    for ang, l in sp:
-        a = math.radians(ang + tilt)
-        base_w = math.radians(24)
-        tip = (c[0] + math.sin(a) * r * (1 + l * ln), c[1] - math.cos(a) * r * (1 + l * ln))
-        p1 = (c[0] + math.sin(a - base_w) * r * 0.95, c[1] - math.cos(a - base_w) * r * 0.95)
-        p2 = (c[0] + math.sin(a + base_w) * r * 0.95, c[1] - math.cos(a + base_w) * r * 0.95)
-        d.polygon([p1, tip, p2], fill=col)
-    if spikes == "long":                                   # SSJ3 : grande crinière dans le dos
-        a0 = math.radians(-100 + tilt)
-        pts = [(c[0] + math.sin(a0) * r, c[1] - math.cos(a0) * r)]
-        for k in range(5):
-            pts.append((c[0] - r * (0.9 + 0.25 * k), c[1] + r * (0.4 + 0.75 * k)))
-            pts.append((c[0] - r * (0.45 + 0.2 * k), c[1] + r * (0.7 + 0.75 * k)))
-        pts.append((c[0] - r * 0.2, c[1] + r * 0.6))
-        d.polygon(pts, fill=col)
-    d.chord((c[0] - r, c[1] - r, c[0] + r, c[1] + r), 180 + tilt * 0.3, 360 + tilt * 0.3, fill=col)
+    import math as m
+    pts = list(GOKU_HAIR)
+    if spikes in ("up", "long"):                          # Super Saiyan : mèches dressées vers le haut
+        q = []
+        for x, y in pts:
+            if y < -0.4:
+                a = m.radians(28)
+                x, y = x * m.cos(a) + y * m.sin(a), -x * m.sin(a) + y * m.cos(a)
+                x, y = x * 1.08, y * 1.15
+            q.append((x, y))
+        pts = q
+    t = m.radians(tilt)
+
+    def P(x, y):
+        x, y = x * m.cos(t) - y * m.sin(t), x * m.sin(t) + y * m.cos(t)
+        return (c[0] + x * r, c[1] + y * r)
+    if spikes == "long":                                  # SSJ3 : crinière jusqu'au bas du dos
+        mane = [(-0.6, -0.8), (-1.6, 0.2), (-1.2, 0.5), (-2.0, 1.4), (-1.4, 1.5), (-2.1, 2.7), (-1.3, 2.4),
+                (-1.7, 3.6), (-0.9, 2.9), (-0.8, 3.8), (-0.4, 2.2), (-0.2, 0.4)]
+        d.polygon([P(x, y) for x, y in mane], fill=col)
+    d.polygon([P(x, y) for x, y in pts], fill=col)
+    d.polygon([P(x, y) for x, y in BANG], fill=col)
 
 
 def draw(pose, form="base", scale=1.0, aura_phase=0.0):
@@ -106,9 +114,10 @@ def draw(pose, form="base", scale=1.0, aura_phase=0.0):
     _limb(d, kf, ff, 32 * s, GI)
     d.rounded_rectangle((ff[0] - 18 * s, ff[1] - 8 * s, ff[0] + 24 * s, ff[1] + 14 * s), 8 * s, fill=BOOT)
     # tête
-    hr = 36 * s
+    hr = 44 * s
     hc = _pt(neck, 180 + pose["lean"] + pose["head"], hr * 0.95)
     d.ellipse((hc[0] - hr, hc[1] - hr, hc[0] + hr, hc[1] + hr), fill=SKIN)
+    d.ellipse((hc[0] - hr * 0.15, hc[1] - hr * 0.05, hc[0] + hr * 0.12, hc[1] + hr * 0.3), fill=tuple(int(c * .9) for c in SKIN))
     _hair(d, hc, hr, f["spikes"], f["hair"], pose["lean"] * 0.5 + pose["head"])
     ex, ey = hc[0] + hr * 0.5, hc[1] + hr * 0.05
     d.polygon([(ex - 9 * s, ey - 4 * s), (ex + 9 * s, ey - 7 * s), (ex + 7 * s, ey + 5 * s), (ex - 8 * s, ey + 4 * s)], fill="white")
