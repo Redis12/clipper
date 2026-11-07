@@ -88,26 +88,40 @@ def load(path, t0=0.0, t1=None, fps=24, side=None):
     n1 = len(data) if t1 is None else min(len(data), int(t1 / ft))
     step = 1 / fps / ft
     frames = [fk(joints, data[int(i)]) for i in np.arange(n0, n1, step)]
-    # direction « devant » moyenne (horizontale) : perpendiculaire à l'axe des hanches ; Y = haut dans CMU
-    fw = np.zeros(3)
-    for P in frames:
-        r = P["RightUpLeg"] - P["LeftUpLeg"]
-        f = np.cross(np.array([0, 1, 0]), r)       # devant
+    # caméra de profil QUI SUIT LE CORPS : à chaque image, on regarde le perso de côté par rapport à SES hanches
+    # (comme un jeu de combat 2D) ; une rotation sur lui-même (coup de pied retourné) devient un demi-tour de l'image.
+    def fwd_of(P):
+        r = P["RightUpLeg"] - P["LeftUpLeg"] + 0.6 * (P["RightArm"] - P["LeftArm"])
+        f = np.cross(np.array([0.0, 1.0, 0.0]), r)
         f[1] = 0
-        fw += f / (np.linalg.norm(f) + 1e-9)
-    fw /= np.linalg.norm(fw) + 1e-9
+        return f / (np.linalg.norm(f) + 1e-9)
+    fws = [fwd_of(P) for P in frames]
+    yaw = np.unwrap([math.atan2(f[2], f[0]) for f in fws])
+    yaw = np.convolve(np.pad(yaw, 2, mode="edge"), np.ones(5) / 5, "valid")
+    y0 = yaw[0]
+    dirx = np.array([math.cos(y0), 0, math.sin(y0)])          # axe de déplacement à l'écran
     side = side or 1
     out = []
     ys = [min(P["LeftToeBase"][1], P["RightToeBase"][1], P["LeftFoot"][1], P["RightFoot"][1]) for P in frames]
-    ground = np.percentile(ys, 5)
-    for P in frames:
+    ground = np.percentile(ys, 3)
+    facing = 1
+    for P, yw in zip(frames, yaw):
+        f = np.array([math.cos(yw), 0, math.sin(yw)])
+        turn = math.cos(yw - y0)
+        if turn > 0.25:                                        # dos tourné à plus de ~105° = on retourne l'image
+            facing = 1                                         # (hystérésis : pas de clignotement autour de 90°)
+        elif turn < -0.25:
+            facing = -1
+
         def p2(name):
-            v = P[name]
-            return (float(v @ fw) * side, float(v[1]))
+            v = P[name] - P["Hips"]
+            return (float(v @ f), float(v[1]))
         pose = {}
         for role, (a, b) in ROLE_J.items():
             A, B = p2(a), p2(b)
             pose[role] = math.degrees(math.atan2(B[1] - A[1], B[0] - A[0])) % 360
         foot = min(P["LeftFoot"][1], P["RightFoot"][1], P["LeftToeBase"][1], P["RightToeBase"][1])
-        out.append((pose, p2("Hips")[0], max(0.0, foot - ground)))
+        lift = foot - ground
+        lift = 0.0 if lift < 1.2 else lift - 1.2
+        out.append((pose, float(P["Hips"] @ dirx) * side, lift, facing))
     return out

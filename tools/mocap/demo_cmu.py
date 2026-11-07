@@ -19,9 +19,10 @@ n = 0
 for name, f, a, b in CLIPS:
     F = bvh.load(D + f, a, b)
     x0 = F[0][1]
-    xs = [x for _, x, _ in F]
+    xs = [x for _, x, _, _ in F]
     mid = (min(xs) + max(xs)) / 2
-    for pose, x, lift in F:
+    for pose, x, lift, fc in F:
+        g.flip = fc < 0
         c = Image.new("RGBA", (W, H), (205, 225, 245, 255))
         d = ImageDraw.Draw(c)
         d.rectangle((0, GY, W, H), fill=(120, 170, 90))
