@@ -70,6 +70,15 @@ P["kame_charge"] = dict(hip=100, spine=104, chest=108, neck=94, head=84, uarm_f=
                         farm_b=190, thigh_f=300, shin_f=278, thigh_b=240, shin_b=256)
 P["kame_fire"] = dict(hip=80, spine=74, chest=70, neck=72, head=76, uarm_f=2, farm_f=0, uarm_b=5, farm_b=3,
                       thigh_f=306, shin_f=280, thigh_b=232, shin_b=244)
+P["hammer_up"] = dict(hip=96, spine=100, chest=104, neck=104, head=100, uarm_f=100, farm_f=125, uarm_b=106, farm_b=130,
+                      thigh_f=320, shin_f=262, thigh_b=236, shin_b=262)
+P["hammer"] = dict(hip=60, spine=50, chest=42, neck=40, head=38, uarm_f=325, farm_f=300, uarm_b=330, farm_b=306,
+                   thigh_f=330, shin_f=262, thigh_b=230, shin_b=258)
+P["duck"] = dict(hip=60, spine=50, chest=42, neck=40, head=50, uarm_f=20, farm_f=100, uarm_b=30, farm_b=108,
+                 thigh_f=350, shin_f=250, thigh_b=322, shin_b=244)
+P["uppercut"] = dict(hip=84, spine=86, chest=90, neck=92, head=96, uarm_f=70, farm_f=88, uarm_b=230, farm_b=250,
+                     thigh_f=300, shin_f=284, thigh_b=248, shin_b=226)
+P["taunt"] = dict(P["stance"], uarm_f=40, farm_f=120, head=92)
 P["block"] = dict(P["stance"], uarm_f=40, farm_f=110, uarm_b=50, farm_b=118, hip=92, spine=94, chest=96, head=94)
 
 
