@@ -22,17 +22,76 @@ def decode(path, assets=None):
     return piv_codec.decode_piv_file(str(path), assets_dir=assets)
 
 
+def arc_pts(start, a, L, bend):
+    """points d'un segment (courbé si bend ≠ 0), comme Pivot."""
+    if abs(bend) < 1e-7:
+        return [start, (start[0] + math.cos(a) * L, start[1] + math.sin(a) * L)]
+    n = max(2, min(64, int(math.ceil(abs(bend) * 16))))
+    r = L / bend
+    return [(start[0] + r * (math.sin(a + bend * i / n) - math.sin(a)),
+             start[1] + r * (math.cos(a) - math.cos(a + bend * i / n))) for i in range(n + 1)]
+
+
+def geom(obj, ft, base=None, rot=0.0, ang=None):
+    """articulations + points de chaque segment. Longueurs de l'objet seulement si len_flag, courbes (bend)."""
+    base = base if base is not None else (obj["root_x"], obj["root_y"])
+    pos, pts = {0: base}, {}
+    segs = sorted(ft["segments"], key=lambda s: s["segment_id"])
+    ang = ang if ang is not None else (obj.get("angles") or [])
+    lens, bends = obj.get("lengths") or [], obj.get("bends") or []
+    sc = obj.get("scale", 1.0)
+    for i, s in enumerate(segs):
+        a = (ang[i] if i < len(ang) else s["angle_rad"]) + rot
+        L = (lens[i] if obj.get("len_flag") and i < len(lens) else s["length"]) * sc
+        b = bends[i] if obj.get("bend_flag") and i < len(bends) else s.get("bend_rad", 0.0)
+        q = pos.get(s["parent_id"], base)
+        pp = arc_pts(q, a, L, b)
+        pos[s["segment_id"]] = pp[-1]
+        pts[s["segment_id"]] = pp
+    return pos, pts
+
+
 def joints(obj, ft):
     """positions des articulations (0 = racine) en coordonnées Pivot."""
-    pos = {0: (obj["root_x"], obj["root_y"])}
-    segs = sorted(ft["segments"], key=lambda s: s["segment_id"])
-    ang, lens = obj.get("angles") or [], obj.get("lengths") or []
-    for i, s in enumerate(segs):
-        a = ang[i] if i < len(ang) else s["angle_rad"]
-        L = (lens[i] if i < len(lens) else s["length"]) * obj.get("scale", 1.0)
-        p = pos.get(s["parent_id"], pos[0])
-        pos[s["segment_id"]] = (p[0] + math.cos(a) * L, p[1] + math.sin(a) * L)
-    return pos
+    return geom(obj, ft)[0]
+
+
+def poly_points(poly, ft, pos, pts):
+    par = {s["segment_id"]: s["parent_id"] for s in ft["segments"]}
+    v = [j for j in poly["segment_ids"] if j in pos]
+    out = [pos[v[0]]] if v else []
+    for k in range(1, len(v) + 1):
+        a, b = v[k - 1], v[k % len(v)]
+        if par.get(b) == a:
+            out += pts[b][1:]
+        elif par.get(a) == b:
+            out += pts[a][::-1][1:]
+        else:
+            out.append(pos[b])
+    if len(out) > 1 and out[0] == out[-1]:
+        out.pop()
+    return out
+
+
+def draw_seg(d, it, ptsP, w, c):
+    """dessine un segment (ligne droite/courbe, cercle)."""
+    A, B = ptsP[0], ptsP[-1]
+    kind = it["segment_kind"]
+    if kind in ("line", "squareLine"):
+        if len(ptsP) > 2:
+            d.line(ptsP, fill=c, width=int(round(w)), joint="curve")
+        else:
+            d.line((A, B), fill=c, width=int(round(w)))
+        if kind == "line":
+            for q in (A, B):
+                d.ellipse((q[0] - w / 2, q[1] - w / 2, q[0] + w / 2, q[1] + w / 2), fill=c)
+    elif kind.startswith("circle"):
+        cx, cy = (A[0] + B[0]) / 2, (A[1] + B[1]) / 2
+        r = math.hypot(B[0] - A[0], B[1] - A[1]) / 2
+        if kind == "circleClear":
+            d.ellipse((cx - r, cy - r, cx + r, cy + r), outline=c, width=int(max(1, w)))
+        else:
+            d.ellipse((cx - r - w / 2, cy - r - w / 2, cx + r + w / 2, cy + r + w / 2), fill=c)
 
 
 def render_frame(doc, kf, scale=2.0, size=None, bg=None, offset=(0, 0), crop=None):
@@ -56,7 +115,7 @@ def render_frame(doc, kf, scale=2.0, size=None, bg=None, offset=(0, 0), crop=Non
         ft = fts.get(o["figure_type_id"])
         if not ft:
             continue
-        pos = joints(o, ft)
+        pos, spts = geom(o, ft)
         ov = o.get("color_override_rgb")
         mix = (o.get("color_override_mix") or 0) / 255
         alpha = int(255 * o.get("opacity", 1.0))
@@ -69,28 +128,14 @@ def render_frame(doc, kf, scale=2.0, size=None, bg=None, offset=(0, 0), crop=Non
         items = [("seg", s["z_order"], s) for s in ft["segments"]] + [("poly", p["z_order"], p) for p in ft["polyfills"]]
         for kind, _, it in sorted(items, key=lambda x: x[1]):
             if kind == "poly":
-                pts = [P(pos[j]) for j in it["segment_ids"] if j in pos]
-                if len(pts) >= 3:
-                    d.polygon(pts, fill=col(it["color_rgb"]))
+                pp = [P(q) for q in poly_points(it, ft, pos, spts)]
+                if len(pp) >= 3:
+                    d.polygon(pp, fill=col(it["color_rgb"]))
                 continue
-            s = it
-            if not s.get("visible", True) and s["segment_kind"] == "line":
+            if not it.get("visible", True) and it["segment_kind"] == "line":
                 continue
-            A, B = P(pos[s["parent_id"]]), P(pos[s["segment_id"]])
-            w = max(1.0, s["thickness"] * k * o.get("scale", 1.0))
-            c = col(s["color_rgb"])
-            if s["segment_kind"] in ("line", "squareLine"):
-                d.line((A, B), fill=c, width=int(round(w)))
-                if s["segment_kind"] == "line":
-                    for q in (A, B):
-                        d.ellipse((q[0] - w / 2, q[1] - w / 2, q[0] + w / 2, q[1] + w / 2), fill=c)
-            elif s["segment_kind"].startswith("circle"):
-                cx, cy = (A[0] + B[0]) / 2, (A[1] + B[1]) / 2
-                r = math.hypot(B[0] - A[0], B[1] - A[1]) / 2
-                if s["segment_kind"] == "circleClear":
-                    d.ellipse((cx - r, cy - r, cx + r, cy + r), outline=c, width=int(max(1, w)))
-                else:
-                    d.ellipse((cx - r - w / 2, cy - r - w / 2, cx + r + w / 2, cy + r + w / 2), fill=c)
+            w = max(1.0, it["thickness"] * k * o.get("scale", 1.0))
+            draw_seg(d, it, [P(q) for q in spts[it["segment_id"]]], w, col(it["color_rgb"]))
     out = im.resize((W, H), Image.LANCZOS)
     if crop:
         out = out.crop(out.getbbox() or (0, 0, W, H))
@@ -158,6 +203,8 @@ class PivotActor:
         walk(root_slot)
         self.root = root_slot
         self.roles, self.scale, self.flip = roles, scale, flip
+        self.mirror = native_left
+        self.off = {}
         # position de repos : on retourne tout le perso pour qu'il regarde à droite (convention des poses)
         rest = self._joints({})
         hip = rest[root_slot][0]
@@ -168,6 +215,12 @@ class PivotActor:
             o = self.objs[s]
             self.rest_ang[s] = [self._m_ang(a) for a in (o.get("angles") or [])]
         self.hip0 = (hip[0], hip[1])
+        # décalage réel entre la poignée du parent et la racine de l'enfant (les objets ne sont pas toujours collés pile)
+        self.off = {}
+        for c, (pp, h) in self.par.items():
+            hb = rest[pp].get(h, rest[pp][0])
+            dx, dy = self.objs[c]["root_x"] - hb[0], self.objs[c]["root_y"] - hb[1]
+            self.off[c] = (-dx if self.mirror else dx, dy)
         self.last = None
 
     def _m_ang(self, a):
@@ -175,26 +228,24 @@ class PivotActor:
 
     def _joints(self, rot, angles=None):
         """positions des articulations de chaque objet ; rot = {slot: rotation (rad)} ; angles = angles de repos."""
-        J = {}
+        J, self._pts = {}, {}
         for s in self.tree:
             o = self.objs[s]
             ft = self.fts[o["figure_type_id"]]
             if s in self.par:
                 p, h = self.par[s]
-                base = J[p].get(h, J[p][0])
+                hb = J[p].get(h, J[p][0])
+                off = self.off.get(s, (0.0, 0.0)) if angles is not None else (0.0, 0.0)
+                rp = rot.get(p, 0.0)
+                base = (hb[0] + off[0] * math.cos(rp) - off[1] * math.sin(rp),
+                        hb[1] + off[0] * math.sin(rp) + off[1] * math.cos(rp))
             else:
                 base = (o["root_x"], o["root_y"]) if angles is None else (0.0, 0.0)
-            pos = {0: base}
-            segs = sorted(ft["segments"], key=lambda q: q["segment_id"])
-            ang = (angles or {}).get(s) if angles is not None else (o.get("angles") or [])
-            lens = o.get("lengths") or []
-            r = rot.get(s, 0.0)
-            for i, sg in enumerate(segs):
-                a = (ang[i] if ang and i < len(ang) else sg["angle_rad"]) + r
-                L = lens[i] if i < len(lens) else sg["length"]
-                q = pos.get(sg["parent_id"], base)
-                pos[sg["segment_id"]] = (q[0] + math.cos(a) * L, q[1] + math.sin(a) * L)
-            J[s] = pos
+            ang = angles.get(s) if angles is not None else None
+            if self.mirror and angles is not None:
+                o = dict(o, bends=[-x for x in (o.get("bends") or [])])
+                ft = dict(ft, segments=[dict(g, bend_rad=-g.get("bend_rad", 0.0)) for g in ft["segments"]])
+            J[s], self._pts[s] = geom(o, ft, base, rot.get(s, 0.0), ang)
         return J
 
     def _rot(self, pose):
@@ -233,6 +284,8 @@ class PivotActor:
             return (((p[0] - minx) * k + pad) * ss, ((p[1] - miny) * k + pad) * ss)
         for s in self.order:
             o = self.objs[s]
+            if o.get("opacity", 1) <= 0:
+                continue
             ft = self.fts[o["figure_type_id"]]
             pos = J[s]
             ov = o.get("color_override_rgb")
@@ -246,24 +299,14 @@ class PivotActor:
             items = [("seg", q["z_order"], q) for q in ft["segments"]] + [("poly", q["z_order"], q) for q in ft["polyfills"]]
             for kind, _, it in sorted(items, key=lambda z: z[1]):
                 if kind == "poly":
-                    ps = [P(pos[j]) for j in it["segment_ids"] if j in pos]
+                    ps = [P(q) for q in poly_points(it, ft, pos, self._pts[s])]
                     if len(ps) >= 3:
                         d.polygon(ps, fill=col(it["color_rgb"]))
                     continue
                 if not it.get("visible", True) and it["segment_kind"] == "line":
                     continue
-                A, B = P(pos[it["parent_id"]]), P(pos[it["segment_id"]])
-                w = max(1.0, it["thickness"] * k * ss)
-                c = col(it["color_rgb"])
-                if it["segment_kind"] in ("line", "squareLine"):
-                    d.line((A, B), fill=c, width=int(round(w)))
-                    if it["segment_kind"] == "line":
-                        for q in (A, B):
-                            d.ellipse((q[0] - w / 2, q[1] - w / 2, q[0] + w / 2, q[1] + w / 2), fill=c)
-                elif it["segment_kind"].startswith("circle"):
-                    cx, cy = (A[0] + B[0]) / 2, (A[1] + B[1]) / 2
-                    r = math.hypot(B[0] - A[0], B[1] - A[1]) / 2
-                    d.ellipse((cx - r - w / 2, cy - r - w / 2, cx + r + w / 2, cy + r + w / 2), fill=c)
+                w = max(1.0, it["thickness"] * k * ss * o.get("scale", 1.0))
+                draw_seg(d, it, [P(q) for q in self._pts[s][it["segment_id"]]], w, col(it["color_rgb"]))
         im = im.resize((Wd, Hd), Image.LANCZOS)
         hipP = ((J[self.root][0][0] - minx) * k + pad, (J[self.root][0][1] - miny) * k + pad)
 
