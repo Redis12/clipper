@@ -22,6 +22,16 @@ ROLES_GOKU = {  # Goku SSJ1 (library/_sticknodes/Goku SSJ1.json)
     "uarm_f": 240, "farm_f": 253, "uarm_b": 1, "farm_b": 14,
     "thigh_f": 17, "shin_f": 30, "thigh_b": 202, "shin_b": 220,
 }
+ROLES_VEGETA = {  # library/_sticknodes/Dragon Ball/Vegeta (*).json (même squelette pour toutes les tenues de Vegeta)
+    "hip": 16, "spine": 18, "chest": 21, "neck": 20, "head": 38,
+    "uarm_f": 133, "farm_f": 134, "uarm_b": 1, "farm_b": 2,
+    "thigh_f": 127, "shin_f": 128, "thigh_b": 11, "shin_b": 12,
+}
+ROLES_GOKU_GI = {  # library/_sticknodes/Dragon Ball/Goku (Turtle suit Gi).json : Goku de base, vrais cheveux noirs
+    "hip": 43, "spine": 51, "chest": 61, "neck": 69, "head": 70,
+    "uarm_f": 274, "farm_f": 275, "uarm_b": 1, "farm_b": 2,
+    "thigh_f": 235, "shin_f": 258, "thigh_b": 8, "shin_b": 29,
+}
 FIST_F, FIST_B = "farm_f", "farm_b"           # bout de l'avant-bras = poing
 
 # ------------------------------------------------------------------------- poses (angles absolus, perso regarde à droite)
@@ -79,6 +89,8 @@ P["duck"] = dict(hip=60, spine=50, chest=42, neck=40, head=50, uarm_f=20, farm_f
 P["uppercut"] = dict(hip=84, spine=86, chest=90, neck=92, head=96, uarm_f=70, farm_f=88, uarm_b=230, farm_b=250,
                      thigh_f=300, shin_f=284, thigh_b=248, shin_b=226)
 P["taunt"] = dict(P["stance"], uarm_f=40, farm_f=120, head=92)
+P["slide"] = dict(hip=150, spine=152, chest=154, neck=150, head=140, uarm_f=200, farm_f=170, uarm_b=215, farm_b=190,
+                  thigh_f=356, shin_f=2, thigh_b=10, shin_b=350)
 P["block"] = dict(P["stance"], uarm_f=40, farm_f=110, uarm_b=50, farm_b=118, hip=92, spine=94, chest=96, head=94)
 
 
