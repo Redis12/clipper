@@ -245,7 +245,7 @@ def draw_flat(pose, form="base", phase=0.0, aura=None):
     hc = _pt(neck, 180 + pose["lean"] + pose["head"], hr * 1.05)
     _quad(d, neck, hc, 14 * s, 14 * s, SKIN2)
     d.ellipse((hc[0] - hr * .92, hc[1] - hr, hc[0] + hr * .92, hc[1] + hr), fill=SKIN2)
-    _hair(d, hc, hr * 1.55, f["spikes"], f["hair"], pose["lean"] * 0.5 + pose["head"])
+    _hair_sprite(im, hc, hr, f, pose["lean"] * 0.5 + pose["head"])
     # bras avant
     e_ = _pt(sh, pose["sh_f"], ua)
     h_ = _pt(e_, pose["sh_f"] + pose["el_f"], fa)
@@ -256,3 +256,29 @@ def draw_flat(pose, form="base", phase=0.0, aura=None):
     d.ellipse((h_[0] - 12 * s, h_[1] - 12 * s, h_[0] + 12 * s, h_[1] + 12 * s), fill=SKIN2)
     out = im.resize((Wc // 2, Hc // 2), Image.LANCZOS)
     return out, (hip[0] / 2, hip[1] / 2), (h_[0] / 2, h_[1] / 2)
+
+
+_HAIR = {}
+
+
+def _hair_sprite(im, hc, hr, f, tilt):
+    """Cheveux = silhouette exacte relevée sur la vidéo de référence de l'utilisateur (hair/goku_base.png),
+    recolorée selon la forme ; Super Saiyan = mèches étirées vers le haut."""
+    import json
+    from pathlib import Path
+    if "base" not in _HAIR:
+        hd = Path(__file__).resolve().parent / "hair"
+        _HAIR["base"] = Image.open(hd / "goku_base.png").convert("L")
+        _HAIR["meta"] = json.load(open(hd / "goku_base.json"))
+    m, meta = _HAIR["base"], _HAIR["meta"]
+    k = hr / meta["head_r"] * 1.05
+    ax, ay = meta["anchor"]
+    sy = 1.0 if f["spikes"] == "base" else 1.3
+    mw, mh = int(m.width * k), int(m.height * k * sy)
+    ms = m.resize((max(1, mw), max(1, mh)), Image.LANCZOS)
+    a_x, a_y = ax * k, ay * k * sy
+    big = Image.new("L", (mw * 2, mh * 2), 0)
+    big.paste(ms, (int(mw - a_x), int(mh - a_y)))
+    big = big.rotate(-tilt, resample=Image.BICUBIC)
+    col = Image.new("RGBA", big.size, f["hair"] + (255,))
+    im.paste(col, (int(hc[0] - mw), int(hc[1] - mh)), big)
