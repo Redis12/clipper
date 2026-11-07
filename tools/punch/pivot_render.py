@@ -202,6 +202,16 @@ class PivotActor:
                 walk(c)
         walk(root_slot)
         self.root = root_slot
+        # objets « mous » (mèches de cheveux…) : enfants de la tête, ignorés pour poser le perso au sol
+        hd = roles.get("head")
+        self.soft = set()
+
+        def mark(s_, inside):
+            if inside:
+                self.soft.add(s_)
+            for c in kids.get(s_, []):
+                mark(c, inside or (s_ == hd))
+        mark(root_slot, False)
         self.roles, self.scale, self.flip = roles, scale, flip
         self.mirror = native_left
         self.off = {}
@@ -321,9 +331,17 @@ class PivotActor:
             marks = {kk: (Wd - v[0], v[1]) for kk, v in marks.items()}
         org = hipP
         if ground is not None:
-            a = np.asarray(im)[..., 3]
-            bottom = np.nonzero(a.max(1) > 0)[0].max()
-            y = ground - (bottom - org[1]) - lift
+            # bas du corps = points des objets durs (pas les cheveux) + demi-épaisseur des traits
+            bb = 0.0
+            for s_ in self.slots:
+                if s_ in self.soft:
+                    continue
+                o = self.objs[s_]
+                th = max((g_["thickness"] for g_ in self.fts[o["figure_type_id"]]["segments"]), default=0) * o.get("scale", 1.0)
+                for pts_ in self._pts[s_].values():
+                    for q in pts_:
+                        bb = max(bb, (q[1] - miny) * k + pad + th * k / 2)
+            y = ground - (bb - org[1]) - lift
         if rot:
             im = im.rotate(rot, resample=Image.BICUBIC, center=org, expand=False)
             ca, sa_ = math.cos(math.radians(-rot)), math.sin(math.radians(-rot))

@@ -142,7 +142,12 @@ def project(frames, side=None, fwd0=None, follow=True):
         for k in ("neck", "head"):
             dlt = (pose[k] - pose["chest"] + 180) % 360 - 180
             pose[k] = (pose["chest"] + max(-18, min(18, dlt * 0.35))) % 360
-        lift = (low(P) - ground) / leg
-        lift = 0.0 if lift < 0.12 else lift - 0.12
+        # hauteur du point le plus bas ; couché, les articulations sont DANS le corps (dos, hanches à ~15 cm du sol) alors
+        # que le dessin 2D, lui, a de l'épaisseur → marge plus grande quand ce n'est pas un pied qui est en bas
+        lowk = min((k for k in P if not k.endswith("_end") and "Top" not in k), key=lambda k: P[k][1])
+        foot = "Foot" in lowk or "Toe" in lowk
+        m = 0.12 if foot else 0.45
+        lift = (P[lowk][1] - ground) / leg
+        lift = 0.0 if lift < m else lift - m
         out.append((pose, float(P["Hips"] @ dirx) * side / leg, lift, facing))
     return out
