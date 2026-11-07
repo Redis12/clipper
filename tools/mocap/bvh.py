@@ -91,7 +91,7 @@ def load(path, t0=0.0, t1=None, fps=24, side=None):
     return project(frames, side)
 
 
-def project(frames, side=None, fwd0=None):
+def project(frames, side=None, fwd0=None, follow=True):
     """positions 3D (Y en haut ; noms Hips, Spine1, Neck, Head, Left/RightArm, …ForeArm, …Hand, …UpLeg, …Leg, …Foot,
     …ToeBase) → (pose, x, lift, facing). x et lift sont en LONGUEURS DE JAMBE (indépendant de l'unité du fichier)."""
     P0 = frames[0]
@@ -112,6 +112,8 @@ def project(frames, side=None, fwd0=None):
     base = math.atan2(fwd0[2], fwd0[0]) if fwd0 is not None else y0
     yaw = yaw - y0 + base
     y0 = base
+    if not follow:                                 # caméra fixe, de côté par rapport à la cible : pas de demi-tour
+        yaw = np.full_like(yaw, base)
     dirx = np.array([math.cos(y0), 0, math.sin(y0)])          # axe de déplacement à l'écran
     side = side or 1
     out = []
@@ -141,6 +143,6 @@ def project(frames, side=None, fwd0=None):
             dlt = (pose[k] - pose["chest"] + 180) % 360 - 180
             pose[k] = (pose["chest"] + max(-18, min(18, dlt * 0.35))) % 360
         lift = (low(P) - ground) / leg
-        lift = 0.0 if lift < 0.07 else lift - 0.07
+        lift = 0.0 if lift < 0.12 else lift - 0.12
         out.append((pose, float(P["Hips"] @ dirx) * side / leg, lift, facing))
     return out

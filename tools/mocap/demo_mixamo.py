@@ -29,7 +29,7 @@ for key, label in NAMES:
         d = ImageDraw.Draw(c)
         d.rectangle((0, GY, W, H), fill=(120, 170, 90))
         d.text((40, 40), label.upper(), font=font, fill=(255, 255, 255), stroke_width=5, stroke_fill=(20, 20, 30))
-        g.draw(c, pose, W / 2 + (x - mid) * LEG * kx, 0, ground=GY, lift=lift * LEG, shadow_y=GY)
+        g.draw(c, pose, W / 2 + (x - mid) * LEG * kx, 0, ground=GY + 14, lift=lift * LEG, shadow_y=GY + 10)
         c.convert("RGB").save(tmp / f"{n:05d}.png"); n += 1
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-r", "30", "-i", str(tmp / "%05d.png"), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "22", sys.argv[3]], check=True)
 print(n)

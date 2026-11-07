@@ -56,4 +56,4 @@ def load(path, t0=0.0, t1=None, fps=24, side=None):
                 L = tout[k]
             G.append(L if par is None else G[par] @ L)
         frames.append({re.sub(r"^mixamorig[_:]?", "", nm): G[i][:3, 3].copy() for i, (nm, _, _) in enumerate(nodes)})
-    return bvh.project(frames, side, fwd0=np.array([0.0, 0.0, 1.0]))
+    return bvh.project(frames, side, fwd0=np.array([0.0, 0.0, 1.0]), follow=False)
