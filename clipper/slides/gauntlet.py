@@ -192,6 +192,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                              "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-preset", "veryfast",
                              "-crf", "20", "-pix_fmt", "yuv420p", str(tmp)], stdin=subprocess.PIPE)
     floats, ko_at, dealt = [], [], [0] * n
+    panels: dict = {}
     by_ = [0.0]
 
     def banner(img_, text, age, col):
@@ -356,6 +357,25 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
                         dl.line((ox + bx, oy + by, fx_, fy_), fill=(240, 240, 255), width=int(3 * k))
                     bubble(img, ox + bx, oy + by - RB - 40 * k, foes[ef].get("say", ""))
                     banner(img, foes[ef].get("gag_label", ""), age, (255, 150, 220))
+                elif kind == "gag" and t0 <= t < ev[3] and foes[ef].get("panel"):
+                    # case de manga plein écran (07/11 : « Nah, I'd win » de Gojo juste avant Sukuna)
+                    pim = panels.get(ef)
+                    if pim is None:
+                        src = Image.open(foes[ef]["panel"]).convert("RGBA")
+                        sc_ = min(W * 0.86 / src.width, H * 0.5 / src.height)
+                        pim = panels[ef] = src.resize((int(src.width * sc_), int(src.height * sc_)), Image.LANCZOS)
+                    dur_ = ev[3] - t0
+                    fade = min(1.0, age / 0.12, max(0.0, (dur_ - age) / 0.2))
+                    img.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, int(190 * fade))))
+                    pop = 1 + 0.18 * max(0.0, 1 - age / 0.18)
+                    pz = pim.resize((int(pim.width * pop), int(pim.height * pop)))
+                    if fade < 1:
+                        pz.putalpha(pz.getchannel("A").point(lambda v, f_=fade: int(v * f_)))
+                    fr_ = Image.new("RGBA", (pz.width + int(16 * k), pz.height + int(16 * k)), (255, 255, 255, int(255 * fade)))
+                    img.alpha_composite(fr_, (int(W / 2 - fr_.width / 2), int(H * 0.47 - fr_.height / 2)))
+                    img.alpha_composite(pz, (int(W / 2 - pz.width / 2), int(H * 0.47 - pz.height / 2)))
+                    if foes[ef].get("gag_label"):
+                        banner(img, foes[ef]["gag_label"], age, (255, 255, 255))
                 elif kind == "gag" and t0 <= t < ev[3]:          # bulle de dialogue, texte qui s'écrit
                     say = foes[ef].get("say", "...")
                     nch = max(1, int(len(say) * min(1.0, age / max(0.3, (ev[3] - t0) * 0.7))))

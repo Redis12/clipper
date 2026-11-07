@@ -51,3 +51,19 @@ if "sage" in sys.argv or "all" in sys.argv:          # gauntlet inversé : Narut
                             lose_at=7, lose_after=3.0, lose_move="TSUKUYOMI!",
                             title=("Can Sage Mode Naruto", "SURVIVE the NARUTO GAUNTLET?"),
                             out=OUT / "Gauntlet - Sage Naruto survive.mp4"))
+if "gojo" in sys.argv:                                # 07/11 : Gojo tombe contre Sukuna, « Nah, I'd win » juste avant
+    J = L + "Jujutsu Kaisen/"
+    GOJO = {"name": "Gojo", "image_path": J + "Satoru Gojo/Gojo.jpg"}
+    foes = [{"name": n, "image_path": J + p} for n, p in [
+        ("Nobara", "Nobara Kugisaki/nobara.png"), ("Megumi", "Megumi Fushiguro/megumi.jpg"),
+        ("Yuji", "Yuji Itadori/Yuji.jpg"), ("Todo", "Aoi Todo/Todo.png"), ("Choso", "Choso/choso.png"),
+        ("Hanami", "Hanami/1340746.jpeg"), ("Mahito", "Mahito/mahito.png"), ("Jogo", "Jogo/1350459.jpeg"),
+        ("Toji", "Toji Fushiguro/toji.jpg"), ("Mahoraga", "Mahoraga/1409410.png"), ("Sukuna", "Sukuna/sukuna.jpg")]]
+    foes[3].update(gag=True, gag_s=1.4, say="What kind of women are you into? 👏")
+    foes[8].update(gag=True, gag_s=1.4, say="Long time no see, Satoru.")
+    foes[9].update(gag=True, gag_s=1.4, say="⚙️ *the wheel turns*", gag_label="ADAPTING...")
+    foes[10].update(gag=True, gag_s=2.2, panel=L + "_gauntlet/nah id win.jpg")
+    print(gauntlet.generate(GOJO, foes, universe="Jujutsu Kaisen", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
+                            base_hits=1, step_hits=0, lose_at=10, lose_after=3.0, lose_move="WORLD CUTTING SLASH!",
+                            title=("Can Gojo", "SURVIVE the JJK GAUNTLET?"),
+                            out=OUT / "Gauntlet - Gojo survive.mp4"))
