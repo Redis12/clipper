@@ -91,6 +91,12 @@ def load(path, t0=0.0, t1=None, fps=24, side=None):
     return project(frames, side)
 
 
+class Frames(list):
+    """liste de (pose, x, lift, facing) + .hip = hauteur des hanches au-dessus du sol (longueurs de jambe), pour
+    placer le perso par ses hanches pendant un salto (le point le plus bas change : pieds → tête)."""
+    hip: list
+
+
 def project(frames, side=None, fwd0=None, follow=True):
     """positions 3D (Y en haut ; noms Hips, Spine1, Neck, Head, Left/RightArm, …ForeArm, …Hand, …UpLeg, …Leg, …Foot,
     …ToeBase) → (pose, x, lift, facing). x et lift sont en LONGUEURS DE JAMBE (indépendant de l'unité du fichier)."""
@@ -116,7 +122,8 @@ def project(frames, side=None, fwd0=None, follow=True):
         yaw = np.full_like(yaw, base)
     dirx = np.array([math.cos(y0), 0, math.sin(y0)])          # axe de déplacement à l'écran
     side = side or 1
-    out = []
+    out = Frames()
+    out.hip = []
     def low(P):                                    # point le plus bas du corps (pieds, ou dos/mains quand il est au sol)
         return min(v[1] for k, v in P.items() if not k.endswith("_end") and "Top" not in k)
     ys = [low(P) for P in frames]
@@ -150,4 +157,5 @@ def project(frames, side=None, fwd0=None, follow=True):
         lift = (P[lowk][1] - ground) / leg
         lift = 0.0 if lift < m else lift - m
         out.append((pose, float(P["Hips"] @ dirx) * side / leg, lift, facing))
+        out.hip.append(float(P["Hips"][1] - ground) / leg)
     return out

@@ -68,8 +68,16 @@ fxs = [x for _, x, _, _ in flip]
 FLIP_K = 130 / max(1e-6, (max(fxs) - min(fxs)) * LEG)    # le salto avance de 380 px au plus
 
 
+# salto placé par les HANCHES (pas par le point le plus bas : à l'envers c'est la tête → saut d'image)
+_c = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+HIP0_PX = GY + 8 - g.draw(_c, flip[0][0], 300, 0, ground=GY + 8, record=False)["y"]
+HIPK = HIP0_PX / max(1e-6, flip.hip[0])
+Y_CROUCH = g.draw(_c, sa.P["crouch"], 300, 0, ground=GY + 8, record=False)["y"]
+FLIPY = [GY + 8 - h * HIPK for h in flip.hip]
+
+
 def state(t):
-    """(pose, x écran, lift, rot)"""
+    """(pose, x écran, lift, rot, y des hanches ou None = posé au sol)"""
     X0 = 170
     if t < T_CUT:
         f = min(len(flip) - 1.0, t * FPS * FLIP_RATE)
@@ -78,8 +86,7 @@ def state(t):
         j = min(i + 1, len(flip) - 1)
         pose = sa.lerp(flip[i][0], flip[j][0], u)
         x = X0 + ((flip[i][1] * (1 - u) + flip[j][1] * u) - fx0) * LEG * FLIP_K
-        lift = (flip[i][2] * (1 - u) + flip[j][2] * u) * LEG
-        return pose, x, lift, 0.0
+        return pose, x, 0.0, 0.0, FLIPY[i] * (1 - u) + FLIPY[j] * u
     xc = X0 + (flip[CUT][1] - fx0) * LEG * FLIP_K
     xl = xc + 40
     if t < T_LAND:
@@ -87,11 +94,11 @@ def state(t):
         u = (t - T_CUT) / (T_LAND - T_CUT)
         land = dict(sa.P["crouch"])
         pose = sa.lerp(flip[CUT][0], land, ease(u))
-        lift = flip[CUT][2] * LEG * (1 - u * u)
-        return pose, xc + 40 * u, lift, 0.0
+        y = FLIPY[CUT] + (Y_CROUCH - FLIPY[CUT]) * (u * u)          # chute (accélère), finit pile accroupi au sol
+        return pose, xc + 40 * u, 0.0, 0.0, y
     if t < T_POW:
         u = ease((t - T_LAND) / 0.3)
-        return sa.lerp(sa.P["crouch"], sa.P["stance_low"], u), xl, 0.0, 0.0
+        return sa.lerp(sa.P["crouch"], sa.P["stance_low"], u), xl, 0.0, 0.0, None
     if t < T_DASH:
         # accroupi qui serre les poings → se redresse en criant (Kaioken)
         u = (t - T_POW) / (T_DASH - T_POW)
@@ -100,25 +107,25 @@ def state(t):
         else:
             pose = sa.lerp(sa.P["crouch"], sa.P["power"], back_out((u - 0.3) / 0.25))
         sh = 6 * math.sin(t * 90) if u > 0.3 else 0
-        return pose, xl + sh, 0.0, 0.0
+        return pose, xl + sh, 0.0, 0.0, None
     if t < T_STOP:
         # rush dans l'aura : penché vers l'avant, glisse vers la droite puis freine
         u = (t - T_DASH) / (T_STOP - T_DASH)
         pose = sa.lerp(sa.P["power"], sa.P["run_a"], ease(u / 0.25))
         x = xl + 140 * (1 - (1 - min(1, u)) ** 3)
-        return pose, x, 30 * math.sin(math.pi * min(1, u)), -18 * (1 - u)
+        return pose, x, 30 * math.sin(math.pi * min(1, u)), -18 * (1 - u), None
     xs = xl + 140
     if t < T_KAME:
         u = ease((t - T_STOP) / (T_KAME - T_STOP))
-        return sa.lerp(sa.P["run_a"], sa.P["stance_low"], u), xs, 0.0, 0.0
+        return sa.lerp(sa.P["run_a"], sa.P["stance_low"], u), xs, 0.0, 0.0, None
     if t < T_FIRE:
         u = ease((t - T_KAME) / 0.4)
-        return sa.lerp(sa.P["stance_low"], sa.P["kame_charge"], u), xs - 25 * u, 0.0, 0.0
+        return sa.lerp(sa.P["stance_low"], sa.P["kame_charge"], u), xs, 0.0, 0.0, None
     if t < T_FLASH + 0.4:
         u = back_out((t - T_FIRE) / 0.18)
-        return sa.lerp(sa.P["kame_charge"], sa.P["kame_fire"], u), xs - 25 - 30 * min(1, (t - T_FIRE) / 1.3), 0.0, 0.0
+        return sa.lerp(sa.P["kame_charge"], sa.P["kame_fire"], u), xs, 0.0, 0.0, None
     u = ease((t - T_FLASH - 0.4) / 0.5)
-    return sa.lerp(sa.P["kame_fire"], sa.P["stance"], u), xs - 55, 0.0, 0.0
+    return sa.lerp(sa.P["kame_fire"], sa.P["stance"], u), xs, 0.0, 0.0, None
 
 
 # ---------------------------------------------------------------- décor (à nous, inspiré : ciel pâle, sol bleuté)
@@ -294,7 +301,7 @@ N = int(T_END * FPS)
 hist = []
 for k in range(N):
     t = k / FPS
-    pose, x, lift, rot = state(t)
+    pose, x, lift, rot, yh = state(t)
     img = BG.copy()
     # Kaioken : intensité
     kaio = ease((t - T_AURA) / 0.5) if t > T_AURA else 0.0
@@ -308,7 +315,10 @@ for k in range(N):
         img.alpha_composite(Image.new("RGBA", (W, H), (40, 50, 70, int(255 * dim))))
     # Goku sur sa propre couche (pour le rougir), info = poings
     gl = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    info = g.draw(gl, pose, x, 0, ground=GY + 8, lift=lift, rot=rot, record=False)
+    if yh is None:
+        info = g.draw(gl, pose, x, 0, ground=GY + 8, lift=lift, rot=rot, record=False)
+    else:
+        info = g.draw(gl, pose, x, yh, rot=rot, record=False)
     cx = (info["box"][0] + info["box"][2]) / 2
     top = info["box"][1]
     # aura derrière Goku
@@ -326,6 +336,15 @@ for k in range(N):
             ghost = Image.new("RGBA", (W, H), (0, 0, 0, 0))
             g.draw(ghost, hp, hx, 0, ground=GY + 8, lift=hl, rot=hr, record=False, alpha=0.35 - 0.07 * j, tint=(255, 90, 120))
             img.alpha_composite(ghost)
+    # Kamehameha : le rayon part de ses mains et passe DERRIÈRE lui (Goku reste devant)
+    hands = ((info["fist"][0] + info["fist_b"][0]) / 2, (info["fist"][1] + info["fist_b"][1]) / 2)
+    if firing:
+        u = ease((t - T_FIRE) / 0.22)
+        th = 190 * (0.4 + 0.6 * u) * (1 + 0.1 * math.sin(t * 30))
+        lay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        beam(lay, hands[0] - 10, hands[1], hands[0] + 20 + (W + 200) * u, th, t)
+        img.alpha_composite(glow(lay, 22, 1.4))
+        img.alpha_composite(lay)
     img.alpha_composite(kaio_tint(gl, kaio))
     hist.append((pose, x, lift, rot))
     # éclairs rouges au début du Kaioken
@@ -342,13 +361,6 @@ for k in range(N):
         light_rays(lay, hands[0], hands[1], t, t * 2.4, alpha=0.4 + 0.6 * u)
         kame_orb(lay, hands[0], hands[1], 14 + 30 * u, t)
         img.alpha_composite(glow(lay, 16, 1.3))
-        img.alpha_composite(lay)
-    if firing:
-        u = ease((t - T_FIRE) / 0.22)
-        th = 190 * (0.4 + 0.6 * u) * (1 + 0.1 * math.sin(t * 30))
-        lay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        beam(lay, hands[0] + 20, hands[1], hands[0] + 20 + (W + 200) * u, th, t)
-        img.alpha_composite(glow(lay, 22, 1.4))
         img.alpha_composite(lay)
     # texte « KAIO-KEN! »
     if T_AURA - 0.05 < t < T_AURA + 1.0:
