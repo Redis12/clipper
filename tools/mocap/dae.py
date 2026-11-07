@@ -43,17 +43,24 @@ def load(path, t0=0.0, t1=None, fps=24, side=None):
         if (n.get("name") or "").endswith("Hips"):
             walk(n, None)
             break
-    T = max(v[0][-1] for v in anim.values())
-    t1 = T if t1 is None else min(T, t1)
-    frames = []
-    for t in np.arange(t0, t1 + 1e-6, 1 / fps):
+    # positions exactes à chaque image clé, puis rééchantillonnage linéaire (pas d'image en double = pas de saccade)
+    tk = max((v[0] for v in anim.values()), key=len)
+    keyf = []
+    for k in range(len(tk)):
         G = []
         for nm, par, rest in nodes:
             L = rest
             if nm in anim:
                 tin, tout = anim[nm]
-                k = int(np.clip(np.searchsorted(tin, t), 0, len(tin) - 1))
-                L = tout[k]
+                L = tout[min(k, len(tout) - 1)]
             G.append(L if par is None else G[par] @ L)
-        frames.append({re.sub(r"^mixamorig[_:]?", "", nm): G[i][:3, 3].copy() for i, (nm, _, _) in enumerate(nodes)})
+        keyf.append({re.sub(r"^mixamorig[_:]?", "", nm): G[i][:3, 3].copy() for i, (nm, _, _) in enumerate(nodes)})
+    T = float(tk[-1])
+    t1 = T if t1 is None else min(T, t1)
+    frames = []
+    for t in np.arange(t0, t1 + 1e-6, 1 / fps):
+        j = int(np.clip(np.searchsorted(tk, t, side="right") - 1, 0, len(tk) - 1))
+        j2 = min(j + 1, len(tk) - 1)
+        u = 0.0 if j2 == j else float((t - tk[j]) / (tk[j2] - tk[j]))
+        frames.append({n: keyf[j][n] * (1 - u) + keyf[j2][n] * u for n in keyf[j]})
     return bvh.project(frames, side, fwd0=np.array([0.0, 0.0, 1.0]), follow=False)
