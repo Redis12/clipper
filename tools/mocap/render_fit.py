@@ -28,6 +28,12 @@ R = {}
 for f in sys.argv[2].split(","):
     R.update({int(k): v for k, v in json.load(open(f)).items()})
 OUT = sys.argv[3]
+# pieds de la réf (bas de la silhouette) : le sol de la réf est en perspective (plus loin = plus haut), donc on pose
+# Goku sur NOTRE sol et on ne garde que la hauteur de saut = sol local (max glissant) − bas de la silhouette
+FEET = {}
+_ff = Path(sys.argv[2].split(",")[0]).with_suffix("").with_suffix(".feet.json")
+if _ff.exists():
+    FEET = {int(k): v for k, v in json.load(open(_ff)).items()}
 N = int(sys.argv[4]) if len(sys.argv) > 4 else max(R) + 1
 FPS = int(sys.argv[5]) if len(sys.argv) > 5 else 30
 ROLES = ["hip", "spine", "chest", "neck", "head", "uarm_f", "farm_f", "uarm_b", "farm_b",
@@ -70,22 +76,26 @@ for i in range(N):
         p = sm[i]
         cx = cam[i] if cam[i] is not None else p["x"]
         X = W / 2 + (p["x"] - cx) * K
-        Y = GY + 8 - (REF_FEET - p["y"]) * K
+        Y = None
+        if FEET and i in FEET:
+            floor = max(FEET[j] for j in range(i - 20, i + 21) if j in FEET)
+            lift = max(0.0, floor - FEET[i] - 3) * K
+        else:
+            lift = 0.0
         g.flip = p["flip"]
         pose = {k: p[k] for k in ROLES}
         # traînée quand il bouge vite (comme le flou de mouvement de la réf)
         if hist:
             pp, PX, PY, pf = hist[-1]
-            if math.hypot(X - PX, Y - PY) > 40:
+            if abs(X - PX) > 40:
                 for jj, (hp, hx, hy, hf) in enumerate(hist[-3:][::-1]):
                     gh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
                     g.flip = hf
                     g.draw(gh, hp, hx, hy, record=False, alpha=0.32 - 0.09 * jj)
                     img.alpha_composite(gh)
                 g.flip = p["flip"]
-        sh = GY + 6 if Y > GY - 1200 else None
-        g.draw(img, pose, X, Y, shadow_y=sh, record=False)
-        hist.append((pose, X, Y, p["flip"]))
+        info = g.draw(img, pose, X, 0, ground=GY + 8, lift=lift, shadow_y=GY + 6, record=False)
+        hist.append((pose, X, info["y"], p["flip"]))
     else:
         hist = []
     if i < 30:                                             # sort du noir (comme la réf)

@@ -23,6 +23,9 @@ BG = Image.open(sys.argv[3]).convert("RGBA")
 OUT = Path(sys.argv[4])
 a0 = int(sys.argv[5]) if len(sys.argv) > 5 else 0
 a1 = int(sys.argv[6]) if len(sys.argv) > 6 else len(FR)
+# 2e départ possible : pose « modèle » (ex. debout), essayée à chaque image en plus de la précédente → évite de
+# rester coincé dans une mauvaise pose (jambes repliées derrière le corps…)
+TEMPLATE = json.loads(sys.argv[7]) if len(sys.argv) > 7 else None
 SCALE = 640 / 768                                         # la vidéo = la scène Pivot (768×432) rendue en 640×360
 g = pr.PivotActor(doc, 0, 0, pr.ROLES_PIVOT_GOKU, scale=SCALE)
 ROLES = ["hip", "spine", "chest", "neck", "head", "uarm_f", "farm_f", "uarm_b", "farm_b",
@@ -53,11 +56,31 @@ def skinw(a):
     return 1 + 3 * (np.abs(a - SKIN).sum(2) < 90)
 
 
+def wrap(d):
+    return (d + 180) % 360 - 180
+
+
+LIMITS = [("thigh_f", "shin_f", -170, 5), ("thigh_b", "shin_b", -170, 5),      # le genou ne plie que dans un sens
+          ("uarm_f", "farm_f", -5, 170), ("uarm_b", "farm_b", -5, 170),        # le coude aussi
+          ("hip", "spine", -40, 40), ("spine", "chest", -40, 40),
+          ("chest", "neck", -45, 45), ("neck", "head", -40, 40)]
+
+
+def anat(p):
+    """pénalité anatomique (degrés hors des limites) : sans elle, le fit trouve des poses tordues qui « passent »
+    à l'image (jambe repliée cachée par le pantalon) mais inutilisables pour rejouer le mouvement."""
+    pen = 0.0
+    for a, b, lo, hi in LIMITS:
+        d = wrap(p[b] - p[a])
+        pen += max(0.0, lo - d) + max(0.0, d - hi)
+    return pen
+
+
 def loss(p, tgt, box, tw=None):
     r = render(p, box)
     d = np.abs(r - tgt).sum(2)
     w = (tw if tw is not None else 1) + 3 * (np.abs(r - SKIN).sum(2) < 90)
-    return float((d * w).mean())
+    return float((d * w).mean()) + 1.0 * anat(p)
 
 
 def init_from_mask(m, prev):
@@ -93,6 +116,15 @@ def fit(tgt, m, prev, prev_m):
         q[a], q[b] = p[b], p[a]
     cands.append(q)
     for q in cands:
+        lq = L(q)
+        if lq < best:
+            p, best = q, lq
+    # rotation de tout le buste d'un coup (se pencher : hanche + colonne + cou + tête ensemble)
+    TRUNK = ("hip", "spine", "chest", "neck", "head")
+    for dr in (-90, -60, -40, -20, 20, 40, 60, 90):
+        q = dict(p)
+        for k in TRUNK:
+            q[k] = p[k] + dr
         lq = L(q)
         if lq < best:
             p, best = q, lq
@@ -138,6 +170,15 @@ for i in range(a0, a1):
         prev, prev_m = None, None
         continue
     p, lv = fit(tgt, m, prev, prev_m)
+    if TEMPLATE is not None:
+        ys_, xs_ = np.nonzero(m)
+        tp = dict(TEMPLATE)
+        tp["x"] = float(xs_.mean()) + TEMPLATE.get("_dx", 0.0)
+        tp["y"] = float(ys_.max()) - TEMPLATE.get("_foot", 0.0)
+        tp.pop("_dx", None), tp.pop("_foot", None)
+        p2, l2 = fit(tgt, m, tp, None)
+        if l2 < lv:
+            p, lv = p2, l2
     p["loss"] = lv
     res[str(i)] = p
     prev, prev_m = {k: v for k, v in p.items() if k != "loss"}, m
