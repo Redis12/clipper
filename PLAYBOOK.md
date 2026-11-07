@@ -146,3 +146,8 @@ Légende : titre-question / phrase avec les mots-clés / « Does Kid Sasuke make
 Par rapport à Kid Naruto vs Sasuke (même format, 268 vues) : nouvelle légende + Madara. Par rapport à Kid Goku vs Beerus 2
 (même légende, 288 vues) : Naruto/Madara + défaite. → Hypothèse : format Power Up + méchant culte + légende à un mot.
 Prochaines vidéos pour vérifier : même formule, autres méchants cultes (une seule chose change à chaque fois).
+
+## 9. Le Gauntlet fait commenter (07/11)
+Sur YouTube, le Gauntlet a fait beaucoup de commentaires : des gens frustrés par le résultat (« X aurait dû l'arrêter »).
+La frustration = de l'engagement. À exploiter : répondre aux commentaires dans l'heure, épingler le plus provocant,
+et faire une « Part 2 » qui répond au commentaire le plus fréquent (« You said Itachi would stop him… »).
