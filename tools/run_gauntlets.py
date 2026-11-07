@@ -58,7 +58,8 @@ if "gojo" in sys.argv:                                # 07/11 : Gojo tombe contr
                  "bg": ((22, 8, 40), (4, 4, 14)), "grid": (60, 40, 110),
                  "glows": [(0.15, 0.2, 380, (140, 60, 255)), (0.9, 0.55, 420, (40, 120, 255)), (0.4, 0.95, 360, (200, 20, 60))],
                  "font": "tools/money_sim/fonts/anton.woff2"}
-    JJK_MUSIC = next((str(p_) for p_ in Path("library/_music").glob("*") if any(w in p_.name.lower() for w in ("jjk", "jujutsu", "gojo", "kaisen"))), None)
+    import os
+    JJK_MUSIC = os.environ.get("GAUNTLET_MUSIC") or next((str(p_) for p_ in Path("library/_music").glob("*") if any(w in p_.name.lower() for w in ("jjk", "jujutsu", "gojo", "kaisen"))), None)
     foes = [{"name": n, "image_path": J + p} for n, p in [
         ("Nobara", "Nobara Kugisaki/nobara.png"), ("Megumi", "Megumi Fushiguro/megumi.jpg"),
         ("Yuji", "Yuji Itadori/Yuji.jpg"), ("Todo", "Aoi Todo/Todo.png"), ("Choso", "Choso/choso.png"),
@@ -70,5 +71,5 @@ if "gojo" in sys.argv:                                # 07/11 : Gojo tombe contr
     foes[10].update(gag=True, gag_s=2.2, panel=L + "_gauntlet/nah id win.jpg")
     print(gauntlet.generate(GOJO, foes, universe="Jujutsu Kaisen", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
                             base_hits=1, step_hits=0, lose_at=10, lose_after=3.0, lose_move="WORLD CUTTING SLASH!",
-                            title=("CAN GOJO", "SURVIVE THE JJK GAUNTLET?"), theme=JJK_THEME, music=JJK_MUSIC,
+                            title=("CAN GOJO", "SURVIVE THE JJK GAUNTLET?"), theme=JJK_THEME, music=JJK_MUSIC, music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")),
                             out=OUT / "Gauntlet - Gojo survive.mp4"))
