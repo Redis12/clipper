@@ -18,7 +18,33 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import goku_poses as gp  # noqa: E402
 import sticknodes as sn  # noqa: E402
-from mugen_punch import F, GOAL_M, GROUND, H, W, FPS, ball_sprite, dist_at, mountains, sky  # noqa: E402
+from mugen_punch import F, GROUND, H, W, FPS, ball_sprite, mountains, sky  # noqa: E402
+import rig  # noqa: E402
+
+GOAL_M = 9999.0
+FLY = 9.0                                  # secondes de vol
+
+
+def dist_at(t, t_hit):
+    if t < t_hit + 0.2:
+        return 0.0
+    e = t - t_hit - 0.2
+    k = 0.42
+    return GOAL_M * (1 - math.exp(-e * k)) / (1 - math.exp(-k * FLY)) if e < FLY else GOAL_M
+
+
+def height_at(t, t_hit):
+    """Hauteur de la boule (px) : grande courbe puis rebonds de plus en plus petits."""
+    e = t - t_hit - 0.2
+    if e <= 0:
+        return 0.0
+    arcs = [(1.6, 400), (1.1, 220), (0.8, 110), (0.6, 50), (0.45, 20)]
+    for du, hmax in arcs:
+        if e < du:
+            x = e / du
+            return 4 * hmax * x * (1 - x)
+        e -= du
+    return 0.0
 from clipper.slides import render, vfxgen  # noqa: E402
 
 BALL_R = 270
@@ -52,7 +78,7 @@ def pose_at(t):
 def main():
     fig = sn.load(sys.argv[1])
     out = Path(sys.argv[2])
-    dur = T_HIT + 0.2 + 8.5 + 2.4
+    dur = T_HIT + 0.2 + FLY + 2.4
     # où arrive le poing à l'impact → la boule est posée juste devant
     imP, posP, oP = sn.render(fig, scale=SCALE, absolute=gp.PUNCH)
     bottomP = np.nonzero(np.asarray(imP)[..., 3].max(1) > 0)[0].max()
@@ -77,7 +103,7 @@ def main():
         t = fi / FPS
         tt = t if t < T_HIT else max(T_HIT, t - 0.2)             # arrêt sur image à l'impact
         m = dist_at(tt, T_HIT)
-        cam = m * 6.0
+        cam = m * 0.62
         img = sky(min(1.0, max(0.0, (tt - T_HIT) / 3.0)))
         img.alpha_composite(far.crop((int(cam * .15) % (W * 10), 0, int(cam * .15) % (W * 10) + W, H)))
         img.alpha_composite(near.crop((int(cam * .45) % (W * 20), 0, int(cam * .45) % (W * 20) + W, H)))
@@ -99,10 +125,15 @@ def main():
         if T_SSJ <= tt < T_HIT + 0.3:
             power = min(1.0, (tt - T_SSJ) / 0.6) * (1 if tt < T_HIT else max(0, 1 - (tt - T_HIT) / 0.3))
             au = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-            fl = 0.85 + 0.15 * math.sin(t * 40)
-            ImageDraw.Draw(au).ellipse((gx - 170 - 50 * power, py - 60 - 80 * power, gx + 170 + 50 * power, GROUND + 25),
-                                       fill=(255, 220, 60, int(150 * power * fl)))
-            au = au.filter(ImageFilter.GaussianBlur(42))
+            ad = ImageDraw.Draw(au)
+            ch_ = (GROUND - py) * 0.62
+            acy = GROUND - ch_ * 0.95
+            for scl, col, al in ((1.25, (255, 225, 40), 150), (1.0, (255, 245, 150), 190), (0.7, (255, 255, 235), 170)):
+                ad.polygon(rig.aura_poly(gx, acy, (150 + 40 * power) * scl, ch_ * scl, t * 1.3 + scl, n=30,
+                                         seed=int(scl * 10)), fill=col + (int(al * power),))
+            glow = au.filter(ImageFilter.GaussianBlur(18))
+            img.paste(glow, (0, 0), glow)
+            au = au.filter(ImageFilter.GaussianBlur(1.5))
             img.paste(au, (0, 0), au)
             if rnd.random() < 0.45 * power:
                 debris.append([gx + rnd.uniform(-220, 220), GROUND - 6, rnd.uniform(-25, 25), -rnd.uniform(90, 220), t,
@@ -116,8 +147,15 @@ def main():
                                rnd.uniform(4, 9), 1.5])
         img.paste(pim, (px, py), pim)
         rb = ball.rotate(-math.degrees(cam / BALL_R), resample=Image.BICUBIC)
-        bx = BALL_X - (cam if tt > T_HIT else 0) + cam             # la boule reste au centre, le monde défile
-        img.paste(rb, (int(bx - rb.width / 2), int(GROUND - 30 - rb.height / 2)), rb)
+        bx = BALL_X                                                 # la boule reste au centre, le monde défile
+        hy = height_at(tt, T_HIT)
+        if hy < 5:                                                  # ombre / contact au sol
+            pass
+        sh_ = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(sh_).ellipse((bx - BALL_R * (1 - hy / 1400), GROUND - 14, bx + BALL_R * (1 - hy / 1400), GROUND + 14),
+                                    fill=(0, 0, 0, int(140 * (1 - hy / 700))))
+        img.paste(sh_, (0, 0), sh_)
+        img.paste(rb, (int(bx - rb.width / 2), int(GROUND - BALL_R - hy - rb.height / 2)), rb)
         d = ImageDraw.Draw(img, "RGBA")
         if 0 <= tt - T_SSJ < 0.35:
             d.rectangle((0, 0, W, H), fill=(255, 245, 180, int(235 * (1 - (tt - T_SSJ) / 0.35))))
@@ -160,15 +198,15 @@ def main():
                 y, x = rnd.uniform(560, GROUND - 20), rnd.uniform(0, W)
                 d.line((x, y, x + min(400, sp_ * 1.5), y), fill=(255, 255, 255, 60), width=3)
         d.text((W / 2, 70), "CAN GOKU PUNCH", font=fT, fill="white", anchor="mt", stroke_width=4, stroke_fill=(20, 10, 40))
-        d.text((W / 2, 172), "THE BALL 1 KM?", font=fT, fill=(255, 200, 60), anchor="mt", stroke_width=4, stroke_fill=(20, 10, 40))
+        d.text((W / 2, 172), "THE BALL 10 KM?", font=fT, fill=(255, 200, 60), anchor="mt", stroke_width=4, stroke_fill=(20, 10, 40))
         d.text((W * 0.3, 320), "PUNCHES", font=fS, fill=(200, 200, 230), anchor="mt")
         d.text((W * 0.7, 320), "DISTANCE", font=fS, fill=(200, 200, 230), anchor="mt")
         d.text((W * 0.3, 360), "1" if t >= T_HIT else "0", font=fN, fill="white", anchor="mt")
         col = (90, 255, 160) if 1 <= m < GOAL_M - 0.5 else (255, 90, 120)
         d.text((W * 0.7, 360), f"{m:,.0f} m", font=fN, fill=col, anchor="mt")
         d.rounded_rectangle((140, 480, W - 140, 500), 10, fill=(50, 50, 80))
-        d.rounded_rectangle((140, 480, 140 + (W - 280) * max(min(1.0, m / 1000), 0.012), 500), 10, fill=(255, 200, 60))
-        d.text((W - 140, 512), "1 KM", font=fS, fill=(255, 200, 60), anchor="ra")
+        d.rounded_rectangle((140, 480, 140 + (W - 280) * max(min(1.0, m / 10000), 0.012), 500), 10, fill=(255, 200, 60))
+        d.text((W - 140, 512), "10 KM", font=fS, fill=(255, 200, 60), anchor="ra")
         if t > dur - 2.4:
             a = min(1.0, (t - (dur - 2.4)) / 0.25)
             d.text((W / 2, 650), "1 METER SHORT...", font=F("anton.woff2", int(112 * (0.8 + 0.2 * a))),
