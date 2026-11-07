@@ -22,6 +22,7 @@ import rig  # noqa: E402
 import sticknodes as sn  # noqa: E402
 from mugen_punch import F, GROUND, H, W, FPS, mountains  # noqa: E402
 from one_punch import draw_stick  # noqa: E402
+import hud  # noqa: E402
 from stick_punch import GX, SCALE, T_CHARGE, T_HIT, T_SSJ, T_SWING, ease, pose_at  # noqa: E402
 from clipper.slides import fusion, render, vfxgen  # noqa: E402
 
@@ -196,8 +197,8 @@ def main():
                     d.ellipse((bx - 22, fist_y - 22, bx + 22, fist_y + 22), fill=(255, 255, 235))
                     if kk < 0.6:
                         s_ = 1 + 0.5 * max(0.0, 1 - kk / 0.12)
-                        d.text((fist_x + 40, fist_y - 190), "HA!", font=F("anton.woff2", int(110 * s_)), fill=(255, 230, 60),
-                               anchor="mm", stroke_width=6, stroke_fill=(40, 10, 10))
+                        img = hud.label(img, (fist_x + 40, fist_y - 190), "HA!", int(120 * s_), fill=(255, 225, 50), angle=6)
+                        d = ImageDraw.Draw(img, "RGBA")
         # ------------------------------------------------ la file
         march = max(0.0, 1.2 - t) * 260                                # elle arrive par la droite au début
         for i, m in enumerate(men):
@@ -338,20 +339,14 @@ def main():
             d.rectangle((0, 0, W, H), fill=(255, 245, 180, int(235 * (1 - (gt - T_SSJ) / 0.35))))
         # ------------------------------------------------ textes
         down = len(launches) + (1 if t >= T_FLY else 0)
-        d.text((W / 2, 64), "1 PUNCH VS", font=fT, fill="white", anchor="mt", stroke_width=5, stroke_fill=(20, 10, 40))
-        d.text((W / 2, 180), "1000 STICKMEN", font=fT, fill=(255, 200, 60), anchor="mt", stroke_width=5,
-               stroke_fill=(20, 10, 40))
         pulse = 1.1 if launches and t - launches[-1] < 0.05 and down < 999 else 1.0
-        col = (255, 255, 255) if down < 999 else ((255, 90, 90) if down == 999 else (90, 255, 140))
-        d.text((W / 2, 330), f"{down} / 1000", font=F("anton.woff2", int(104 * pulse)), fill=col, anchor="mt",
-               stroke_width=5, stroke_fill=(10, 10, 30))
-        d.text((W / 2, 448), "KNOCKED OUT", font=fS, fill=(30, 40, 80), anchor="mt")
+        img = hud.draw(img, "a", down, pulse=pulse)                    # style A choisi par l'utilisateur
         if T_END + 0.2 <= t < T_FLY and not cut_goku:
-            d.text((W / 2, 570), "1 LEFT...", font=F("anton.woff2", 96), fill=(255, 90, 90), anchor="mm",
-                   stroke_width=5, stroke_fill=(20, 10, 10))
+            img = hud.label(img, (W / 2, 580), "1 LEFT...", 104, fill=(255, 80, 80), angle=-3)
             m = men[-1]
-            d.text((m["x"] - cx, GROUND - SH - 70), "!?" if t < T_LOOK + 0.8 else "?", font=F("anton.woff2", 80),
-                   fill=(255, 230, 60), anchor="mm", stroke_width=4, stroke_fill=(20, 10, 10))
+            img = hud.label(img, (m["x"] - cx, GROUND - SH - 75), "!?" if t < T_LOOK + 0.8 else "?", 86,
+                            fill=(255, 225, 50))
+        d = ImageDraw.Draw(img, "RGBA")
         if t >= T_WIN:
             a_ = t - T_WIN
             rays = Image.new("RGBA", (W, H), (0, 0, 0, 0))            # rayons qui tournent derrière le texte
@@ -373,12 +368,11 @@ def main():
                 w_ = 14 * abs(math.cos(a_ * 6 + c[5])) + 3
                 d.rectangle((x - w_, y - 6, x + w_, y + 6), fill=c[4])
             s = 1 + 0.4 * max(0.0, 1 - a_ / 0.15) + 0.04 * math.sin(a_ * 6)
-            d.text((W / 2, 610), "FLAWLESS", font=F("anton.woff2", int(150 * s)), fill=(255, 220, 60), anchor="mm",
-                   stroke_width=7, stroke_fill=(40, 10, 10))
+            img = hud.label(img, (W / 2, 610), "FLAWLESS", int(150 * s), fill=(255, 214, 50), angle=3)
             if a_ > 0.4:
                 rgba = img.convert("RGBA")
-                render.draw_rich(rgba, (W / 2, 730), "Who takes 10,000 next? Comment 👇", F("mont900.woff2", 50),
-                                 (255, 255, 255), anchor="ma", stroke_width=4, stroke_fill=(0, 0, 0))
+                render.draw_rich(rgba, (W / 2, 735), "Who takes 10,000 next? Comment 👇", hud.font("luckiest-guy.woff2", 54),
+                                 (255, 255, 255), anchor="ma", stroke_width=5, stroke_fill=(20, 20, 50))
                 img = rgba.convert("RGB")
         # secousse
         sh = 0
