@@ -39,13 +39,16 @@ rnd = random.Random(7)
 flip = dae.load(f"{D}/mx_flipkick/mx_flipkick.dae", fps=FPS)
 FLIP_RATE = 1.15
 T0_FLIP = 0.0
-T_LAND = len(flip) / FPS / FLIP_RATE                     # fin du clip
+CUT = 34                                                 # image du salto où on quitte Mixamo (encore en l'air, avant
+                                                         # que l'acteur se retourne : sinon tête à droite / corps à gauche)
+T_CUT = CUT / FPS / FLIP_RATE
+T_LAND = T_CUT + 0.32                                    # chute contrôlée jusqu'au sol, réception accroupie
 T_POW = T_LAND + 0.35                                    # début du Kaioken
 T_AURA = T_POW + 0.45
 T_DASH = T_POW + 1.55
 T_STOP = T_DASH + 0.55
 T_KAME = T_STOP + 0.45
-T_FIRE = T_KAME + 2.1
+T_FIRE = T_KAME + 2.8
 T_FLASH = T_FIRE + 1.35
 T_END = T_FLASH + 1.0
 
@@ -68,7 +71,7 @@ FLIP_K = 130 / max(1e-6, (max(fxs) - min(fxs)) * LEG)    # le salto avance de 38
 def state(t):
     """(pose, x écran, lift, rot)"""
     X0 = 170
-    if t < T_LAND:
+    if t < T_CUT:
         f = min(len(flip) - 1.0, t * FPS * FLIP_RATE)
         i = int(f)
         u = f - i
@@ -77,10 +80,18 @@ def state(t):
         x = X0 + ((flip[i][1] * (1 - u) + flip[j][1] * u) - fx0) * LEG * FLIP_K
         lift = (flip[i][2] * (1 - u) + flip[j][2] * u) * LEG
         return pose, x, lift, 0.0
-    xl = X0 + (flip[-1][1] - fx0) * LEG * FLIP_K
+    xc = X0 + (flip[CUT][1] - fx0) * LEG * FLIP_K
+    xl = xc + 40
+    if t < T_LAND:
+        # fin du salto : le corps finit sa rotation et se pose accroupi, la hauteur retombe (chute)
+        u = (t - T_CUT) / (T_LAND - T_CUT)
+        land = dict(sa.P["crouch"])
+        pose = sa.lerp(flip[CUT][0], land, ease(u))
+        lift = flip[CUT][2] * LEG * (1 - u * u)
+        return pose, xc + 40 * u, lift, 0.0
     if t < T_POW:
         u = ease((t - T_LAND) / 0.3)
-        return sa.lerp(flip[-1][0], sa.P["stance_low"], u), xl, 0.0, 0.0
+        return sa.lerp(sa.P["crouch"], sa.P["stance_low"], u), xl, 0.0, 0.0
     if t < T_DASH:
         # accroupi qui serre les poings → se redresse en criant (Kaioken)
         u = (t - T_POW) / (T_DASH - T_POW)
@@ -304,9 +315,9 @@ for k in range(N):
     if kaio > 0:
         hgt = (GY - top) * 1.3 * (0.55 + 0.45 * back_out(min(1, (t - T_AURA) / 0.35)))
         wid = min(460.0, (info["box"][2] - info["box"][0]) * 1.0 + 170)
-        stretch = 1.0 if T_DASH <= t < T_STOP else 0.0
+        stretch = 0.0
         al = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        flame_aura(al, cx, GY + 10 - lift, hgt, wid, t, kaio, stretch)
+        flame_aura(al, x, GY + 10 - lift, hgt, wid, t, kaio, stretch)
         img.alpha_composite(glow(al, 10, 0.8))
         img.alpha_composite(al)
     # images rémanentes pendant le rush
