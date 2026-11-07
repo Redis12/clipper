@@ -27,7 +27,9 @@ a1 = int(sys.argv[6]) if len(sys.argv) > 6 else len(FR)
 # rester coincé dans une mauvaise pose (jambes repliées derrière le corps…)
 TEMPLATE = json.loads(sys.argv[7]) if len(sys.argv) > 7 else None
 SCALE = 640 / 768                                         # la vidéo = la scène Pivot (768×432) rendue en 640×360
-g = pr.PivotActor(doc, 0, 0, pr.ROLES_PIVOT_GOKU, scale=SCALE)
+sys.path.insert(0, str(HERE))
+import views  # noqa: E402
+ACTORS = views.make_actors(doc, SCALE)                    # 9 vues du perso (profil, 3/4, face, dos…)
 ROLES = ["hip", "spine", "chest", "neck", "head", "uarm_f", "farm_f", "uarm_b", "farm_b",
          "thigh_f", "shin_f", "thigh_b", "shin_b"]
 bga = np.asarray(BG.convert("RGB")).astype(np.int16)
@@ -42,6 +44,7 @@ def target(i):
 def render(p, box):
     x0, y0, x1, y1 = box
     c = BG.crop(box).copy()
+    g = ACTORS[p.get("view", 0)]
     g.flip = p["flip"]
     pose = {r: p[r] for r in ROLES}
     g.draw(c, pose, p["x"] - x0, p["y"] - y0, record=False)
@@ -112,6 +115,10 @@ def fit(tgt, m, prev, prev_m):
     cands = []
     q = dict(p, flip=not p["flip"])
     cands.append(q)
+    for v in range(len(ACTORS)):                          # changer de vue (le perso se tourne)
+        for fl in (False, True):
+            if v != p.get("view", 0) or fl != p["flip"]:
+                cands.append(dict(p, view=v, flip=fl))
     q = dict(p)
     for a, b in (("uarm_f", "uarm_b"), ("farm_f", "farm_b")):
         q[a], q[b] = p[b], p[a]

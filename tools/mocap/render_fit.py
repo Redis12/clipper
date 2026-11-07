@@ -38,14 +38,17 @@ N = int(sys.argv[4]) if len(sys.argv) > 4 else max(R) + 1
 FPS = int(sys.argv[5]) if len(sys.argv) > 5 else 30
 ROLES = ["hip", "spine", "chest", "neck", "head", "uarm_f", "farm_f", "uarm_b", "farm_b",
          "thigh_f", "shin_f", "thigh_b", "shin_b"]
-g = pr.PivotActor(doc, 0, 0, pr.ROLES_PIVOT_GOKU, scale=SCALE)
+import views  # noqa: E402
+ACTORS = views.make_actors(doc, SCALE)
+g = ACTORS[0]
 BG = make_bg(GY)
 
 ids = sorted(R)
 # lissage : médiane sur 3 images (angles dépliés), positions comprises
 sm = {}
 for j, i in enumerate(ids):
-    nb = [R[k] for k in ids[max(0, j - 1): j + 2] if abs(k - i) <= 1 and R[k]["flip"] == R[i]["flip"]]
+    nb = [R[k] for k in ids[max(0, j - 1): j + 2] if abs(k - i) <= 1 and R[k]["flip"] == R[i]["flip"]
+          and R[k].get("view", 0) == R[i].get("view", 0)]
     p = dict(R[i])
     for k in ROLES:
         base = R[i][k]
@@ -82,20 +85,21 @@ for i in range(N):
             lift = max(0.0, floor - FEET[i] - 3) * K
         else:
             lift = 0.0
+        g = ACTORS[p.get("view", 0)]
         g.flip = p["flip"]
         pose = {k: p[k] for k in ROLES}
         # traînée quand il bouge vite (comme le flou de mouvement de la réf)
         if hist:
-            pp, PX, PY, pf = hist[-1]
+            pp, PX, PY, pf, _ = hist[-1]
             if abs(X - PX) > 40:
-                for jj, (hp, hx, hy, hf) in enumerate(hist[-3:][::-1]):
+                for jj, (hp, hx, hy, hf, hg) in enumerate(hist[-3:][::-1]):
                     gh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-                    g.flip = hf
-                    g.draw(gh, hp, hx, hy, record=False, alpha=0.32 - 0.09 * jj)
+                    hg.flip = hf
+                    hg.draw(gh, hp, hx, hy, record=False, alpha=0.32 - 0.09 * jj)
                     img.alpha_composite(gh)
                 g.flip = p["flip"]
         info = g.draw(img, pose, X, 0, ground=GY + 8, lift=lift, shadow_y=GY + 6, record=False)
-        hist.append((pose, X, info["y"], p["flip"]))
+        hist.append((pose, X, info["y"], p["flip"], g))
     else:
         hist = []
     if i < 30:                                             # sort du noir (comme la réf)
