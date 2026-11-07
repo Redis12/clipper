@@ -158,7 +158,9 @@ def build(meta: dict, handle: str = "@animelorehq") -> dict:
               "who would win", "anime simulation"]
     elif kind == "powerup":
         a, b = meta.get("hero") or short(names[0]), meta.get("boss") or short(names[1])
-        title = f"Can {a} beat {b} in under 60 seconds? 😳"
+        # 07/11 : le chiffre doit être celui du compte à rebours de la vidéo (bug : « 60 » sur une vidéo de 30 s)
+        secs = meta.get("timer") or max([x for x in (15, 20, 30, 45, 60, 90) if x <= float(meta.get("seconds") or 60) + 0.5] or [60])
+        title = f"Can {a} beat {b} in under {int(secs)} seconds? 😳"
         hook = f"{a} vs {b}: every hit gets stronger and he transforms. Can he do it before the timer hits 0?"
         ask = "Comment if you think he makes it 👇"
         core = ["satisfying", "animebattle"]

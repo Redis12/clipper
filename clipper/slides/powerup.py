@@ -589,7 +589,7 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
     meta = {"kind": "powerup", "title": f"Can {hero_name} beat {boss_name} in under {int(seconds)} seconds?"
             + (f" {part}" if part else ""),
             "hero": hero_name, "boss": boss_name, "names": [hero_name, boss_name], "seed": seed, "hits": len(hits),
-            "forms": [f["name"] for f in forms], "result": "hakai" if hakai else ("fail" if fail else "win"), "part": part, "seconds": round(duration, 1), "created_at": db.now()}
+            "forms": [f["name"] for f in forms], "result": "hakai" if hakai else ("fail" if fail else "win"), "part": part, "seconds": round(duration, 1), "timer": seconds, "created_at": db.now()}
     out.with_suffix(".json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
     _brand_video(out)
     log.info("power up : %s vs %s, %d coups, %.0f s → %s", hero_name, boss_name, len(hits), duration, out.name)
