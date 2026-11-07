@@ -159,8 +159,10 @@ class Actor:
         return im, pos, org
 
     def draw(self, canvas, pose, x, y, rot=0.0, hair=None, alpha=1.0, ground=None, trail=0, ghost_col=None,
-             shadow_y=None, lift=0.0):
-        """x, y = bassin. ground = y du sol → les pieds y sont posés (y ignoré). trail = nb d'images fantômes."""
+             shadow_y=None, lift=0.0, record=True, glow=None, tint=None, mask=None):
+        """x, y = bassin. ground = y du sol → les pieds y sont posés (y ignoré). trail = nb d'images fantômes.
+        glow = (couleur, taille) liseré lumineux ; tint = couleur unie (écho coloré) ; mask = image L où l'on ajoute
+        la silhouette (pour les impact frames)."""
         im, pos, org = self.render(pose, hair)
         if ground is not None:
             a = np.asarray(im)[..., 3]
@@ -168,6 +170,9 @@ class Actor:
             y = ground - (bottom - org[1]) - lift
         if rot:
             im = im.rotate(rot, resample=Image.BICUBIC, center=org, expand=False)
+            ca, sa_ = math.cos(math.radians(-rot)), math.sin(math.radians(-rot))
+            pos = {k: (org[0] + (v[0] - org[0]) * ca - (v[1] - org[1]) * sa_,
+                       org[1] + (v[0] - org[0]) * sa_ + (v[1] - org[1]) * ca) for k, v in pos.items()}
         px, py = int(x - org[0]), int(y - org[1])
         if shadow_y is not None:
             d = ImageDraw.Draw(canvas, "RGBA")
@@ -183,15 +188,27 @@ class Actor:
                     g = col
                 g.putalpha(g.getchannel("A").point(lambda v, k=k: int(v * 0.45 * k)))
                 canvas.paste(g, (gx, gy), g)
+        if tint is not None:
+            col = Image.new("RGBA", im.size, tuple(tint) + (0,))
+            col.putalpha(im.getchannel("A"))
+            im = col
         if alpha < 1:
             im.putalpha(im.getchannel("A").point(lambda v: int(v * alpha)))
+        if glow:
+            from stickfx import rim_glow
+            g = rim_glow(im, glow[0], glow[1], glow[2] if len(glow) > 2 else 1.0)
+            canvas.alpha_composite(g, (max(0, px), max(0, py))) if px >= 0 and py >= 0 else canvas.paste(g, (px, py), g)
         canvas.paste(im, (px, py), im)
-        self.trail.append((im, px, py))
-        fist = pos[self.roles[FIST_F]]
-        self.last = dict(x=x, y=y, fist=(px + fist[0], py + fist[1]), head=(px + pos[self.roles["head"]][0],
-                                                                             py + pos[self.roles["head"]][1]),
-                         box=(px, py, px + im.width, py + im.height))
-        return self.last
+        if mask is not None:
+            mask.paste(255, (px, py), im.getchannel("A"))
+        if record:
+            self.trail.append((im, px, py))
+        P_ = lambda k: (px + pos[self.roles[k]][0], py + pos[self.roles[k]][1])  # noqa: E731
+        info = dict(x=x, y=y, fist=P_(FIST_F), fist_b=P_(FIST_B), foot=P_("shin_f"), head=P_("head"),
+                    box=(px, py, px + im.width, py + im.height))
+        if record:
+            self.last = info
+        return info
 
 
 def contact_sheet(fig, path, roles=ROLES_GOKU, names=None, scale=0.45, hair=None):
