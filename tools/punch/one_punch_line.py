@@ -20,21 +20,35 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import goku_poses as gp  # noqa: E402
 import rig  # noqa: E402
 import sticknodes as sn  # noqa: E402
-from how_far import day_sky  # noqa: E402
 from mugen_punch import F, GROUND, H, W, FPS, mountains  # noqa: E402
 from one_punch import draw_stick  # noqa: E402
 from stick_punch import GX, SCALE, T_CHARGE, T_HIT, T_SSJ, T_SWING, ease, pose_at  # noqa: E402
 from clipper.slides import fusion, render, vfxgen  # noqa: E402
 
 N = 1000
-GAP = 40                         # écart entre 2 stickmen de la file
-SH = 112                         # taille d'un stickman
+GAP = 52                         # écart entre 2 stickmen de la file
+SH = 165                         # taille d'un stickman
 OFF = 1.6                        # la file arrive pendant que Goku attend
 TP = T_HIT + OFF                 # le coup
 FREEZE = 0.22
 WA, WB = 500.0, 900.0            # onde : x = WB·a + WA·a² (accélère)
 GRAV = 2000.0
-DASH = 120
+DASH = 95
+GSC = SCALE * 0.75               # Goku un peu plus petit (demandé)
+
+
+def desert_sky():
+    """Ciel clair au-dessus d'un désert rocheux (autre terrain que « How far »)."""
+    y = np.linspace(0, 1, H)[:, None, None]
+    top, bot = np.array([70, 150, 230.]), np.array([255, 226, 170.])
+    a = top * (1 - y ** 0.8) + bot * y ** 0.8
+    im = Image.fromarray(a.repeat(W, 1).clip(0, 255).astype(np.uint8)).convert("RGBA")
+    d = ImageDraw.Draw(im)
+    for cx_, cy_, w_ in ((160, 620, 300), (720, 760, 380), (420, 900, 260)):
+        for j in range(4):
+            d.ellipse((cx_ + j * w_ / 5 - w_ / 3, cy_ - 30 - (j % 2) * 26, cx_ + j * w_ / 5 + w_ / 3, cy_ + 30),
+                      fill=(255, 255, 255, 230))
+    return im
 
 
 def wave_x(a):
@@ -44,7 +58,7 @@ def wave_x(a):
 def main():
     fig = sn.load(sys.argv[1])
     out = Path(sys.argv[2])
-    imP, posP, oP = sn.render(fig, scale=SCALE, absolute=gp.PUNCH)
+    imP, posP, oP = sn.render(fig, scale=GSC, absolute=gp.PUNCH)
     bottomP = np.nonzero(np.asarray(imP)[..., 3].max(1) > 0)[0].max()
     fist_x = GX + DASH + (posP[253][0] - oP[0])
     fist_y = GROUND - (bottomP - posP[253][1])
@@ -60,13 +74,16 @@ def main():
     T_END = TP + FREEZE + A_END
     T_LOOK = T_END + 0.5
     T_CUT = T_LOOK + 1.9            # coupe sur Goku : *flick*
-    T_BACK = T_CUT + 0.9            # retour sur le survivant, la boule arrive
+    T_BACK = T_CUT + 1.5            # retour sur le survivant, la boule arrive
     T_FLY = T_BACK + 0.35
-    DUR = T_FLY + 3.2
+    T_STAR = T_FLY + 0.9             # il devient une étoile qui scintille dans le ciel
+    T_WIN = T_STAR + 0.35
+    DUR = T_WIN + 3.0
     CAM_MAX = X_LAST - 640
-    far = mountains(1, (120, 160, 220, 255), 170, 1100, 320, W * 8)
-    near = mountains(2, (90, 160, 100, 255), 110, 1200, 230, W * 16)
-    sky = day_sky(0.0)
+    far = mountains(1, (214, 150, 110, 255), 260, 1080, 420, W * 8)      # terrain « désert rocheux » à la DBZ
+    near = mountains(2, (176, 108, 72, 255), 150, 1190, 260, W * 16)
+    sky = desert_sky()
+    confetti = []
     explo = list(vfxgen.frames("explosion", 620, (255, 210, 80)))
     ring = list(vfxgen.frames("ring", 900, (255, 240, 180)))
     bolt = list(vfxgen.frames("lightning", 260, (255, 240, 120)))
@@ -90,11 +107,13 @@ def main():
         img.alpha_composite(near.crop((int(cx * .4) % (W * 14), 0, int(cx * .4) % (W * 14) + W, H)))
         img = img.convert("RGB")
         d = ImageDraw.Draw(img, "RGBA")
-        d.rectangle((0, 1180, W, H), fill=(90, 170, 80))
+        d.rectangle((0, 1180, W, H), fill=(222, 178, 120))
         for k in range(-1, W // 140 + 2):                              # touffes d'herbe qui défilent
             gx = k * 140 - (cx % 140)
-            d.line((gx, GROUND + 60, gx + 40, GROUND + 60), fill=(70, 150, 62), width=4)
-            d.line((gx + 70, GROUND + 160, gx + 120, GROUND + 160), fill=(70, 150, 62), width=4)
+            d.line((gx, GROUND + 60, gx + 34, GROUND + 74), fill=(185, 135, 88), width=4)
+            d.ellipse((gx + 70, GROUND + 150, gx + 120, GROUND + 178), fill=(165, 112, 74))
+            d.ellipse((gx + 76, GROUND + 148, gx + 112, GROUND + 166), fill=(196, 140, 96))
+            d.line((gx + 20, GROUND + 260, gx + 90, GROUND + 250), fill=(185, 135, 88), width=4)
         mk = int(cx // 2000)                                           # bornes de distance
         for j in (mk, mk + 1):
             bx = j * 2000 + 600 - cx
@@ -110,9 +129,15 @@ def main():
             gx_ = GX + (DASH * ease((gt - T_SWING) / (T_HIT - T_SWING)) if gt >= T_SWING else 0)
         else:
             gx_ = GX + DASH
-            if cut_goku:
-                k = (t - T_CUT) / 0.25
-                pose = sn.lerp_pose(gp.IDLE, gp.PUNCH, ease(k))
+            if cut_goku:                                              # vrai lancer : armé → charge → lancer
+                k = t - T_CUT
+                if k < 0.6:
+                    pose = sn.lerp_pose(gp.IDLE, gp.WINDUP, ease(k / 0.35))
+                    pose[54] += 1.5 * math.sin(t * 40)
+                elif k < 0.75:
+                    pose = sn.lerp_pose(gp.WINDUP, gp.PUNCH, ease((k - 0.6) / 0.15) ** 0.6)
+                else:
+                    pose = gp.PUNCH
             elif t - TP < 1.4:
                 pose = gp.PUNCH
             else:
@@ -122,7 +147,7 @@ def main():
         if goku_on:
             ssj = gt >= T_SSJ
             cm = None if ssj else (lambda i, c: (22, 22, 28, 255) if c[:3] in gp.HAIR_COLORS else c)
-            pim, pos, org = sn.render(fig, scale=SCALE, absolute=pose, color_map=cm)
+            pim, pos, org = sn.render(fig, scale=GSC, absolute=pose, color_map=cm)
             bottom = np.nonzero(np.asarray(pim)[..., 3].max(1) > 0)[0].max()
             px, py = int(gx_ - org[0] - cx), int(GROUND - bottom)
             power = 0.0
@@ -135,7 +160,7 @@ def main():
                 ad = ImageDraw.Draw(au)
                 ch_ = (GROUND - py) * 0.62
                 for scl, col, al in ((1.25, (255, 225, 40), 150), (1.0, (255, 245, 150), 190), (0.7, (255, 255, 235), 170)):
-                    ad.polygon(rig.aura_poly(gx_ - cx, GROUND - ch_ * 0.95, (150 + 40 * power) * scl, ch_ * scl,
+                    ad.polygon(rig.aura_poly(gx_ - cx, GROUND - ch_ * 0.95, (110 + 30 * power) * scl, ch_ * scl,
                                              t * 1.3 + scl, n=30, seed=int(scl * 10)), fill=col + (int(al * power),))
                 g_ = au.filter(ImageFilter.GaussianBlur(18))
                 img.paste(g_, (0, 0), g_)
@@ -146,13 +171,33 @@ def main():
             img.paste(pim, (px, py), pim)
             d = ImageDraw.Draw(img, "RGBA")
             if cut_goku:
-                d.text((fist_x + 60, fist_y - 160), "*flick*", font=F("anton.woff2", 76), fill=(255, 255, 255),
-                       anchor="mm", stroke_width=5, stroke_fill=(20, 10, 40))
-                k = (t - T_CUT - 0.25) / 0.6
-                if k > 0:
-                    bx = fist_x + k * 900
-                    d.ellipse((bx - 30, fist_y - 30, bx + 30, fist_y + 30), fill=(255, 240, 120, 130))
-                    d.ellipse((bx - 16, fist_y - 16, bx + 16, fist_y + 16), fill=(255, 255, 230))
+                k = t - T_CUT
+                hx, hy = px + pos[253][0], py + pos[253][1]          # la main
+                if k < 0.75:                                          # la boule de ki se charge dans la main
+                    r = 8 + 30 * ease(k / 0.6)
+                    gl = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+                    ImageDraw.Draw(gl).ellipse((hx - r * 2.2, hy - r * 2.2, hx + r * 2.2, hy + r * 2.2), fill=(255, 230, 90, 170))
+                    gl = gl.filter(ImageFilter.GaussianBlur(16))
+                    img.paste(gl, (0, 0), gl)
+                    d = ImageDraw.Draw(img, "RGBA")
+                    d.ellipse((hx - r, hy - r, hx + r, hy + r), fill=(255, 250, 210))
+                    for j in range(5):                                # énergie qui converge
+                        an = j * 1.26 + t * 9
+                        rr = 120 * (1 - (k * 3 + j * 0.2) % 1)
+                        d.line((hx + math.cos(an) * rr, hy + math.sin(an) * rr, hx + math.cos(an) * (rr + 30),
+                                hy + math.sin(an) * (rr + 30)), fill=(255, 240, 150, 220), width=5)
+                else:
+                    kk = (k - 0.75) / 0.75
+                    bx = fist_x + kk * 1100
+                    for j in range(8):
+                        d.ellipse((bx - j * 40 - 30 + j * 3, fist_y - 30 + j * 3, bx - j * 40 + 30 - j * 3, fist_y + 30 - j * 3),
+                                  fill=(255, 235, 110, 160 - j * 18))
+                    d.ellipse((bx - 40, fist_y - 40, bx + 40, fist_y + 40), fill=(255, 240, 120, 140))
+                    d.ellipse((bx - 22, fist_y - 22, bx + 22, fist_y + 22), fill=(255, 255, 235))
+                    if kk < 0.6:
+                        s_ = 1 + 0.5 * max(0.0, 1 - kk / 0.12)
+                        d.text((fist_x + 40, fist_y - 190), "HA!", font=F("anton.woff2", int(110 * s_)), fill=(255, 230, 60),
+                               anchor="mm", stroke_width=6, stroke_fill=(40, 10, 10))
         # ------------------------------------------------ la file
         march = max(0.0, 1.2 - t) * 260                                # elle arrive par la droite au début
         for i, m in enumerate(men):
@@ -192,7 +237,23 @@ def main():
         if t >= T_FLY:
             m = men[-1]
             aa = t - T_FLY
-            draw_stick(d, m["x"] - cx + 1300 * aa, GROUND - 2200 * aa + 0.5 * GRAV * aa * aa, SH, 0, 1100 * aa, "fly", m["col"])
+            if t < T_STAR:                                            # il file vers le ciel en rapetissant
+                k = ease(aa / (T_STAR - T_FLY))
+                sx0, sy0 = m["x"] - cx, GROUND
+                tx, ty = W * 0.78, 560
+                x = sx0 + (tx - sx0) * k
+                y = sy0 + (ty - sy0) * k - 260 * math.sin(math.pi * k)
+                draw_stick(d, x, y + SH * (1 - k) * 0.5, SH * (1 - 0.92 * k), 0, 1300 * aa, "fly", m["col"])
+            elif t < T_STAR + 0.9:                                    # ✦ scintillement « Team Rocket »
+                k = (t - T_STAR) / 0.9
+                r = 70 * math.sin(math.pi * min(1.0, k * 1.6)) + 8
+                cxs, cys = W * 0.78, 560
+                for an in (0, 90, 180, 270):
+                    ra = math.radians(an + k * 90)
+                    d.polygon([(cxs + math.cos(ra) * r, cys + math.sin(ra) * r), (cxs + math.cos(ra + .3) * r * .25,
+                               cys + math.sin(ra + .3) * r * .25), (cxs, cys), (cxs + math.cos(ra - .3) * r * .25,
+                               cys + math.sin(ra - .3) * r * .25)], fill=(255, 255, 255, 240))
+                d.ellipse((cxs - r * .3, cys - r * .3, cxs + r * .3, cys + r * .3), fill=(255, 250, 200))
         if T_BACK <= t < T_FLY:                                        # la boule arrive de la gauche
             k = (t - T_BACK) / (T_FLY - T_BACK)
             bx, by = -40 + (men[-1]["x"] - cx + 40) * k, GROUND - SH * 0.55
@@ -257,9 +318,27 @@ def main():
             m = men[-1]
             d.text((m["x"] - cx, GROUND - SH - 70), "!?" if t < T_LOOK + 0.8 else "?", font=F("anton.woff2", 80),
                    fill=(255, 230, 60), anchor="mm", stroke_width=4, stroke_fill=(20, 10, 10))
-        if t >= T_FLY + 0.4:
-            a_ = t - (T_FLY + 0.4)
-            s = 1 + 0.4 * max(0.0, 1 - a_ / 0.15)
+        if t >= T_WIN:
+            a_ = t - T_WIN
+            rays = Image.new("RGBA", (W, H), (0, 0, 0, 0))            # rayons qui tournent derrière le texte
+            rd = ImageDraw.Draw(rays)
+            for j in range(14):
+                an = math.radians(j * 360 / 14 + a_ * 40)
+                rd.polygon([(W / 2, 610), (W / 2 + math.cos(an - .09) * 1400, 610 + math.sin(an - .09) * 1400),
+                            (W / 2 + math.cos(an + .09) * 1400, 610 + math.sin(an + .09) * 1400)],
+                           fill=(255, 235, 120, int(90 * min(1.0, a_ / 0.3))))
+            img.paste(rays, (0, 0), rays)
+            d = ImageDraw.Draw(img, "RGBA")
+            if not confetti:
+                for _ in range(160):
+                    confetti.append([rnd.uniform(0, W), rnd.uniform(-900, -20), rnd.uniform(-80, 80), rnd.uniform(250, 520),
+                                     rnd.choice([(255, 80, 80), (255, 210, 60), (80, 200, 255), (120, 255, 140), (255, 120, 220)]),
+                                     rnd.uniform(0, 6.3)])
+            for c in confetti:
+                x, y = c[0] + c[2] * a_ + 30 * math.sin(a_ * 4 + c[5]), c[1] + c[3] * a_
+                w_ = 14 * abs(math.cos(a_ * 6 + c[5])) + 3
+                d.rectangle((x - w_, y - 6, x + w_, y + 6), fill=c[4])
+            s = 1 + 0.4 * max(0.0, 1 - a_ / 0.15) + 0.04 * math.sin(a_ * 6)
             d.text((W / 2, 610), "FLAWLESS", font=F("anton.woff2", int(150 * s)), fill=(255, 220, 60), anchor="mm",
                    stroke_width=7, stroke_fill=(40, 10, 10))
             if a_ > 0.4:
@@ -312,7 +391,8 @@ def main():
         put(launches[j], S("hit", 30 + j % 6), 0.25)
     put(T_CUT + 0.2, S("shots", 3), 0.6)
     put(T_FLY, S("hit", 3), 1.0)
-    put(T_FLY + 0.4, S("ko", 1), 0.7)
+    put(T_STAR, S("teleport", 4), 0.5)
+    put(T_WIN, S("ko", 1), 0.7)
     lvl = float(np.percentile(np.abs(audio), 99.7)) or 1.0
     audio = audio * min(1.0, 0.75 / lvl)
     wav = out.with_suffix(".wav")
