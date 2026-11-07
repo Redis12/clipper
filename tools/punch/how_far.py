@@ -26,15 +26,17 @@ from clipper.slides import fusion, render, vfxgen  # noqa: E402
 BALL_R = 220
 E0 = T_HIT + 0.2                          # départ de la boule
 # (fin du segment en s après E0, distance en km à la fin)
-SEG = [(2.2, 5.0), (4.2, 15.0), (5.8, 40.0), (7.4, 100.0), (11.6, 40075.0)]
-T_BACK = E0 + 11.6                        # retour chez Goku
+SEG = [(2.2, 5.0), (4.2, 15.0), (5.8, 40.0), (7.4, 100.0), (14.6, 40075.0)]
+TS = 1.5                                  # 1 unité d'histoire = 1,5 s réelle (vidéo ≈ 30 s)
+SP = SEG[-1][0]
+T_BACK = E0 + SP * TS                        # retour chez Goku
 T_BONK = T_BACK + 1.0
 DUR = T_BONK + 3.2
 KAME_AT, VEG_AT, MACH_AT = 3.2, 4.85, 0.15
 
 
 def km_at(t):
-    e = t - E0
+    e = (t - E0) / TS
     if e <= 0:
         return 0.0
     prev_t, prev_d = 0.0, 0.0
@@ -103,6 +105,48 @@ def earth(r):
     return im
 
 
+def satellite():
+    im = Image.new("RGBA", (220, 120), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    for x0 in (8, 142):
+        d.rectangle((x0, 38, x0 + 70, 82), fill=(40, 80, 170), outline=(180, 200, 255), width=3)
+        for gx in range(x0 + 14, x0 + 70, 14):
+            d.line((gx, 40, gx, 80), fill=(120, 160, 230), width=2)
+    d.line((78, 60, 142, 60), fill=(200, 200, 210), width=5)
+    d.rectangle((88, 34, 132, 86), fill=(225, 190, 90), outline=(120, 90, 40), width=3)
+    d.ellipse((98, 8, 122, 32), outline=(230, 230, 240), width=4)
+    return im
+
+
+def frieza_ship():
+    """Vaisseau rond blanc à hublots (clin d'œil, dessiné en code)."""
+    im = Image.new("RGBA", (240, 180), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    for lx in (50, 120, 190):
+        d.line((lx, 110, lx + (lx - 120) * 0.3, 165), fill=(170, 170, 190), width=7)
+    d.ellipse((10, 30, 230, 140), fill=(235, 235, 245), outline=(150, 150, 170), width=4)
+    d.chord((10, 30, 230, 140), 0, 180, fill=(205, 205, 220))
+    for hx in range(40, 220, 36):
+        d.ellipse((hx - 9, 72, hx + 9, 90), fill=(170, 80, 220))
+    d.ellipse((90, 18, 150, 50), fill=(200, 140, 255), outline=(120, 60, 180), width=3)
+    return im
+
+
+def day_sky(warm):
+    """Ciel de jour (demandé : « le ciel c'est déprimant ») : bleu vif → clair, soleil + halo ; warm = un peu doré."""
+    y = np.linspace(0, 1, H)[:, None, None]
+    top = np.array([30, 110, 235.])
+    bot = np.array([165, 220, 255.]) * (1 - warm * .4) + np.array([255, 225, 160.]) * warm * .4
+    a = top * (1 - y) + bot * y
+    im = Image.fromarray(a.repeat(W, 1).clip(0, 255).astype(np.uint8)).convert("RGBA")
+    g = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    gd = ImageDraw.Draw(g)
+    gd.ellipse((700, 380, 1020, 700), fill=(255, 250, 200, 120))
+    im.alpha_composite(g.filter(ImageFilter.GaussianBlur(60)))
+    ImageDraw.Draw(im).ellipse((790, 470, 930, 610), fill=(255, 250, 215))
+    return im
+
+
 def stars(n=220, seed=1):
     r = random.Random(seed)
     return [(r.uniform(0, W), r.uniform(0, H), r.uniform(1, 3.2), r.uniform(0.3, 1)) for _ in range(n)]
@@ -117,8 +161,8 @@ def main():
     fist_x = GX + DASH + (posP[253][0] - oP[0])
     fist_y = GROUND - (bottomP - posP[253][1])
     BALL_X0 = fist_x + BALL_R - 25
-    far = mountains(1, (28, 22, 58, 255), 170, 1150, 320, W * 14)
-    near = mountains(2, (14, 12, 30, 255), 120, 1290, 230, W * 28)
+    far = mountains(1, (120, 160, 220, 255), 170, 1150, 320, W * 14)
+    near = mountains(2, (60, 130, 80, 255), 120, 1290, 230, W * 28)
     ball_big = ball_sprite(BALL_R)
     ball_mid = ball_sprite(130)
     kame = kame_house()
@@ -130,6 +174,7 @@ def main():
     bolt = list(vfxgen.frames("lightning", 260, (255, 240, 120)))
     fT, fS, fN, fL = F("anton.woff2", 100), F("mont900.woff2", 30), F("anton.woff2", 104), F("anton.woff2", 64)
     rnd = random.Random(7)
+    sat, ship, hits = satellite(), frieza_ship(), {}
     debris, trail = [], []
     proc = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s",
                              f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-preset", "veryfast", "-crf",
@@ -138,21 +183,21 @@ def main():
     for fi in range(int(DUR * FPS)):
         t = fi / FPS
         tt = t if t < T_HIT else max(T_HIT, t - 0.2)
-        e = tt - E0
+        e = (tt - E0) / TS if tt > E0 else tt - E0
         km = km_at(tt)
         if T_BACK <= t:
             km = SEG[-1][1]
         # ---------------------------------------------------------------- scènes
-        if t < E0 + 7.4 or t >= T_BACK:
+        if t < E0 + 7.4 * TS or t >= T_BACK:
             # monde « au sol » : de 0 à 2.2 s terre, puis mer ; la caméra monte vers le ciel entre 4.2 et 7.4 s
             if t >= T_BACK:
                 warm, scroll, tilt, sea = 1.0, 0.0, 0.0, 0.0
             else:
                 warm = min(1.0, max(0.0, e / 2.5)) if e > 0 else 0.0
-                scroll = (km * 900 if km < 15 else 15 * 900 + (km - 15) * 300)
+                scroll = (km * 1300 if km < 15 else 15 * 1300 + (km - 15) * 400)
                 tilt = ease((e - 4.2) / 3.2) if e > 4.2 else 0.0
                 sea = ease((e - 1.9) / 0.6) if e > 1.9 else 0.0
-            img = sky(warm)
+            img = day_sky(warm)
             if tilt > 0:                                              # le ciel fonce, les étoiles arrivent
                 dk = Image.new("RGBA", (W, H), (2, 2, 10, int(255 * min(1, tilt * 1.15))))
                 img.alpha_composite(dk)
@@ -168,9 +213,9 @@ def main():
             d = ImageDraw.Draw(img, "RGBA")
             gy = GROUND + shift
             if gy < H:
-                gcol = tuple(int(a * (1 - sea) + b * sea) for a, b in zip((8, 8, 18), (20, 60, 120)))
+                gcol = tuple(int(a * (1 - sea) + b * sea) for a, b in zip((70, 150, 70), (30, 120, 210)))
                 d.rectangle((0, gy, W, H), fill=gcol)
-                d.line((0, gy, W, gy), fill=(150, 230, 255), width=4)
+                d.line((0, gy, W, gy), fill=(190, 240, 140), width=6)
                 if sea > 0:
                     for k in range(14):
                         x = (k * 170 - scroll * 0.9) % (W + 200) - 100
@@ -187,7 +232,7 @@ def main():
                 for k in range(6):
                     cx_ = (k * 300 - (e - 4.0) * 2600) % (W + 600) - 300
                     cy_ = 900 + (k % 3) * 220 - tilt * 300
-                    d.ellipse((cx_, cy_, cx_ + 260, cy_ + 70), fill=(255, 255, 255, int(110 * (1 - tilt))))
+                    d.ellipse((cx_, cy_, cx_ + 260, cy_ + 70), fill=(255, 255, 255, int(200 * (1 - tilt))))
             # Kame House
             if 2.4 < e < 4.4 and t < T_BACK:
                 kx = W + 200 - (e - 2.4) * 900
@@ -195,7 +240,7 @@ def main():
                 if abs(e - KAME_AT) < 0.9 and not any(l[1].startswith("KAME") for l in labels):
                     labels.append((t, "KAME HOUSE · 11 km", (255, 160, 190)))
             # Goku (au début, puis au retour)
-            if t < E0 + 1.5 or t >= T_BACK:
+            if t < E0 + 1.2 or t >= T_BACK:
                 if t >= T_BACK:
                     pose = dict(gp.IDLE)
                     pose[53] += 2 * math.sin(t * 5)
@@ -247,10 +292,28 @@ def main():
             # Lune en easter egg
             d.ellipse((800, 640, 900, 740), fill=(220, 220, 210))
             d.ellipse((830, 670, 850, 690), fill=(180, 180, 170))
-            k = (e - 7.4) / (11.6 - 7.4)
-            ang = math.radians(200 - 360 * ease(k) * 1.0)
+            k = (e - 7.4) / (SP - 7.4)
+            ang = math.radians(200 - 360 * (0.15 * ease(k) + 0.85 * k))
             R = 330 + 70
             bxp, byp = ec[0] + math.cos(ang) * R, ec[1] - math.sin(ang) * R
+            deg = math.degrees(ang)
+            for name, adeg, spr, lab, col in (("sat", 150, sat, "SATELLITE DOWN", (200, 220, 255)),
+                                              ("ship", 40, ship, "FRIEZA'S SHIP?!", (200, 120, 255))):
+                ox, oy = ec[0] + math.cos(math.radians(adeg)) * R, ec[1] - math.sin(math.radians(adeg)) * R
+                if name not in hits and deg <= adeg:
+                    hits[name] = t
+                    labels.append((t, lab, col))
+                if name not in hits:
+                    img.paste(spr, (int(ox - spr.width / 2), int(oy - spr.height / 2 + 6 * math.sin(t * 3))), spr)
+                else:
+                    a_ = t - hits[name]
+                    if a_ < 1.2:                                      # éjecté en tournant
+                        rs = spr.rotate(a_ * 700, resample=Image.BICUBIC)
+                        img.paste(rs, (int(ox - rs.width / 2 + a_ * 500), int(oy - rs.height / 2 - a_ * 420)), rs)
+                    if a_ < 0.8:
+                        ex = explo[min(len(explo) - 1, int(a_ / 0.8 * len(explo)))]
+                        img.paste(ex, (int(ox - ex.width / 2), int(oy - ex.height / 2)), ex)
+            d = ImageDraw.Draw(img, "RGBA")
             trail.append((bxp, byp))
             del trail[:-40]
             for j, (tx, ty) in enumerate(trail):
@@ -260,11 +323,11 @@ def main():
             d.ellipse((bxp - 34, byp - 34, bxp + 34, byp + 34), outline=(255, 200, 120, 200), width=4)
             if k > 0.08 and not any(l[1].startswith("LEAVING") for l in labels):
                 pass
-            if k > 0.45 and not any(l[1].startswith("AROUND") for l in labels):
+            if k > 0.78 and not any(l[1].startswith("AROUND") for l in labels):
                 labels.append((t, "AROUND THE WORLD?!", (120, 230, 255)))
         d = ImageDraw.Draw(img, "RGBA")
         # ---------------------------------------------------------------- la boule (phases au sol / ciel)
-        if T_HIT - 1 < t < E0 + 7.4:
+        if t < E0 + 7.4 * TS:
             if t < E0:
                 bx, by, bimg = BALL_X0, GROUND - BALL_R, ball_big
             else:
@@ -402,7 +465,7 @@ def main():
             sh = 16
         if 0 <= ee < 0.8:
             sh = 30 * (1 - ee / 0.8)
-        if abs(t - (E0 + VEG_AT)) < 0.25 or 0 <= t - T_BONK < 0.4:
+        if abs(t - (E0 + VEG_AT * TS)) < 0.25 or 0 <= t - T_BONK < 0.4 or any(0 <= t - h_ < 0.3 for h_ in hits.values()):
             sh = 20
         if sh:
             dx, dy = rnd.randint(-int(sh), int(sh)), rnd.randint(-int(sh), int(sh))
@@ -431,12 +494,17 @@ def main():
     put(T_SWING, S("teleport"), 0.5)
     put(T_HIT, S("hit", 1), 1.0)
     put(T_HIT + 0.2, S("bomb", 2), 0.9)
-    put(E0 + MACH_AT, S("bomb", 4), 0.7)
-    put(E0 + 1.0, S("beam", 3), 0.35)
-    put(E0 + VEG_AT, S("hit", 2), 1.0)
-    put(E0 + VEG_AT + 0.05, S("ko"), 0.6)
-    put(E0 + 5.8, S("beam", 1), 0.5)
-    put(E0 + 7.4, S("teleport", 1), 0.5)
+    put(E0 + MACH_AT * TS, S("bomb", 4), 0.7)
+    put(E0 + 1.0 * TS, S("beam", 3), 0.35)
+    put(E0 + VEG_AT * TS, S("hit", 2), 1.0)
+    put(E0 + VEG_AT * TS + 0.05, S("ko"), 0.6)
+    put(E0 + 5.8 * TS, S("beam", 1), 0.5)
+    put(E0 + 7.4 * TS, S("teleport", 1), 0.5)
+    for adeg in (150, 40):                                           # satellite, vaisseau
+        kk = next(i / 2000 for i in range(2000) if 200 - 360 * (0.15 * ease(i / 2000) + 0.85 * i / 2000) <= adeg)
+        th = E0 + (7.4 + kk * (SP - 7.4)) * TS
+        put(th, S("hit", 4), 0.9)
+        put(th + 0.03, S("bomb", 6), 0.6)
     put(T_BACK + 0.4, S("teleport", 2), 0.6)
     put(T_BONK, S("hit", 3), 1.0)
     put(T_BONK + 0.05, S("ko", 1), 0.7)
