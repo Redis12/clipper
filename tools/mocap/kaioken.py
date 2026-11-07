@@ -76,6 +76,11 @@ Y_CROUCH = g.draw(_c, sa.P["crouch"], 300, 0, ground=GY + 8, record=False)["y"]
 FLIPY = [GY + 8 - h * HIPK for h in flip.hip]
 
 
+# charge du Kamehameha DEVANT lui (mains en coupe devant la taille, buste droit) au lieu des mains derrière la hanche
+KAME_FRONT = dict(sa.P["kame_charge"], hip=94, spine=95, chest=97, neck=92, head=86,
+                  uarm_f=300, farm_f=35, uarm_b=308, farm_b=40)
+
+
 def state(t):
     """(pose, x écran, lift, rot, y des hanches ou None = posé au sol)"""
     X0 = 170
@@ -120,10 +125,10 @@ def state(t):
         return sa.lerp(sa.P["run_a"], sa.P["stance_low"], u), xs, 0.0, 0.0, None
     if t < T_FIRE:
         u = ease((t - T_KAME) / 0.4)
-        return sa.lerp(sa.P["stance_low"], sa.P["kame_charge"], u), xs, 0.0, 0.0, None
+        return sa.lerp(sa.P["stance_low"], KAME_FRONT, u), xs, 0.0, 0.0, None
     if t < T_FLASH + 0.4:
         u = back_out((t - T_FIRE) / 0.18)
-        return sa.lerp(sa.P["kame_charge"], sa.P["kame_fire"], u), xs, 0.0, 0.0, None
+        return sa.lerp(KAME_FRONT, sa.P["kame_fire"], u), xs, 0.0, 0.0, None
     u = ease((t - T_FLASH - 0.4) / 0.5)
     return sa.lerp(sa.P["kame_fire"], sa.P["stance"], u), xs, 0.0, 0.0, None
 
