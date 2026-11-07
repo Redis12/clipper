@@ -88,6 +88,14 @@ def load(path, t0=0.0, t1=None, fps=24, side=None):
     n1 = len(data) if t1 is None else min(len(data), int(t1 / ft))
     step = 1 / fps / ft
     frames = [fk(joints, data[int(i)]) for i in np.arange(n0, n1, step)]
+    return project(frames, side)
+
+
+def project(frames, side=None, fwd0=None):
+    """positions 3D (Y en haut ; noms Hips, Spine1, Neck, Head, Left/RightArm, …ForeArm, …Hand, …UpLeg, …Leg, …Foot,
+    …ToeBase) → (pose, x, lift, facing). x et lift sont en LONGUEURS DE JAMBE (indépendant de l'unité du fichier)."""
+    P0 = frames[0]
+    leg = float(np.linalg.norm(P0["LeftUpLeg"] - P0["LeftLeg"]) + np.linalg.norm(P0["LeftLeg"] - P0["LeftFoot"]))
     # caméra de profil QUI SUIT LE CORPS : à chaque image, on regarde le perso de côté par rapport à SES hanches
     # (comme un jeu de combat 2D) ; une rotation sur lui-même (coup de pied retourné) devient un demi-tour de l'image.
     def fwd_of(P):
@@ -99,10 +107,17 @@ def load(path, t0=0.0, t1=None, fps=24, side=None):
     yaw = np.unwrap([math.atan2(f[2], f[0]) for f in fws])
     yaw = np.convolve(np.pad(yaw, 2, mode="edge"), np.ones(5) / 5, "valid")
     y0 = yaw[0]
+    # fwd0 = direction de la cible (Mixamo : +Z). Le perso garde son décalage (garde de profil, hanches à 45°) et la
+    # caméra ne suit que les rotations par rapport à la 1re image.
+    base = math.atan2(fwd0[2], fwd0[0]) if fwd0 is not None else y0
+    yaw = yaw - y0 + base
+    y0 = base
     dirx = np.array([math.cos(y0), 0, math.sin(y0)])          # axe de déplacement à l'écran
     side = side or 1
     out = []
-    ys = [min(P["LeftToeBase"][1], P["RightToeBase"][1], P["LeftFoot"][1], P["RightFoot"][1]) for P in frames]
+    def low(P):                                    # point le plus bas du corps (pieds, ou dos/mains quand il est au sol)
+        return min(v[1] for k, v in P.items() if not k.endswith("_end") and "Top" not in k)
+    ys = [low(P) for P in frames]
     ground = np.percentile(ys, 3)
     facing = 1
     for P, yw in zip(frames, yaw):
@@ -120,8 +135,12 @@ def load(path, t0=0.0, t1=None, fps=24, side=None):
         for role, (a, b) in ROLE_J.items():
             A, B = p2(a), p2(b)
             pose[role] = math.degrees(math.atan2(B[1] - A[1], B[0] - A[0])) % 360
-        foot = min(P["LeftFoot"][1], P["RightFoot"][1], P["LeftToeBase"][1], P["RightToeBase"][1])
-        lift = foot - ground
-        lift = 0.0 if lift < 1.2 else lift - 1.2
-        out.append((pose, float(P["Hips"] @ dirx) * side, lift, facing))
+        # tête : la mocap penche beaucoup la tête (menton rentré du boxeur) ; avec la grosse tête du perso 2D ça cache
+        # les bras → on garde 35 % de l'écart avec le buste, plafonné à ±18°
+        for k in ("neck", "head"):
+            dlt = (pose[k] - pose["chest"] + 180) % 360 - 180
+            pose[k] = (pose["chest"] + max(-18, min(18, dlt * 0.35))) % 360
+        lift = (low(P) - ground) / leg
+        lift = 0.0 if lift < 0.07 else lift - 0.07
+        out.append((pose, float(P["Hips"] @ dirx) * side / leg, lift, facing))
     return out
