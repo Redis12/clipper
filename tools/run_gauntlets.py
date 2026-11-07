@@ -83,7 +83,9 @@ if "sukuna" in sys.argv:                              # 07/11 : Sukuna (Shibuya,
     foes = [{"name": n, "image_path": N + p} for n, p in [
         ("TenTen", "TenTen/TenTen.jpg"), ("Sakura", "Sakura/Sakura.jpg"), ("Tsunade", "Tsunade/Tsunade.png"),
         ("Orochimaru", "Orochimaru/Orochimaru.jpg"), ("Jiraiya", "Jiraya/Jiraya.png"), ("Raikage", "Raikage/Raikage.jpg"),
-        ("Itachi", "Itachi/Itachi.jpg")]]
+        ("Itachi", "Itachi/Itachi.jpg"), ("Pain", "Pain/Pain.jpg"), ("Minato", "Minato/Minato.jpg"),
+        ("Obito", "Obito/Obito.png"), ("Madara", "Madara/Madara.jpg")]]
+    foes.append({"name": "Naruto", "image_path": L + "_fusion/Naruto/8 SIX PATH.jpg"})   # la liste continue : pas de spoil
     foes[1].update(gag=True, gag_s=1.3, say="SHANNAROOO! 👊")
     foes[3].update(gag=True, gag_s=1.5, say="What a fine vessel... I want that body 🐍")
     foes[6].update(gag=True, gag_s=1.5, say="You're already in my genjutsu.", gag_label="SHARINGAN")
