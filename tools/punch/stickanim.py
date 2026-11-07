@@ -25,12 +25,12 @@ ROLES_GOKU = {  # Goku SSJ1 (library/_sticknodes/Goku SSJ1.json)
 ROLES_VEGETA = {  # library/_sticknodes/Dragon Ball/Vegeta (*).json (même squelette pour toutes les tenues de Vegeta)
     "hip": 16, "spine": 18, "chest": 21, "neck": 20, "head": 38,
     "uarm_f": 133, "farm_f": 134, "uarm_b": 1, "farm_b": 2,
-    "thigh_f": 127, "shin_f": 128, "thigh_b": 11, "shin_b": 12,
+    "thigh_f": 127, "shin_f": 128, "thigh_b": 11, "shin_b": 12, "_native_left": True,
 }
 ROLES_GOKU_GI = {  # library/_sticknodes/Dragon Ball/Goku (Turtle suit Gi).json : Goku de base, vrais cheveux noirs
     "hip": 43, "spine": 51, "chest": 61, "neck": 69, "head": 70,
     "uarm_f": 274, "farm_f": 275, "uarm_b": 1, "farm_b": 2,
-    "thigh_f": 235, "shin_f": 258, "thigh_b": 8, "shin_b": 29,
+    "thigh_f": 235, "shin_f": 258, "thigh_b": 8, "shin_b": 29, "_native_left": True,
 }
 FIST_F, FIST_B = "farm_f", "farm_b"           # bout de l'avant-bras = poing
 
@@ -95,7 +95,7 @@ P["block"] = dict(P["stance"], uarm_f=40, farm_f=110, uarm_b=50, farm_b=118, hip
 
 
 def to_abs(pose, roles):
-    return {roles[k]: v for k, v in pose.items() if k in roles}
+    return {roles[k]: v for k, v in pose.items() if k in roles and not k.startswith("_")}
 
 
 def lerp(a, b, t):
@@ -159,8 +159,11 @@ class Track:
 
 
 class Actor:
-    def __init__(self, fig, roles=ROLES_GOKU, scale=0.75, hair_nodes_colors=None, flip=False, recolor=None):
+    def __init__(self, fig, roles=ROLES_GOKU, scale=0.75, hair_nodes_colors=None, flip=False, recolor=None,
+                 native_left=None):
         self.fig, self.roles, self.scale, self.flip = fig, roles, scale, flip
+        # squelette dessiné tourné vers la GAUCHE dans Stick Nodes (pieds, visage, cheveux) → on miroite les angles
+        self.native_left = roles.get("_native_left", False) if native_left is None else native_left
         self.recolor = recolor
         self.hair_cols = hair_nodes_colors or set()
         self.trail = deque(maxlen=6)
@@ -175,8 +178,12 @@ class Actor:
             if self.recolor:
                 return self.recolor(c)
             return c
-        im, pos, org = sn.render(self.fig, scale=self.scale, absolute=to_abs(pose, self.roles), flip=self.flip,
-                                 color_map=cm)
+        ab = to_abs(pose, self.roles)
+        flip = self.flip
+        if self.native_left:
+            ab = {k: 180 - v for k, v in ab.items()}
+            flip = not flip
+        im, pos, org = sn.render(self.fig, scale=self.scale, absolute=ab, flip=flip, color_map=cm)
         return im, pos, org
 
     def draw(self, canvas, pose, x, y, rot=0.0, hair=None, alpha=1.0, ground=None, trail=0, ghost_col=None,
