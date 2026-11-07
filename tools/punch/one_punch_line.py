@@ -21,7 +21,7 @@ import goku_poses as gp  # noqa: E402
 import rig  # noqa: E402
 import sticknodes as sn  # noqa: E402
 from mugen_punch import F, GROUND, H, W, FPS, mountains  # noqa: E402
-from one_punch import draw_stick  # noqa: E402
+from one_punch import draw_stick, stick_pts  # noqa: E402
 import hud  # noqa: E402
 from stick_punch import GX, SCALE, T_CHARGE, T_HIT, T_SSJ, T_SWING, ease, pose_at  # noqa: E402
 from clipper.slides import fusion, render, vfxgen  # noqa: E402
@@ -36,6 +36,70 @@ WA, WB = 500.0, 900.0            # onde : x = WB·a + WA·a² (accélère)
 GRAV = 2000.0
 DASH = 95
 GSC = SCALE * 0.75               # Goku un peu plus petit (demandé)
+
+
+SKIN = (250, 214, 178)
+# petits clins d'œil dans la file (demandé : « des petites refs, c'est tout ») : index → type
+EGGS = {3: "straw", 7: "band", 10: "bald", N - 5: "yamcha"}
+EGG_COL = {"straw": (200, 40, 40), "band": (240, 120, 30), "bald": (240, 120, 30), "yamcha": (240, 120, 30)}
+
+
+def draw_egg(d, kind, x, y, h, ph, rot, mode, hat=True):
+    """Accessoire dessiné sur la tête d'un stickman (chapeau de paille, bandeau, crâne à points…)."""
+    p = stick_pts(x, y, h, ph, rot, mode)
+    hx, hy = p["head"]
+    nx, ny = p["neck"]
+    ang = math.atan2(hy - ny, hx - nx)                       # direction « haut » de la tête
+    ux, uy = math.cos(ang), math.sin(ang)                    # vers le haut
+    vx, vy = -uy, ux                                         # perpendiculaire
+    r = h * 0.11
+    def P(a, b):
+        return (hx + ux * a * r + vx * b * r, hy + uy * a * r + vy * b * r)
+    if kind == "straw" and hat:
+        d.polygon([P(0.5, -2.1), P(0.9, -1.0), P(0.9, 1.0), P(0.5, 2.1), P(0.2, 0)], fill=(240, 205, 90))
+        d.polygon([P(0.7, -0.9), P(1.7, -0.7), P(1.7, 0.7), P(0.7, 0.9)], fill=(240, 205, 90))
+        d.polygon([P(0.75, -0.9), P(1.05, -0.85), P(1.05, 0.85), P(0.75, 0.9)], fill=(200, 30, 30))
+    elif kind == "band":
+        d.polygon([P(0.15, -1.05), P(0.55, -1.05), P(0.55, 1.05), P(0.15, 1.05)], fill=(30, 40, 110))
+        d.polygon([P(0.18, -0.45), P(0.52, -0.45), P(0.52, 0.45), P(0.18, 0.45)], fill=(200, 205, 215))
+        for b in (-1.0, 0.0, 1.0):                           # cheveux jaunes en pointes
+            d.polygon([P(0.6, b - 0.55), P(1.55, b + 0.15), P(0.6, b + 0.55)], fill=(255, 210, 40))
+    elif kind == "zoro":
+        for b in (-0.9, -0.3, 0.3, 0.9):
+            d.polygon([P(0.3, b - 0.45), P(1.35, b), P(0.3, b + 0.45)], fill=(60, 170, 70))
+        hip = p["hip"]
+        for k in range(3):                                   # 3 sabres à la ceinture
+            d.line((hip[0] - 0.05 * h, hip[1] + k * 4, hip[0] + 0.45 * h, hip[1] - 0.12 * h + k * 7), fill=(30, 30, 30),
+                   width=max(2, int(h * 0.03)))
+    elif kind in ("bald", "yamcha"):
+        d.ellipse((hx - r, hy - r, hx + r, hy + r), fill=SKIN)
+        if kind == "bald":
+            for a, b in ((0.55, -0.35), (0.55, 0.0), (0.55, 0.35), (0.25, -0.2), (0.25, 0.15), (0.8, 0.0)):
+                q = P(a, b)
+                d.ellipse((q[0] - 2.5, q[1] - 2.5, q[0] + 2.5, q[1] + 2.5), fill=(90, 60, 50))
+        else:
+            for b in (-0.9, -0.3, 0.3, 0.9):                 # cheveux noirs
+                d.polygon([P(0.4, b - 0.4), P(1.5, b + 0.5), P(0.4, b + 0.4)], fill=(25, 25, 30))
+
+
+def yamcha_pose(d, x, h, col):
+    """Le célèbre K.O. recroquevillé dans son cratère."""
+    g = GROUND
+    d.ellipse((x - h * 0.85, g - h * 0.12, x + h * 0.85, g + h * 0.22), fill=(150, 105, 70))
+    d.ellipse((x - h * 0.7, g - h * 0.05, x + h * 0.7, g + h * 0.16), fill=(120, 82, 55))
+    w = max(2, int(h * 0.075))
+    hip, sh_ = (x + h * 0.15, g - h * 0.05), (x - h * 0.25, g - h * 0.1)
+    d.line((hip, sh_), fill=col, width=w)
+    d.line((hip, (x + h * 0.3, g - h * 0.32), (x + h * 0.05, g - h * 0.3)), fill=col, width=w, joint="curve")
+    d.line((hip, (x + h * 0.4, g - h * 0.18), (x + h * 0.15, g - h * 0.2)), fill=col, width=w, joint="curve")
+    d.line((sh_, (x - h * 0.15, g - h * 0.3)), fill=col, width=w)
+    d.line((sh_, (x - h * 0.05, g - h * 0.02)), fill=col, width=w)
+    r = h * 0.11
+    hx, hy = x - h * 0.4, g - h * 0.09
+    d.ellipse((hx - r, hy - r, hx + r, hy + r), fill=SKIN)
+    for b in (-0.8, -0.2, 0.4):
+        d.polygon([(hx - r * 0.4, hy - r * 0.3 + b * r), (hx - r * 1.5, hy + b * r + r * 0.4), (hx - r * 0.4, hy + b * r + r * 0.5)],
+                  fill=(25, 25, 30))
 
 
 def desert_sky():
@@ -68,6 +132,11 @@ def main():
     pal = [(30, 30, 40)] * 5 + [(70, 70, 85)] * 2 + [(160, 40, 45), (40, 70, 160), (240, 240, 245)]
     men = [dict(x=X0 + i * GAP, col=rnd.choice(pal), ph=rnd.uniform(0, 6.3), hit=None) for i in range(N)]
     men[-1]["col"] = (30, 30, 40)
+    for i_, k_ in EGGS.items():
+        men[i_]["col"] = EGG_COL[k_]
+        men[i_]["egg"] = k_
+    men[N - 5]["yam"] = True
+    hat = {}                                                          # chapeau de paille qui s'envole
     X_LAST = men[-1]["x"]
     # fin de l'onde : juste devant le dernier
     span = X_LAST - 30 - fist_x
@@ -207,6 +276,8 @@ def main():
                 m["vx"] = rnd.uniform(200, 900)
                 m["vy"] = -rnd.uniform(1300, 2500)
                 m["spin"] = rnd.uniform(600, 1500) * rnd.choice((1, -1))
+                if m.get("yam"):
+                    m["vx"], m["vy"] = -120, -1500
                 launches.append(t)
             if m["hit"] is None:
                 x = m["x"] + march - cx
@@ -223,6 +294,8 @@ def main():
                 mode = "run" if march > 0 else ("stand" if t > TP else "stand")
                 ph = m["ph"] + t * 14
                 draw_stick(d, x, GROUND, SH, ph, 0, mode, m["col"], look=look)
+                if m.get("egg"):
+                    draw_egg(d, m["egg"], x, GROUND, SH, ph, 0, mode)
             else:
                 aa = (t - m["hit"]) * (0.45 if t < TP + FREEZE + 0.9 else 1.0)
                 tl = 2 * -m["vy"] / GRAV
@@ -232,8 +305,30 @@ def main():
                     rot = m["spin"] * aa
                 else:                                                   # retombé : couché
                     x, y, rot = m["x"] + m["vx"] * tl - cx, GROUND, 90
-                if -80 < x < W + 80 and y > -80:
+                if m.get("yam") and aa >= tl:
+                    if -120 < x < W + 120:
+                        yamcha_pose(d, x, SH, m["col"])
+                elif -80 < x < W + 80 and y > -80:
                     draw_stick(d, x, y, SH, 0, rot, "fly", m["col"])
+                    if m.get("egg"):
+                        draw_egg(d, m["egg"], x, y, SH, 0, rot, "fly", hat=False)
+                if m.get("egg") == "straw":                           # le chapeau part tout seul et redescend en planant
+                    ha = t - m["hit"]
+                    hxw = m["x"] + 260 * ha
+                    hyw = GROUND - SH - 900 * ha + 260 * ha * ha
+                    hyw = min(hyw, GROUND - 12)
+                    q = hxw - cx + 30 * math.sin(ha * 5)
+                    if -100 < q < W + 100:
+                        draw_egg(d, "straw", q, hyw + SH, SH, 0, 25 * math.sin(ha * 5), "stand")
+        # Zoro, perdu tout au bout de la file (il n'était même pas dans la queue)
+        if t >= T_END - 0.6:
+            zx = X_LAST + 250 + 30 * math.sin((t - T_END) * 0.8) - cx
+            if -80 < zx < W + 80:
+                draw_stick(d, zx, GROUND, SH, 0, 0, "stand", (40, 120, 50), look=math.sin(t * 2.3))
+                draw_egg(d, "zoro", zx, GROUND, SH, 0, 0, "stand")
+                if t >= T_END + 0.6:
+                    d.text((zx, GROUND - SH - 60), "?", font=hud.font("luckiest-guy.woff2", 60), fill=(120, 230, 120),
+                           anchor="mm", stroke_width=5, stroke_fill=(20, 40, 20))
         # le dernier s'envole
         if t >= T_FLY:
             m = men[-1]
