@@ -6,6 +6,7 @@ Vue de profil, tourné vers la droite. Une pose = angles en degrés (0 = vers le
 `draw(pose, form, scale)` -> image RGBA. Les formes changent les cheveux, les yeux et l'aura.
 """
 import math
+import random
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
@@ -156,3 +157,102 @@ if __name__ == "__main__":
         img, _ = draw(p, fm)
         sheet.alpha_composite(img, (i * 420, 0))
     sheet.save(sys.argv[1] if len(sys.argv) > 1 else "/tmp/rig.png")
+
+
+# ---------------------------------------------------------------- style « animation flash » (07/11, référence YouTube)
+PANTS, PANTS_D, NAVY, SKIN2 = (240, 120, 40), (205, 95, 30), (28, 36, 80), (246, 205, 170)
+SHIRT = (40, 70, 160)
+
+
+def _quad(d, a, b, wa, wb, col, bulge=0.0):
+    """Segment épais en polygone (largeur wa au départ, wb à l'arrivée, ventre au milieu)."""
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    L = math.hypot(dx, dy) or 1
+    px, py = -dy / L, dx / L
+    m = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+    wm = (wa + wb) / 2 * (1 + bulge)
+    pts = [(a[0] + px * wa / 2, a[1] + py * wa / 2), (m[0] + px * wm / 2, m[1] + py * wm / 2),
+           (b[0] + px * wb / 2, b[1] + py * wb / 2), (b[0] - px * wb / 2, b[1] - py * wb / 2),
+           (m[0] - px * wm / 2, m[1] - py * wm / 2), (a[0] - px * wa / 2, a[1] - py * wa / 2)]
+    d.polygon(pts, fill=col)
+    for p, w in ((a, wa), (b, wb)):
+        d.ellipse((p[0] - w / 2, p[1] - w / 2, p[0] + w / 2, p[1] + w / 2), fill=col)
+
+
+def aura_poly(cx, cy, rx, ry, phase, n=26, seed=0):
+    r = random.Random(seed)
+    pts = []
+    for i in range(n):
+        a = i / n * math.tau
+        up = max(0.0, -math.cos(a))                      # flammes plus hautes en haut
+        k = 1 + (0.25 + 0.55 * up) * (0.5 + 0.5 * math.sin(phase * 7 + i * 1.9 + r.random() * 6)) * (i % 2)
+        pts.append((cx + math.sin(a) * rx * (k if i % 2 else 0.85), cy - math.cos(a) * ry * (k if i % 2 else 0.85)))
+    return pts
+
+
+def draw_flat(pose, form="base", phase=0.0, aura=None):
+    """Goku plat façon animation flash : fin, pantalon bouffant, pas de visage, grosses mèches."""
+    f = FORMS[form]
+    s = 2.0
+    Wc, Hc = int(560 * s), int(720 * s)
+    im = Image.new("RGBA", (Wc, Hc), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    hip = (Wc * 0.45, Hc * 0.62 + pose["crouch"] * s)
+    th, tl, ua, fa = 92 * s, 128 * s, 72 * s, 66 * s
+    neck = _pt(hip, 180 + pose["lean"], tl)
+    sh = _pt(hip, 180 + pose["lean"], tl * 0.88)
+    aura_col = aura if aura is not None else f["aura"]
+    if aura_col:                                         # aura en flammes derrière le perso
+        cx, cy = hip[0], hip[1] - 70 * s
+        for scl, alpha, mix in ((1.25, 150, 0.0), (1.0, 200, 0.45)):
+            col = tuple(int(c + (255 - c) * mix) for c in aura_col)
+            lay = Image.new("RGBA", (Wc, Hc), (0, 0, 0, 0))
+            ImageDraw.Draw(lay).polygon(aura_poly(cx, cy, 120 * s * scl, 230 * s * scl, phase + scl, seed=int(scl * 10)),
+                                        fill=col + (alpha,))
+            im.alpha_composite(lay.filter(ImageFilter.GaussianBlur(2 * s)))
+    # jambe arrière
+    for hp, kn, col, boot in ((pose["hip_b"], pose["kn_b"], PANTS_D, NAVY), ):
+        k_ = _pt(hip, hp, th)
+        a_ = _pt(k_, hp - kn, th)
+        _quad(d, hip, k_, 44 * s, 40 * s, col, 0.15)
+        _quad(d, k_, a_, 40 * s, 24 * s, col, 0.25)
+        d.ellipse((a_[0] - 13 * s, a_[1] - 9 * s, a_[0] + 13 * s, a_[1] + 9 * s), fill=SHIRT)
+        d.rounded_rectangle((a_[0] - 14 * s, a_[1] + 2 * s, a_[0] + 30 * s, a_[1] + 22 * s), 9 * s, fill=boot)
+    # bras arrière
+    e_ = _pt(sh, pose["sh_b"], ua)
+    h_ = _pt(e_, pose["sh_b"] + pose["el_b"], fa)
+    _quad(d, sh, e_, 15 * s, 13 * s, tuple(int(c * .88) for c in SKIN2))
+    _quad(d, e_, h_, 13 * s, 12 * s, tuple(int(c * .88) for c in SKIN2))
+    w_ = _pt(e_, pose["sh_b"] + pose["el_b"], fa * 0.78)
+    _quad(d, w_, h_, 17 * s, 17 * s, (30, 50, 120))
+    d.ellipse((h_[0] - 10 * s, h_[1] - 10 * s, h_[0] + 10 * s, h_[1] + 10 * s), fill=tuple(int(c * .88) for c in SKIN2))
+    # buste : maillot bleu dessous, kimono orange par-dessus, ceinture
+    _quad(d, hip, neck, 38 * s, 44 * s, SHIRT)
+    mid = ((hip[0] * 0.35 + neck[0] * 0.65), (hip[1] * 0.35 + neck[1] * 0.65))
+    _quad(d, hip, mid, 40 * s, 40 * s, PANTS)
+    _quad(d, mid, _pt(mid, 180 + pose["lean"], 26 * s), 40 * s, 26 * s, PANTS)
+    b0 = _pt(hip, 180 + pose["lean"], 12 * s)
+    _quad(d, _pt(b0, 90 + pose["lean"], -22 * s), _pt(b0, 90 + pose["lean"], 22 * s), 12 * s, 12 * s, SHIRT)
+    # jambe avant
+    k_ = _pt(hip, pose["hip_f"], th)
+    a_ = _pt(k_, pose["hip_f"] - pose["kn_f"], th)
+    _quad(d, hip, k_, 46 * s, 42 * s, PANTS, 0.15)
+    _quad(d, k_, a_, 42 * s, 25 * s, PANTS, 0.25)
+    d.ellipse((a_[0] - 13 * s, a_[1] - 9 * s, a_[0] + 13 * s, a_[1] + 9 * s), fill=SHIRT)
+    d.rounded_rectangle((a_[0] - 14 * s, a_[1] + 2 * s, a_[0] + 32 * s, a_[1] + 22 * s), 9 * s, fill=NAVY)
+    # tête (sans visage) + cheveux
+    hr = 27 * s
+    hc = _pt(neck, 180 + pose["lean"] + pose["head"], hr * 1.05)
+    _quad(d, neck, hc, 14 * s, 14 * s, SKIN2)
+    d.ellipse((hc[0] - hr * .92, hc[1] - hr, hc[0] + hr * .92, hc[1] + hr), fill=SKIN2)
+    _hair(d, hc, hr * 1.55, f["spikes"], f["hair"], pose["lean"] * 0.5 + pose["head"])
+    # bras avant
+    e_ = _pt(sh, pose["sh_f"], ua)
+    h_ = _pt(e_, pose["sh_f"] + pose["el_f"], fa)
+    _quad(d, sh, e_, 16 * s, 14 * s, SKIN2)
+    _quad(d, e_, h_, 14 * s, 13 * s, SKIN2)
+    w_ = _pt(e_, pose["sh_f"] + pose["el_f"], fa * 0.78)
+    _quad(d, w_, h_, 18 * s, 18 * s, SHIRT)
+    d.ellipse((h_[0] - 12 * s, h_[1] - 12 * s, h_[0] + 12 * s, h_[1] + 12 * s), fill=SKIN2)
+    out = im.resize((Wc // 2, Hc // 2), Image.LANCZOS)
+    return out, (hip[0] / 2, hip[1] / 2), (h_[0] / 2, h_[1] / 2)
