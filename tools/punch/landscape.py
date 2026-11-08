@@ -323,15 +323,66 @@ class PixelScene:
             o = int(cx * p) % TW
             img.alpha_composite(lay.crop((o, 0, o + self.W, hh)), (0, oy))
         y_end = oy + hh
-        if y_end < self.H:                                  # sous l'image : la bande d'herbe du bas répétée (pas d'aplat)
-            band = max(60, int(22 * self.s))
-            strip = img.crop((0, y_end - band, self.W, y_end))
-            y = y_end
-            while y < self.H:
-                img.paste(strip, (0, y))
-                y += band
-            shade = Image.new("RGBA", (self.W, self.H - y_end), (0, 30, 10, 0))
-            al = np.linspace(0, 90, self.H - y_end).astype(np.uint8)[:, None].repeat(self.W, 1)
-            shade.putalpha(Image.fromarray(al))
-            img.alpha_composite(shade, (0, y_end))
+        if y_end < self.H:                                  # sous l'image du pack : prairie générée (jamais répétée)
+            if self.meadow is None:
+                self.meadow = self._meadow(self.H)
+            mw, TW = self.meadow
+            o = int(cx) % TW
+            img.alpha_composite(mw.crop((o, 0, o + self.W, self.H - y_end)), (0, y_end))
         return img.convert("RGB")
+
+    meadow = None
+
+    def _meadow(self, need):
+        """herbe du 1er plan dessinée au même grain que le pack (pixels de self.s), couleurs prises dans sa dernière
+        rangée : rangées d'herbe ondulées de plus en plus grandes vers le bas (perspective), brins, fleurs."""
+        s = self.s
+        rnd = random.Random(11)
+        w0 = self.layers[-1][1] / s                          # largeur de la scène en pixels du pack
+        cw = int(round(w0))
+        ch = int(need / s) + 2
+        greens = [(69, 164, 96), (66, 143, 65), (31, 127, 65), (81, 173, 98), (21, 106, 51)]
+        a = np.zeros((ch, cw, 3), np.uint8)
+        a[:] = (31, 127, 65)                                  # couleur de la dernière rangée du pack (pas de trou)
+        y = -2.0
+        row = 0
+        xs = np.arange(cw)
+        while y < ch:
+            hgt = 5 + row * 1.6                               # rangées plus hautes vers le bas
+            col = np.array(greens[row % 4], np.uint8)
+            dark = np.array(greens[(row % 4 + 2) % 5], np.uint8)
+            wav = sum(np.sin(xs / cw * 2 * math.pi * f + rnd.uniform(0, 6.3)) / f ** 0.7 for f in (7, 13, 29, 53))
+            edge = y + hgt * 0.35 * (wav - wav.min()) / (np.ptp(wav) or 1)                       # bord irrégulier
+            edge -= np.array([rnd.choice((0, 0, 0, 1, 2, 3)) for _ in xs])                          # pointes d'herbe
+            for x in range(cw):
+                y0 = int(max(0, edge[x]))
+                a[y0:, x] = col                                                                      # jusqu'en bas
+                if (x * 7 + row) % 5 == 0:
+                    a[y0:y0 + 1, x] = dark
+            y += hgt
+            row += 1
+        im = Image.fromarray(a).convert("RGBA")
+        d = ImageDraw.Draw(im)
+        for _ in range(int(cw * ch / 140)):                   # brins clairs / foncés
+            x, yy = rnd.randrange(cw), rnd.randrange(ch)
+            hgt = 2 + int(yy / ch * 4)
+            c = rnd.choice([(8, 206, 177), (109, 151, 77), (21, 106, 51), (81, 173, 98)])
+            d.line((x, yy, x, yy - hgt), fill=c)
+        for _ in range(int(cw * ch / 420)):                   # fleurs
+            x, yy = rnd.randrange(cw), rnd.randrange(ch)
+            c = rnd.choice([(249, 199, 88), (234, 237, 235), (249, 199, 88)])
+            if yy / ch > 0.4:
+                d.rectangle((x - 1, yy, x + 1, yy), fill=c)
+                d.rectangle((x, yy - 1, x, yy + 1), fill=c)
+                d.point((x, yy), fill=(255, 240, 160))
+            else:
+                d.point((x, yy), fill=c)
+        sh = np.linspace(1.0, 0.72, ch)[:, None, None]       # un peu plus sombre en bas
+        arr = (np.asarray(im)[..., :3] * sh).astype(np.uint8)
+        im = Image.fromarray(np.dstack([arr, np.full(arr.shape[:2], 255, np.uint8)]))
+        big = im.resize((round(cw * s), round(ch * s)), Image.NEAREST)
+        TW = big.width
+        wrap = Image.new("RGBA", (TW + self.W, big.height), (0, 0, 0, 0))
+        wrap.paste(big, (0, 0))
+        wrap.paste(big.crop((0, 0, self.W, big.height)), (TW, 0))
+        return wrap, TW
