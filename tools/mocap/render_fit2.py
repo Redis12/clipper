@@ -154,13 +154,16 @@ for i in range(N):
         p = dict(pose_of(k))
         X = W / 2 + (R[k]["x"] - cam[i]) * K
         lift = 0.0
-        if i in FEET:
+        grounded = any(a <= i <= b for a, b in CUT.get("ground", []))   # au sol : jamais de saut (la perspective trompe)
+        if i in FEET and not grounded:
             floor = max(FEET[j] for j in range(i - 20, i + 21) if j in FEET)
             lift = max(0.0, floor - FEET[i] - 3) * K
         lay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         fx = FX.get(k, {}).get("fx")
-        draw_actor(A, lay, p, X, ground=GY + 8, lift=lift, shadow=None)
+        info = draw_actor(A, lay, p, X, ground=GY + 8, lift=lift, shadow=None)
         if not fx:
+            bx = info["box"]
+            X = X if bx is None else (bx[0] + bx[2]) / 2           # ombre centrée sous le corps, pas sous la hanche
             sh = ImageDraw.Draw(img, "RGBA")
             hh = max(0.15, 1 - lift / 900)
             sh.ellipse((X - 80 * hh, GY + 6 - 11 * hh, X + 80 * hh, GY + 6 + 11 * hh), fill=(0, 0, 0, int(70 * hh)))
