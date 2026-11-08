@@ -224,7 +224,8 @@ def main():
     T_WIN = T_STAR + 0.35
     DUR = T_WIN + 3.0
     CAM_MAX = X_LAST - 640
-    scene = landscape.PixelScene(W, H, GROUND, "nature_5")               # décor pixel-art (pack de l'utilisateur)
+    # nature_2 : grande prairie qui remplit tout le bas en vertical (nature_5 laissait un raccord visible)
+    scene = landscape.PixelScene(W, H, GROUND, "nature_2", scale=6.8, oy=-278)
     confetti = []
     explo = list(vfxgen.frames("explosion", 620, (255, 210, 80)))
     ring = list(vfxgen.frames("ring", 900, (255, 240, 180)))

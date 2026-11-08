@@ -280,7 +280,7 @@ class PixelScene:
            "nature_1": [0.0, 0.04, 0.12, 0.2, 0.35, 0.45, 1.0, 1.0], "nature_4": [0.0, 0.1, 0.35, 1.0],
            "nature_3": [0.0, 0.08, 0.3, 1.0]}
 
-    def __init__(self, W, H, ground, name="nature_5", ground_frac=None, scale=None):
+    def __init__(self, W, H, ground, name="nature_5", ground_frac=None, scale=None, oy=None):
         self.W, self.H = W, H
         d = DECORS / "nature" / name
         fs = sorted([f for f in d.glob("*.png") if f.stem.isdigit()], key=lambda f: int(f.stem))
@@ -292,7 +292,7 @@ class PixelScene:
             last = np.asarray(raw[-1] if (np.asarray(raw[-1])[..., 3] > 0).mean() > 0.05 else raw[-2])[..., 3]
             rows = np.nonzero((last > 0).mean(1) > 0.9)[0]
             ground_frac = (rows.min() + 6) / h0 if len(rows) else 0.85
-        self.oy = int(ground - ground_frac * h0 * s)
+        self.oy = int(ground - ground_frac * h0 * s) if oy is None else int(oy)
         par = self.PAR.get(name, [0.0] + [0.15 * i for i in range(1, len(raw))])
         self.layers = []
         for im, p in zip(raw, par + [1.0] * (len(raw) - len(par))):

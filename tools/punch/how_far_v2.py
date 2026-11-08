@@ -390,7 +390,8 @@ def main():
     kame = kame_house().transpose(Image.FLIP_LEFT_RIGHT)          # retourné 2 fois = texte lisible
     veg = fusion.icon(str(ROOT / "library/_fusion/Vegeta/1 Base.jpg"), 230, (60, 90, 255)).transpose(Image.FLIP_LEFT_RIGHT)
     eimg = earth(330)
-    scene = landscape.PixelScene(W, H, GROUND, "nature_5")
+    # nature_2 : grande prairie qui remplit tout le bas en vertical (nature_5 laissait un raccord visible)
+    scene = landscape.PixelScene(W, H, GROUND, "nature_2", scale=6.8, oy=-278)
     PL = ROOT / "library/_decors/planets"
     from PIL import ImageEnhance
     earth_fr = []
