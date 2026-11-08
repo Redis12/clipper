@@ -147,7 +147,9 @@ Par rapport à Kid Naruto vs Sasuke (même format, 268 vues) : nouvelle légende
 (même légende, 288 vues) : Naruto/Madara + défaite. → Hypothèse : format Power Up + méchant culte + légende à un mot.
 Prochaines vidéos pour vérifier : même formule, autres méchants cultes (une seule chose change à chaque fois).
 
-## 9. Le Gauntlet fait commenter (07/11)
+## 9. Le Gauntlet fait commenter (07/11) — et c'est LE format qui marche le mieux (08/11)
+**08/11, constat de l'utilisateur : « les Gauntlet c'est les vidéos qui marchent le mieux et de loin ».** → priorité de
+production : au moins un Gauntlet par jour (créneau de 18h), les autres formats en complément.
 Sur YouTube, le Gauntlet a fait beaucoup de commentaires : des gens frustrés par le résultat (« X aurait dû l'arrêter »).
 La frustration = de l'engagement. À exploiter : répondre aux commentaires dans l'heure, épingler le plus provocant,
 et faire une « Part 2 » qui répond au commentaire le plus fréquent (« You said Itachi would stop him… »).
