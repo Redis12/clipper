@@ -59,14 +59,23 @@ if __name__ == "__main__":
         for f in sys.argv[7].split(","):
             INIT.update({int(k): v for k, v in json.load(open(f)).items()})
     groups = fit2.unique_poses(FR, F.bga, a0, a1)
+    ONLY = set(int(x) for x in sys.argv[9].split(",")) if len(sys.argv) > 9 else None
     res = json.loads(OUT.read_text()) if OUT.exists() else {}
     prev, t0 = None, time.time()
     for key, members in groups:
+        if ONLY is not None and key not in ONLY:
+            continue
         rgb = np.asarray(Image.open(FR[key]).convert("RGB")).astype(np.int16)
         if (np.abs(rgb - F.bga).sum(2) >= 45).sum() < 300:
             prev = None
             continue
         inits = [INIT[i] for i in members if i in INIT][:3]
+        if ONLY is not None:                                        # reprise : les poses voisines comme départs
+            ks = sorted(INIT)
+            lo = [k for k in ks if k < key and k not in ONLY][-1:]
+            hi = [k for k in ks if k > key and k not in ONLY][:1]
+            inits += [INIT[k] for k in lo + hi]
+            prev = None
         p, c, n, box = F.fit(rgb, prev, starts(), inits)
         res[str(key)] = dict(p, cost=round(c, 3), n=n, frames=members)
         prev = p

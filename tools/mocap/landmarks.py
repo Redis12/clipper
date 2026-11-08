@@ -32,6 +32,16 @@ def find(lab):
     if blue:
         out["belt"] = blue[0][:2]
         out["wrists"] = [(x, y) for x, y, _ in blue[1:]]
+    allm = lab > 0
+    if allm.sum() > 50:                                  # points extrêmes : poing tendu, pied tendu, haut des cheveux
+        ys, xs = np.nonzero(allm)
+        i, j = xs.argmax(), xs.argmin()
+        out["right"], out["left"] = (float(xs[i]), float(ys[i])), (float(xs[j]), float(ys[j]))
+    skin = np.isin(lab, (5, 6))
+    if skin.sum() > 10:
+        ys, xs = np.nonzero(skin)
+        i = xs.argmax()
+        out["skin_r"] = (float(xs[i]), float(ys[i]))           # main la plus en avant (coup de poing)
     orange = np.isin(lab, (2, 3))
     if orange.any():
         ys, xs = np.nonzero(orange)
@@ -62,7 +72,7 @@ def dist(r, c, miss=25.0):
     """écart (px) entre les repères de la référence r et ceux de la recopie c."""
     d = _pair(r.get("boots", []), c.get("boots", []), miss) * 1.5
     d += _pair(r.get("wrists", []), c.get("wrists", []), miss * 0.6)
-    for k, w in (("head", 1.5), ("belt", 1.0), ("body", 1.0)):
+    for k, w in (("head", 1.5), ("belt", 1.0), ("body", 1.0), ("right", 1.0), ("left", 1.0), ("skin_r", 1.5)):
         if k in r and k in c:
             d += w * float(np.hypot(r[k][0] - c[k][0], r[k][1] - c[k][1]))
         elif k in r or k in c:

@@ -4,7 +4,8 @@ On ne garde que les pixels de NOTRE Goku : couleurs de sa palette (fit2.PAL), re
 seulement les morceaux reliés à son pantalon orange (l'adversaire SSJ4 a la même peau et le même liseré rouge, mais
 un pantalon jaune) ; les cheveux argentés sont repeints dans le noir du Pivot. Le reste = fond vide fixe (le même
 pour toutes les images), donc fit2 / check2 / render_fit2 marchent sans changement.
-python3 clean.py dossier_brut fond_vide.png dossier_sortie [échelle]
+python3 clean.py dossier_brut fond_vide.png dossier_sortie [échelle] [base]
+base = Goku de base (cheveux noirs gardés tels quels).
 échelle : agrandit/rétrécit l'image autour du bas-centre si Goku n'a pas la même taille que le Goku de référence.
 """
 import sys
@@ -22,14 +23,26 @@ HAIR = np.array([(166, 170, 190), (160, 166, 186), (180, 188, 205), (150, 154, 1
 HAIR_DST = (24, 24, 24)
 
 
-def clean(rgb, bg, scale=1.0):
+# Goku de base du passage 1:46–1:51 : gi plus rouge que celui du Pivot → ramené aux couleurs du Pivot
+REMAP_BASE = [((238, 78, 26), (238, 112, 60)), ((228, 68, 16), (228, 103, 52))]
+
+
+def clean(rgb, bg, scale=1.0, base=False):
+    if base:
+        rgb = rgb.copy()
+        a0 = rgb.astype(np.int16)
+        dd = np.stack([np.abs(a0 - np.array(s_, np.int16)).sum(2) for s_, _ in REMAP_BASE])
+        j = dd.argmin(0)
+        hit = dd.min(0) < 45
+        for k, (_, d_) in enumerate(REMAP_BASE):
+            rgb[hit & (j == k)] = d_
     a = rgb.astype(np.int16)
     d = np.abs(a[:, :, None, :] - fit2.PCOL[None, None]).sum(3)
     cls = fit2.PCLS[d.argmin(2)]
     near = d.min(2) < 60
     dh = np.abs(a[:, :, None, :] - HAIR[None, None]).sum(3).min(2)
-    hair = dh < 28
-    body = near & ~hair & (cls != 1)                       # pas de noir chez le Goku UI (cheveux argentés)
+    hair = (cls == 1) & near if base else dh < 28          # Goku de base : cheveux noirs ; UI : argentés
+    body = near & ~hair & (cls != 1)
     orange0 = body & np.isin(cls, (2, 3))
     if orange0.any():
         top = np.nonzero(orange0)[0].min()
@@ -89,9 +102,10 @@ def clean(rgb, bg, scale=1.0):
 if __name__ == "__main__":
     src, bgp, dst = Path(sys.argv[1]), sys.argv[2], Path(sys.argv[3])
     sc = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
+    base = len(sys.argv) > 5 and sys.argv[5] == "base"
     bg = np.asarray(Image.open(bgp).convert("RGB")).astype(np.int16)
     dst.mkdir(parents=True, exist_ok=True)
     for f in sorted(src.glob("*.png")):
         rgb = np.asarray(Image.open(f).convert("RGB"))
-        Image.fromarray(clean(rgb, bg, sc)).save(dst / f.name)
+        Image.fromarray(clean(rgb, bg, sc, base)).save(dst / f.name)
     print("ok")
