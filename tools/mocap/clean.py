@@ -53,6 +53,14 @@ def clean(rgb, bg, scale=1.0):
         if m.sum() < 20000 and (m & big).any():
             # ne pas reprendre l'adversaire : pas de jaune/magenta autour
             keep |= m & (body | hair)
+    # on ne garde que le plus gros bloc (Goku) : les miettes de l'adversaire autour partent
+    bl, bn = ndi.label(ndi.binary_dilation(keep, iterations=4), structure=np.ones((3, 3)))
+    if bn > 1:
+        sizes = ndi.sum(keep, bl, range(1, bn + 1))
+        main = bl == (1 + int(np.argmax(sizes)))
+        near_main = ndi.binary_dilation(main, iterations=14)
+        ok_b = [i + 1 for i, sz in enumerate(sizes) if sz >= 120 and (near_main & (bl == i + 1)).any()]
+        keep &= np.isin(bl, ok_b)
     # trous laissés par les traits de vitesse blancs qui passent devant lui : bouchés avec la couleur voisine
     filled = ndi.binary_fill_holes(ndi.binary_closing(keep, iterations=2))
     _, (iy, ix) = ndi.distance_transform_edt(~keep, return_indices=True)
