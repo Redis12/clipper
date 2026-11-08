@@ -30,63 +30,45 @@ def frames(video, t0, t1, fps=30):
 
 
 def cut(rgb, base, empty=None):
-    """empty = image du décor vide (caméra fixe, 0:19–0:30) : masque = différence avec le décor, bien plus propre quand
-    Goku passe devant le palais ; sinon (caméra qui bouge) : clean.py."""
-    bg = np.zeros(rgb.shape, np.int16)
-    bg[:] = KEY
+    """Découpe d'une image. empty = décor vide de la même prise (« clean plate » : décor fixe d'une animation 2D,
+    pixels identiques d'une image à l'autre) → masque = ce qui diffère du décor, PUIS bords « dé-mélangés »
+    (matting à fond connu) : un pixel de bord C = α·F + (1−α)·B, B = décor connu, F = couleur du perso la plus
+    proche → α exact, plus de liseré clair ni de trace du décor. Sans décor : clean.py (moins propre)."""
     if empty is None:
+        bg = np.zeros(rgb.shape, np.int16)
+        bg[:] = KEY
         out = clean.clean(rgb, bg, 1.0, base).astype(np.int16)
         a = (np.abs(out - np.array(KEY)).sum(2) > 0)
-    else:
-        out = rgb.astype(np.int16)
-        a = np.abs(rgb.astype(np.int16) - empty).sum(2) >= 45
-        a = ndi.binary_opening(a, iterations=1) | (a & ndi.binary_erosion(a))
-    # dorés (classe 8 = liseré du gi) : les traits fins restent, les gros morceaux = dôme du palais derrière
-    d = np.abs(rgb.astype(np.int16)[:, :, None, :] - fit2.PCOL[None, None]).sum(3)
-    gold = a & (fit2.PCLS[d.argmin(2)] == 8)
-    thick = ndi.binary_dilation(ndi.binary_erosion(gold, iterations=2), iterations=4) & gold
-    gl, gn = ndi.label(gold, structure=np.ones((3, 3)))
-    if empty is None:
-        a &= ~np.isin(gl, [i for i in np.unique(gl[thick]) if i])
-    lab, n = ndi.label(a, structure=np.ones((3, 3)))
-    if n > 1:
-        sz = ndi.sum(a, lab, range(1, n + 1))
-        a &= ndi.binary_dilation(lab == 1 + int(np.argmax(sz)), iterations=3) | np.isin(lab, [i + 1 for i in range(n) if sz[i] >= 60])
-    px = rgb.copy()                                               # couleurs d'origine de la vidéo
-    # aplats nets (la compression de la vidéo fait des taches) : chaque pixel proche d'une couleur du perso y est ramené
-    pal = np.array([c for c, _ in clean.REMAP_BASE] if base else [], np.int16).reshape(-1, 3)
-    pal = np.concatenate([fit2.PCOL, pal]) if len(pal) else fit2.PCOL
-    # gi plus rouge (1:46) ou orange du Pivot (0:19) : on garde celui qui domine dans l'image
-    red = [c for c, _ in clean.REMAP_BASE]
-    piv = [c for c, k in zip(fit2.PCOL.tolist(), fit2.PCLS.tolist()) if k in (2, 3)][:1] + \
-          [c for c, k in zip(fit2.PCOL.tolist(), fit2.PCLS.tolist()) if k == 3][:1]
-    n_red = sum(int((np.abs(rgb.astype(np.int16) - np.array(c)).sum(2) < 20).sum()) for c in red)
-    n_piv = sum(int((np.abs(rgb.astype(np.int16) - np.array(c)).sum(2) < 20).sum()) for c in piv)
-    oranges = red if n_red > n_piv else piv
-    pal = np.array([c for c, k in zip(fit2.PCOL.tolist(), fit2.PCLS.tolist()) if k not in (2, 3)] + oranges, np.int16)
-    dp = np.abs(rgb.astype(np.int16)[:, :, None, :] - pal[None, None]).sum(3)
-    snap = a & (dp.min(2) < 40)
-    idx = dp.argmin(2)
-    if True:                                                       # 2 tons du gi : vote sur 13×13 (taches de compression)
-        lo, hi = len(pal) - 2, len(pal) - 1
-        org = snap & np.isin(idx, (lo, hi))
-        light = ndi.uniform_filter((org & (idx == lo)).astype(float), 13)
-        tot = ndi.uniform_filter(org.astype(float), 13) + 1e-6
-        idx = np.where(org, np.where(light / tot >= 0.5, lo, hi), idx)
-    px[snap] = pal[idx][snap].astype(np.uint8)
-    fill = a & (dp.min(2) >= 60)                                  # trous bouchés par clean (traits de vitesse blancs)
-    fl, fn = ndi.label(fill, structure=np.ones((3, 3)))            # petits détails (logo du gi) gardés tels quels
-    if fn:
-        fsz = ndi.sum(fill, fl, range(1, fn + 1))
-        fill &= np.isin(fl, [i + 1 for i in range(fn) if fsz[i] > 60])
-    if fill.any():                                                # couleur du voisin net le plus proche
-        _, (iy, ix) = ndi.distance_transform_edt(~(snap & ~fill), return_indices=True)
-        px[fill] = px[iy, ix][fill]
-    hair = a & (np.abs(out - np.array(clean.HAIR_DST)).sum(2) == 0)
-    if not base:
-        px[hair] = out[hair].astype(np.uint8)                     # UI : cheveux argentés → noirs comme clean
-    rgba = np.dstack([px, (a * 255).astype(np.uint8)])
-    return rgba, a
+        return np.dstack([rgb, (a * 255).astype(np.uint8)]), a
+    C = rgb.astype(np.float32)
+    B = empty.astype(np.float32)
+    d = np.abs(C - B).sum(2)
+    core = d >= 60
+    core = ndi.binary_opening(core, iterations=1) | (core & ndi.binary_erosion(core))   # poussières de compression
+    lab, n = ndi.label(ndi.binary_dilation(core, iterations=3), structure=np.ones((3, 3)))
+    if n > 1:                                                         # le perso = gros morceaux (pas de miettes)
+        sz = ndi.sum(core, lab, range(1, n + 1))
+        core &= np.isin(lab, [i + 1 for i in range(n) if sz[i] >= max(80, 0.02 * sz.max())])
+    holes = ndi.binary_fill_holes(core) & ~core                         # petits trous (logo blanc ≈ ciel) bouchés
+    hl, hn = ndi.label(holes)
+    if hn:
+        hs = ndi.sum(holes, hl, range(1, hn + 1))
+        core |= np.isin(hl, [i + 1 for i in range(hn) if hs[i] <= 250])
+    sure = ndi.binary_erosion(core, iterations=1)
+    band = ndi.binary_dilation(core, iterations=2) & ~sure
+    _, (iy, ix) = ndi.distance_transform_edt(~sure, return_indices=True)
+    F = C[iy, ix]                                                      # couleur du perso la plus proche
+    FB = F - B
+    alpha = np.where(sure, 1.0, 0.0)
+    den = (FB * FB).sum(2)
+    ab = np.clip(((C - B) * FB).sum(2) / np.maximum(den, 1.0), 0.0, 1.0)
+    ab[den < 400] = core[den < 400]                                     # perso ≈ décor : on garde le masque dur
+    alpha = np.where(band, ab, alpha)
+    alpha[core & (d < 60)] = 1.0                                     # trous bouchés : opaques
+    alpha[alpha < 0.12] = 0
+    px = np.where((band & ~(core & (d < 60)))[..., None], F, C)
+    rgba = np.dstack([np.clip(px, 0, 255).astype(np.uint8), (alpha * 255).astype(np.uint8)])
+    return rgba, alpha > 0.5
 
 
 if __name__ == "__main__":

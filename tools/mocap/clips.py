@@ -1,7 +1,7 @@
 """Lecture des mouvements découpés dans la vidéo de référence (library/_mocap/clips/<nom>/, voir extract.py).
     frames, feet = clips.load("coup_de_poing_fente", height=700)   # images RGBA mises à l'échelle + bas des pieds
     clips.paste(canvas, frames[i], x_centre, y_sol, feet[i])       # pose l'image, pieds sur le sol
-Agrandissement LANCZOS puis contours nets (la source fait 640×360 : Goku ≈ 250 px de haut).
+Agrandissement LANCZOS (bords déjà « dé-mélangés » par extract.py : alpha doux, sans liseré) (la source fait 640×360 : Goku ≈ 250 px de haut).
 """
 import json
 from pathlib import Path
@@ -25,8 +25,6 @@ def load(name, height=700.0, flip=False):
     for f in sorted(d.glob("0*.png")):
         im = Image.open(f).convert("RGBA")
         im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
-        a = im.getchannel("A").point(lambda v: 255 if v > 110 else 0)      # bord net (pas de halo)
-        im.putalpha(a)
         if flip:
             im = im.transpose(Image.FLIP_LEFT_RIGHT)
         out.append(im)
