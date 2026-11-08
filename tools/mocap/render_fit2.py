@@ -52,12 +52,13 @@ def draw_actor(A, canvas, p, x, y=None, ground=None, lift=0.0, alpha=1.0, shadow
     g.flip = p["flip"]
     g.extra = {int(s): v for s, v in p.get("ex", {}).items()}
     g.lscale = {g.roles[k]: f for k, f in p.get("ls", {}).items()}
+    g.fmirror = [int(q) for q in p.get("fm", [])]
     if ground is None:
         info = g.draw(canvas, {r: p[r] for r in ROLES}, x, y, record=False, alpha=alpha)
     else:
         info = g.draw(canvas, {r: p[r] for r in ROLES}, x, 0, ground=ground, lift=lift, record=False, alpha=alpha,
                       shadow_y=shadow)
-    g.extra, g.lscale = {}, {}
+    g.extra, g.lscale, g.fmirror = {}, {}, []
     return info
 
 

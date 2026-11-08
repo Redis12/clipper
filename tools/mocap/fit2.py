@@ -114,8 +114,9 @@ class Fitter:
         g.flip = p["flip"]
         g.extra = {int(k): v for k, v in p.get("ex", {}).items()}
         g.lscale = {g.roles[r]: f for r, f in p.get("ls", {}).items()}
+        g.fmirror = [int(q) for q in p.get("fm", [])]
         g.draw(c, {r: p[r] for r in ROLES}, p["x"] - x0, p["y"] - y0, record=False)
-        g.extra, g.lscale = {}, {}
+        g.extra, g.lscale, g.fmirror = {}, {}, []
         return np.asarray(c.convert("RGB")).astype(np.int16)
 
     def cost(self, p, tl, box, bgc):

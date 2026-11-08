@@ -51,7 +51,7 @@ if __name__ == "__main__":
             continue
         x0, y0 = R[ids[0]]["x"], R[ids[0]]["y"]
         frames = [dict({k: round(R[i][k], 2) for k in ROLES}, flip=R[i]["flip"], view=R[i].get("view", 0),
-                       ex=R[i].get("ex", {}), ls=R[i].get("ls", {}),
+                       ex=R[i].get("ex", {}), ls=R[i].get("ls", {}), fm=R[i].get("fm", []),
                        dx=round(R[i]["x"] - x0, 2), dy=round(R[i]["y"] - y0, 2), ref=i) for i in ids]
         seq = {"name": name, "desc": desc, "fps": cut["fps"], "source": cut["source"],
                "t": [round(cut["t0"] + a / cut["fps"], 2), round(cut["t0"] + b / cut["fps"], 2)], "frames": frames}
@@ -65,8 +65,9 @@ if __name__ == "__main__":
             gg.flip = f["flip"]
             gg.extra = {int(s): v for s, v in f.get("ex", {}).items()}
             gg.lscale = {gg.roles[k]: v for k, v in f.get("ls", {}).items()}
+            gg.fmirror = [int(q) for q in f.get("fm", [])]
             gg.draw(c, {k: f[k] for k in ROLES}, 75 + f["dx"] * 0.5, 0, ground=180, record=False)
-            gg.extra, gg.lscale = {}, {}
+            gg.extra, gg.lscale, gg.fmirror = {}, {}, []
             ImageDraw.Draw(c).text((3, 3), str(f["ref"]), fill=(200, 0, 0))
             cells.append(c)
         sh = Image.new("RGB", (150 * len(cells), 210), (255, 255, 255))
