@@ -1,0 +1,15 @@
+{
+ "source": "Goku ALL Transformations (référence de l'utilisateur), 1:46.8 → 1:49.3 (Goku de base, kata seul)",
+ "fps": 30,
+ "t0": 106.8,
+ "seq": [
+  ["debout_avance", 3, 13, "debout, s'avance d'un pas, prêt"],
+  ["mise_en_garde", 13, 23, "descend en position du cavalier, poings levés"],
+  ["garde_cavalier", 23, 33, "tient la garde basse, poing arrière armé"],
+  ["coup_de_poing_fente", 33, 43, "coup de poing puissant : se jette en fente, bras tendu devant, buste à l'horizontale"],
+  ["retour_du_coup", 43, 53, "ramène le bras, se redresse en pas chassé"],
+  ["coup_de_pied_haut", 53, 66, "coup de pied haut, jambe tendue, bras écartés pour l'équilibre"],
+  ["appel_saut", 66, 76, "retombe et s'accroupit pour sauter"]
+ ],
+ "ground": [[3, 76]]
+}

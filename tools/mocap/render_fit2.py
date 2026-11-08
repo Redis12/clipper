@@ -138,11 +138,12 @@ W, H, GY, SCALE = 1080, 1920, 1250, 2.6
 K = SCALE / (640 / 768)
 A = views.make_actors(doc, SCALE)
 BG = make_bg(GY)
+# caméra : moyenne centrée sur ±12 images (suit les grands déplacements, fente du coup de poing, sans retard)
 cam, c = {}, None
 for i in range(N):
-    if i in owner:
-        x = R[owner[i]]["x"]
-        c = x if c is None else c + (x - c) * 0.12
+    xs_ = [R[owner[j]]["x"] for j in range(i - 12, i + 13) if j in owner]
+    if xs_:
+        c = sum(xs_) / len(xs_)
     cam[i] = c
 tmp2 = Path("/tmp/fit/r2fin")
 tmp2.mkdir(parents=True, exist_ok=True)
@@ -169,8 +170,9 @@ for i in range(N):
             hh = max(0.15, 1 - lift / 900)
             sh.ellipse((X - 80 * hh, GY + 6 - 11 * hh, X + 80 * hh, GY + 6 + 11 * hh), fill=(0, 0, 0, int(70 * hh)))
         img.alpha_composite(apply_fx(lay, fx, k))
-    if i < 30:
-        img.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, int(255 * (1 - i / 30)))))
+    nf = min(30, max(6, N // 10))                                # fondu d'ouverture (court si le passage est court)
+    if i < nf:
+        img.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, int(255 * (1 - i / nf)))))
     img.convert("RGB").save(tmp2 / f"{i:05d}.png")
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-r", "30", "-i", str(tmp2 / "%05d.png"), "-c:v", "libx264",
                 "-pix_fmt", "yuv420p", "-crf", "20", OUT_FIN], check=True)

@@ -59,6 +59,7 @@ if __name__ == "__main__":
         (out / f"{name}.json").write_text(json.dumps(seq))
         # planche : ~8 images de la séquence
         step = max(1, len(frames) // 8)
+        mdx = sum(f["dx"] for f in frames) / len(frames)          # planche centrée sur le geste (fente : 150 px)
         cells = []
         for f in frames[::step][:8]:
             c = Image.new("RGBA", (150, 190), (225, 236, 245, 255))
@@ -67,7 +68,7 @@ if __name__ == "__main__":
             gg.extra = {int(s): v for s, v in f.get("ex", {}).items()}
             gg.lscale = {gg.roles[k]: v for k, v in f.get("ls", {}).items()}
             gg.fmirror = [int(q) for q in f.get("fm", [])]
-            gg.draw(c, {k: f[k] for k in ROLES}, 75 + f["dx"] * 0.5, 0, ground=180, record=False)
+            gg.draw(c, {k: f[k] for k in ROLES}, 75 + max(-40.0, min(40.0, (f["dx"] - mdx) * 0.42)), 0, ground=180, record=False)
             gg.extra, gg.lscale, gg.fmirror = {}, {}, []
             ImageDraw.Draw(c).text((3, 3), str(f["ref"]), fill=(200, 0, 0))
             cells.append(c)
@@ -77,5 +78,13 @@ if __name__ == "__main__":
         ImageDraw.Draw(sh).text((4, 4), f"{name} — {desc}", fill=(0, 0, 0))
         sh.save(out / f"{name}.png")
         index.append(f"| `{name}` | {a}–{b} | {len(frames) / cut['fps']:.2f} s | {desc} |")
-    (out / "INDEX.md").write_text("\n".join(index) + "\n")
+    # l'index garde les autres sources : une section par source, celle-ci remplacée si elle existe déjà
+    idx = out / "INDEX.md"
+    secs = [x for x in (idx.read_text().split("\n## ") if idx.exists() else []) if x.strip()]
+    secs = [x for x in secs if cut["source"] not in x]
+    body = "\n".join(index[1:]) if False else "\n".join(index)
+    body = body.replace("# Mouvements recopiés\n\n", "")
+    parts = [x.replace("# Mouvements recopiés\n\n", "", 1) for x in secs] + [body]
+    txt = "# Mouvements recopiés\n\n" + "\n\n## ".join(p_.strip("\n") for p_ in parts) + "\n"
+    idx.write_text(txt)
     print("\n".join(index))
