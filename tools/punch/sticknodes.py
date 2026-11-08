@@ -59,7 +59,22 @@ def render(fig, overrides=None, scale=1.0, flip=False, pad=60, color_map=None, a
     def P(p):
         return ((p[0] - x0) * k, (p[1] - y0) * k)
     pos = {}
+    ends = {idx: P(b) for idx, n, a, b, ang in lay}
+    starts = {idx: P(a) for idx, n, a, b, ang in lay}
+    fills = {}                                       # polyfills (08/11) : dessinés juste avant leur nœud d'ancrage
+    for pf in fig.get("polyfills") or []:
+        fills.setdefault(pf["anchor_node_draw_index"], []).append(pf)
     for idx, n, a, b, ang in sorted(lay, key=lambda x: x[0]):
+        for pf in fills.get(idx, []):
+            ids = pf["attached_node_draw_indices"]
+            pts = [ends[i] for i in ids if i in ends]
+            if ids and ids[0] in starts:
+                pts = [starts[ids[0]]] + pts
+            if len(pts) >= 3:
+                pc = _col(pf["color"]) if pf.get("use_polyfill_color", True) else figc
+                if color_map:
+                    pc = color_map(ids[0], pc)
+                d.polygon(pts, fill=pc)
         col = _col(n["color"]) if n["use_segment_color"] else figc
         if color_map:
             col = color_map(idx, col)

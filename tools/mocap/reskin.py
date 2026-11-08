@@ -49,7 +49,7 @@ def head_of(a, r):
         k = min(L, 0.35 * r)
         cy, cx = cy + vy / L * k, cx + vx / L * k
         side = fx - xs.mean()
-    oy, ox = np.nonzero(orange | navy)
+    oy, ox = np.nonzero(orange)
     neck = None
     below = oy > cy + 0.3 * r                       # le cou est sous la tête (sauf salto : alors n'importe où)
     if below.sum() > 50:
