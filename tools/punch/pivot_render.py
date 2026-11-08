@@ -262,6 +262,32 @@ class PivotActor:
                 o = dict(o, len_flag=1, lengths=[(L0[i] if L0 and i < len(L0) else g_["length"]) * f
                                                    for i, g_ in enumerate(segs)])
             J[s], self._pts[s] = geom(o, ft, base, rot.get(s, 0.0), ang)
+        # bottes retournées (recopie fine) : le morceau et ses enfants en miroir par rapport à l'axe du tibia (la
+        # pointe passe de l'autre côté sans sortir de la jambe ; une rotation la décalait et la mettait de travers)
+        fm = getattr(self, "fmirror", None) or ()
+        if fm and angles is not None:
+            kids = {}
+            for c, (pp, _h) in self.par.items():
+                kids.setdefault(pp, []).append(c)
+            for r in fm:
+                if r not in J or r not in self.par:
+                    continue
+                p, h = self.par[r]
+                a, b = J[p][0], J[p].get(h, J[p][0])          # axe : racine → poignée du parent (le tibia)
+                dx, dy = b[0] - a[0], b[1] - a[1]
+                n = math.hypot(dx, dy) or 1.0
+                ux, uy = dx / n, dy / n
+
+                def refl(q):
+                    vx, vy = q[0] - b[0], q[1] - b[1]
+                    t = vx * ux + vy * uy
+                    return (b[0] + 2 * t * ux - vx, b[1] + 2 * t * uy - vy)
+                stack = [r]
+                while stack:
+                    t_ = stack.pop()
+                    J[t_] = {k_: refl(v) for k_, v in J[t_].items()}
+                    self._pts[t_] = {k_: [refl(q) for q in v] for k_, v in self._pts[t_].items()}
+                    stack += kids.get(t_, [])
         return J
 
     def _rot(self, pose):

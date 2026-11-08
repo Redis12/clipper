@@ -24,9 +24,10 @@ def load(path):
 
 
 def play(seq, i):
-    """image i d'une séquence → (pose, flip, dx, dy, vue, morceaux, raccourcis)"""
+    """image i d'une séquence → (pose, flip, dx, dy, vue, morceaux, raccourcis, bottes en miroir)"""
     f = seq["frames"][min(i, len(seq["frames"]) - 1)]
-    return {k: f[k] for k in ROLES}, f["flip"], f["dx"], f["dy"], f.get("view", 0), f.get("ex", {}), f.get("ls", {})
+    return ({k: f[k] for k in ROLES}, f["flip"], f["dx"], f["dy"], f.get("view", 0), f.get("ex", {}), f.get("ls", {}),
+            f.get("fm", []))
 
 
 if __name__ == "__main__":
