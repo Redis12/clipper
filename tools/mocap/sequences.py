@@ -24,9 +24,9 @@ def load(path):
 
 
 def play(seq, i):
-    """image i d'une séquence → (pose, flip, dx, dy)"""
+    """image i d'une séquence → (pose, flip, dx, dy, vue, morceaux, raccourcis)"""
     f = seq["frames"][min(i, len(seq["frames"]) - 1)]
-    return {k: f[k] for k in ROLES}, f["flip"], f["dx"], f["dy"]
+    return {k: f[k] for k in ROLES}, f["flip"], f["dx"], f["dy"], f.get("view", 0), f.get("ex", {}), f.get("ls", {})
 
 
 if __name__ == "__main__":
@@ -34,10 +34,15 @@ if __name__ == "__main__":
     R = {}
     for f in sys.argv[2].split(","):
         R.update({int(k): v for k, v in json.load(open(f)).items()})
+    # format fit2 : une entrée par pose distincte, avec la liste des images où elle est tenue → une entrée par image
+    if any("frames" in v for v in R.values()):
+        R = {i: v for v in list(R.values()) for i in v["frames"]}
     cut = json.load(open(sys.argv[3]))
     out = Path(sys.argv[4])
     out.mkdir(parents=True, exist_ok=True)
-    g = pr.PivotActor(doc, 0, 0, pr.ROLES_PIVOT_GOKU, scale=0.42)
+    sys.path.insert(0, str(HERE))
+    import views  # noqa: E402
+    ACT = views.make_actors(doc, 0.42)
     index = [f"# Mouvements recopiés\n\nSource : {cut['source']} ({cut['fps']} i/s). Une séquence = un geste.\n",
              "| Séquence | Images | Durée | Description |", "|---|---|---|---|"]
     for name, a, b, desc in cut["seq"]:
@@ -45,7 +50,8 @@ if __name__ == "__main__":
         if not ids:
             continue
         x0, y0 = R[ids[0]]["x"], R[ids[0]]["y"]
-        frames = [dict({k: round(R[i][k], 2) for k in ROLES}, flip=R[i]["flip"],
+        frames = [dict({k: round(R[i][k], 2) for k in ROLES}, flip=R[i]["flip"], view=R[i].get("view", 0),
+                       ex=R[i].get("ex", {}), ls=R[i].get("ls", {}),
                        dx=round(R[i]["x"] - x0, 2), dy=round(R[i]["y"] - y0, 2), ref=i) for i in ids]
         seq = {"name": name, "desc": desc, "fps": cut["fps"], "source": cut["source"],
                "t": [round(cut["t0"] + a / cut["fps"], 2), round(cut["t0"] + b / cut["fps"], 2)], "frames": frames}
@@ -55,8 +61,12 @@ if __name__ == "__main__":
         cells = []
         for f in frames[::step][:8]:
             c = Image.new("RGBA", (150, 190), (225, 236, 245, 255))
-            g.flip = f["flip"]
-            g.draw(c, {k: f[k] for k in ROLES}, 75 + f["dx"] * 0.5, 0, ground=180, record=False)
+            gg = ACT[f.get("view", 0)]
+            gg.flip = f["flip"]
+            gg.extra = {int(s): v for s, v in f.get("ex", {}).items()}
+            gg.lscale = {gg.roles[k]: v for k, v in f.get("ls", {}).items()}
+            gg.draw(c, {k: f[k] for k in ROLES}, 75 + f["dx"] * 0.5, 0, ground=180, record=False)
+            gg.extra, gg.lscale = {}, {}
             ImageDraw.Draw(c).text((3, 3), str(f["ref"]), fill=(200, 0, 0))
             cells.append(c)
         sh = Image.new("RGB", (150 * len(cells), 210), (255, 255, 255))
