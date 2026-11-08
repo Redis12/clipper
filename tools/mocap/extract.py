@@ -24,7 +24,7 @@ KEY = (255, 0, 255)
 
 def frames(video, t0, t1, fps=30):
     d = Path(tempfile.mkdtemp())
-    subprocess.run(["ffmpeg", "-v", "error", "-ss", str(t0), "-to", str(t1), "-i", video, "-vf", f"fps={fps}",
+    subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-ss", str(t0), "-t", str(round(t1 - t0, 3)), "-i", video, "-vf", f"fps={fps}",
                     str(d / "%04d.png")], check=True)
     return sorted(d.glob("*.png"))
 
