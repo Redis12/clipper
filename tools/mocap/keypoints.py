@@ -90,27 +90,39 @@ def extract(a, r, state=None):
     body = orange | navy | S["under"]
     # ---- jambes : pantalon clair = avant, foncé = arrière ; bottes : bleu 64 = avant, 56 = arrière
     light = S["light"]
-    bl, bn = ndi.label(S["boots"])
-    boots = {"f": np.zeros_like(vis), "b": np.zeros_like(vis)}
+    allboots = S["boots"] | (S["trim"] if "trim" in S else False)
+    bl, bn = ndi.label(ndi.binary_dilation(S["boots"], iterations=3))
+    bl = bl * S["boots"]
+    comps = []
     for i in range(1, bn + 1):
         m = bl == i
         if m.sum() < 0.15 * r * r:
             continue
-        boots["f" if np.median(B[m]) >= 60 else "b"] |= m
+        comps.append((np.median(B[m]), m))
+    comps.sort(key=lambda c: -c[1].sum())
+    comps = comps[:2]
+    boots = {"f": None, "b": None}
+    if len(comps) == 2:
+        (b1, m1), (b2, m2) = comps
+        boots = {"f": m1, "b": m2} if b1 >= b2 else {"f": m2, "b": m1}
+    elif len(comps) == 1:
+        boots["f" if comps[0][0] >= 60 else "b"] = comps[0][1]
     for s_, pm in (("f", pants & light), ("b", pants & ~light)):
         bm = boots[s_]
-        if not bm.any() or not pm.any() or hip is None:
+        if bm is None or not pm.any() or hip is None:
             kp[f"kn_{s_}"] = kp[f"an_{s_}"] = kp[f"toe_{s_}"] = None
             continue
-        an = _nearest(bm & ndi.binary_dilation(pm, iterations=4), hip) or _nearest(bm, hip)
-        toe = _farthest(bm, an)
-        # cheville = milieu du haut de la botte
-        top_b = bm & ndi.binary_dilation(pm, iterations=4)
+        top_b = bm & ndi.binary_dilation(pants, iterations=5)
         if top_b.sum() > 5:
             ys, xs = np.nonzero(top_b)
             an = (float(xs.mean()), float(ys.mean()))
-        start = _nearest(pm, hip)
-        path = _path(pm | bm, body, start, an)
+        else:
+            an = _nearest(bm, hip)
+        toe = _farthest(bm, an)
+        # le pantalon de CE côté qui touche cette botte (sinon tout le pantalon)
+        leg = pm if (ndi.binary_dilation(bm, iterations=6) & pm).any() else pants
+        start = _nearest(leg, hip)
+        path = _path(leg | bm, body, start, an)
         kp[f"an_{s_}"], kp[f"toe_{s_}"] = an, toe
         kp[f"kn_{s_}"] = _bend(path, hip, an)
     # ---- bras : peau claire = avant (sans le visage), peau foncée = arrière ; poignets + mains
