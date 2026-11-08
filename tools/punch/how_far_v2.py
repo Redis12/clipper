@@ -99,28 +99,39 @@ def vx(name, im):
 def goku_at(tt, t):
     """→ (image tournée vers la gauche, x gauche écran final, y haut) ; None si Goku n'est pas là."""
     t_punch = T_HIT - PUNCH_HIT / FPS
-    LX = place("garde_cavalier", clip("garde_cavalier")[0]) + cx_of(clip("garde_cavalier")[0])   # où il atterrit
-    tp, rec = clip("tp"), clip("reception_garde")
+    # atterrissage fluide : saut d'élan joué à l'envers (descend, s'accroupit, se relève), puis mise en garde
+    # (comme dans la vidéo : debout → position du cavalier) → garde. Plus de saut d'image entre 2 poses.
+    tp, ap, mg = clip("tp"), clip("appel_saut"), clip("mise_en_garde")
+    mg_x = place("mise_en_garde", mg[0]) + cx_of(mg[0])
+    ap_left = mg_x - cx_of(ap[0])                                # dernier pas de l'atterrissage = début de la garde
     t_fall = T_TP + len(tp) / FPS
     t_land = t_fall + T_FALL
-    t_garde = t_land + (len(rec) - 1) / FPS
-    rec_left = LX - cx_of(rec[-1])
+    t_mise = t_land + len(ap) / FPS
+    t_garde = t_mise + len(mg) / FPS
     if t >= T_BACK:
         return goku_back(t)
     if tt < t_fall:                                             # apparition en l'air
         im = fr("tp", int((tt - T_TP) * FPS))
-        left = rec_left + cx_of(rec[0]) - cx_of(tp[-1])
+        left = ap_left + cx_of(ap[-1]) - cx_of(tp[-1])
         return im, left, GROUND - GFEET["tp"] - H_TP
     if tt < t_land:                                             # chute
         k = (tt - t_fall) / T_FALL
-        return rec[0], rec_left, GROUND - GFEET["reception_garde"] - H_TP * (1 - k * k)
-    if tt < t_garde:                                            # réception
-        return fr("reception_garde", int((tt - t_land) * FPS)), rec_left, GROUND - GFEET["reception_garde"]
+        return ap[-1], ap_left, GROUND - GFEET["appel_saut"] - H_TP * (1 - k * k)
+    if tt < t_mise:                                             # réception (élan à l'envers)
+        i = int((tt - t_land) * FPS)
+        return fr("appel_saut", len(ap) - 1 - i), ap_left, GROUND - GFEET["appel_saut"]
+    if tt < t_garde:
+        im = fr("mise_en_garde", int((tt - t_mise) * FPS))
+        return im, place("mise_en_garde", im), GROUND - GFEET["mise_en_garde"]
     if tt < t_punch:
         g = clip("garde_cavalier")
-        n = len(g)
-        i = int((tt - t_garde) * FPS * 0.5) % (2 * n - 2)        # respiration lente (aller-retour)
-        im = g[i if i < n else 2 * n - 2 - i]
+        n = 8                                                   # images 0–7 : garde ; 8–9 : départ du coup
+        left_t = t_punch - tt
+        if left_t <= 2 / FPS:
+            im = g[min(len(g) - 1, 8 + int((2 / FPS - left_t) * FPS))]
+        else:
+            i = int((tt - t_garde) * FPS * 0.5) % (2 * n - 2)    # respiration lente (aller-retour)
+            im = g[i if i < n else 2 * n - 2 - i]
         return im, place("garde_cavalier", im), GROUND - GFEET["garde_cavalier"]
     i = int((tt - t_punch) * FPS + 1e-6)
     if i < PUNCH_N:
@@ -352,11 +363,12 @@ def main():
     out = Path(sys.argv[1])
     global GFEET
     GFEET = {}
-    for n_ in ("garde_cavalier", "coup_de_poing_fente", "retour_du_coup", "reception_garde", "appel_saut", "salto"):
+    for n_ in ("garde_cavalier", "coup_de_poing_fente", "retour_du_coup", "reception_garde", "appel_saut", "salto",
+               "mise_en_garde"):
         GFEET[n_] = clips.load(n_, GH)[1][0]
         clip(n_)
     # passage 0:19 : Goku y regarde à droite → retourné pour regarder à gauche dès le début
-    for alias, n_ in (("tp", "arrivee_teleportation"), ("respire_g", "garde_respire")):
+    for alias, n_ in (("tp", "arrivee_teleportation"), ("respire_g", "debout_regarde")):
         fr_, ft_ = clips.load(n_, GH, flip=True)
         CL[alias], GFEET[alias] = fr_, ft_[0]
     hit = clip("coup_de_poing_fente")[PUNCH_HIT]
@@ -712,7 +724,7 @@ def main():
     put(T_BACK + 0.4, S("teleport", 2), 0.6)
     t_j = T_BONK - (len(clip("appel_saut")) + jump_peak()) / FPS
     put(0.0, S("teleport", 3), 0.8)                                  # apparition dans les airs
-    put(T_TP + len(clip("tp")) / FPS + T_FALL, S("hit", 5), 0.6)    # atterrissage
+    put(T_TP + len(clip("tp")) / FPS + T_FALL, S("hit", 5), 0.6)    # atterrissage (sol touché)
     put(t_j + len(clip("appel_saut")) / FPS - 0.05, S("teleport", 4), 0.7)   # saut
     put(T_BONK - 0.05, S("beam", 2), 0.5)                            # la boule passe dessous
     put(t_j + (len(clip("appel_saut")) + len(clip("salto"))) / FPS, S("hit", 6), 0.4)   # réception
