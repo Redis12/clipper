@@ -51,8 +51,13 @@ def ssj(im):
     if k not in _SSJ:
         a = np.asarray(im).copy()
         c = a[..., :3].astype(int)
-        hair = (c.sum(2) < 170) & (np.abs(c[..., 2] - c[..., 0]) < 30) & (a[..., 3] > 0)
-        lum = c[..., 0][hair] / 170.0
+        core = (c.sum(2) < 170) & (np.abs(c[..., 2] - c[..., 0]) < 30) & (a[..., 3] > 0)
+        # mèches fines et bords gris foncés autour des cheveux aussi (sinon il reste des bouts noirs)
+        from scipy import ndimage as ndi
+        zone = ndi.binary_dilation(core, iterations=max(8, im.height // 25))
+        dark = (c.sum(2) < 360) & (np.abs(c[..., 2] - c[..., 0]) < 45) & (a[..., 3] > 0)
+        hair = core | (dark & zone)
+        lum = np.minimum(c[..., 0][hair], 170) / 170.0
         a[..., 0][hair] = (255 - 30 * (1 - lum)).astype(np.uint8)
         a[..., 1][hair] = (220 - 50 * (1 - lum)).astype(np.uint8)
         a[..., 2][hair] = (70 - 30 * (1 - lum)).clip(0, 255).astype(np.uint8)
@@ -65,29 +70,100 @@ PUNCH_N = 10                               # images du coup gardées, puis « re
 FREEZE = 0.2
 
 
-def goku_frame(tt, t, back):
-    """→ (image RGBA tournée vers la gauche, nom du mouvement) au temps tt (temps « figé » au coup)."""
-    f = lambda n, i: clip(n)[max(0, min(len(clip(n)) - 1, i))]   # noqa: E731
-    if back:
-        g = clip("garde_respire")
-        n = len(g)
-        i = int(t * FPS) % (2 * n - 2)
-        return g[i if i < n else 2 * n - 2 - i], "garde_respire"
+T_TP = 0.0                                  # téléportation dans les airs
+H_TP = 560                                  # hauteur de l'apparition (px au-dessus du sol)
+T_FALL = 0.32                               # durée de la chute
+
+
+def cx_of(im, _c={}):
+    k = id(im)
+    if k not in _c:
+        a = np.asarray(im)[..., 3] > 128
+        _c[k] = float(np.nonzero(a)[1].mean())
+    return _c[k]
+
+
+def fr(name, i):
+    c = clip(name)
+    return c[max(0, min(len(c) - 1, i))]
+
+
+def vx(name, im):
+    """centroïde x dans le repère de la vidéo (px finaux) : enchaîner des mouvements d'un même passage."""
+    if name not in INFO:
+        import json
+        INFO[name] = json.load(open(clips.ROOT / name / "info.json"))
+    return INFO[name]["x_in_video"] * GH / INFO[name]["goku_h"] + cx_of(im)
+
+
+def goku_at(tt, t):
+    """→ (image tournée vers la gauche, x gauche écran final, y haut) ; None si Goku n'est pas là."""
     t_punch = T_HIT - PUNCH_HIT / FPS
-    if tt < T_CHARGE:
-        g = clip("garde_respire")
-        return g[int(tt * FPS) % len(g)], "garde_respire"
-    if tt < T_CHARGE + len(clip("mise_en_garde")) / FPS:
-        return f("mise_en_garde", int((tt - T_CHARGE) * FPS)), "mise_en_garde"
+    LX = place("garde_cavalier", clip("garde_cavalier")[0]) + cx_of(clip("garde_cavalier")[0])   # où il atterrit
+    tp, rec = clip("tp"), clip("reception_garde")
+    t_fall = T_TP + len(tp) / FPS
+    t_land = t_fall + T_FALL
+    t_garde = t_land + (len(rec) - 1) / FPS
+    rec_left = LX - cx_of(rec[-1])
+    if t >= T_BACK:
+        return goku_back(t)
+    if tt < t_fall:                                             # apparition en l'air
+        im = fr("tp", int((tt - T_TP) * FPS))
+        left = rec_left + cx_of(rec[0]) - cx_of(tp[-1])
+        return im, left, GROUND - GFEET["tp"] - H_TP
+    if tt < t_land:                                             # chute
+        k = (tt - t_fall) / T_FALL
+        return rec[0], rec_left, GROUND - GFEET["reception_garde"] - H_TP * (1 - k * k)
+    if tt < t_garde:                                            # réception
+        return fr("reception_garde", int((tt - t_land) * FPS)), rec_left, GROUND - GFEET["reception_garde"]
     if tt < t_punch:
         g = clip("garde_cavalier")
         n = len(g)
-        i = int((tt - T_CHARGE) * FPS * 0.5) % (2 * n - 2)         # respiration lente (aller-retour)
-        return g[i if i < n else 2 * n - 2 - i], "garde_cavalier"
+        i = int((tt - t_garde) * FPS * 0.5) % (2 * n - 2)        # respiration lente (aller-retour)
+        im = g[i if i < n else 2 * n - 2 - i]
+        return im, place("garde_cavalier", im), GROUND - GFEET["garde_cavalier"]
     i = int((tt - t_punch) * FPS + 1e-6)
     if i < PUNCH_N:
-        return f("coup_de_poing_fente", i), "coup_de_poing_fente"
-    return f("retour_du_coup", i - PUNCH_N), "retour_du_coup"
+        im = fr("coup_de_poing_fente", i)
+        return im, place("coup_de_poing_fente", im), GROUND - GFEET["coup_de_poing_fente"]
+    im = fr("retour_du_coup", i - PUNCH_N)
+    return im, place("retour_du_coup", im), GROUND - GFEET["retour_du_coup"]
+
+
+XC = 640                                    # où Goku attend la boule au retour (centre, écran final)
+JUMP = ("appel_saut", "salto", "reception_garde")
+SQUEEZE = 0.3                               # le salto avance beaucoup vers la gauche : déplacement réduit
+
+
+def jump_peak():
+    fy = INFO_load("salto")["feet_y"]
+    return int(np.argmin(fy))
+
+
+def INFO_load(name):
+    if name not in INFO:
+        import json
+        INFO[name] = json.load(open(clips.ROOT / name / "info.json"))
+    return INFO[name]
+
+
+def goku_back(t):
+    t_j = T_BONK - (len(clip("appel_saut")) + jump_peak()) / FPS     # au sommet du salto quand la boule passe
+    if t < t_j:
+        g = clip("respire_g")
+        n = len(g)
+        i = int(t * FPS) % (2 * n - 2)
+        im = g[i if i < n else 2 * n - 2 - i]
+        return im, XC - cx_of(im), GROUND - GFEET["respire_g"]
+    i = int((t - t_j) * FPS)
+    v0 = vx("appel_saut", clip("appel_saut")[0])
+    for name in JUMP:
+        c = clip(name)
+        if i < len(c) or name == JUMP[-1]:
+            im = c[min(i, len(c) - 1)]
+            cxf = XC + SQUEEZE * (vx(name, im) - v0)
+            return im, cxf - cx_of(im), GROUND - GFEET[name]
+        i -= len(c)
 
 
 INFO = {}
@@ -103,6 +179,42 @@ def place(name, im):
         g = clip("garde_cavalier")[0]
         return ANCHOR[0] + (INFO["garde_cavalier"]["x_in_video"] - 988) * k + g.width / 2 - im.width / 2
     return ANCHOR[0] + (INFO[name]["x_in_video"] - 988) * k            # 988 = garde_cavalier
+
+import hud  # noqa: E402
+
+
+def hud_label(d, xy, txt, size, fill, angle=0):
+    """gros mot style cartoon 3D (hud.py, choisi par l'utilisateur), dessiné sur l'image de d."""
+    base = d._image
+    L = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    hud.text3d(L, xy, txt, hud.font("luckiest-guy.woff2", size), fill, side=(50, 20, 60), depth=max(4, size // 13),
+               outline=(20, 10, 30), ow=max(4, size // 20))
+    if angle:
+        L = L.rotate(angle, resample=Image.BICUBIC, center=xy)
+    if base.mode == "RGBA":
+        base.alpha_composite(L)
+    else:
+        base.paste(L, (0, 0), L)
+
+
+def hud_title(img, km):
+    """titre penché en relief + compteur dans une cartouche (même style que « 1 punch vs 1000 stickmen »)."""
+    base = img.convert("RGBA")
+    L = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    hud.text3d(L, (W / 2, 120), "HOW FAR CAN GOKU", hud.font("luckiest-guy.woff2", 104), (255, 255, 255),
+               side=(30, 60, 140), depth=11, outline=(20, 20, 50), ow=7)
+    hud.text3d(L, (W / 2, 235), "HIT THE BALL?", hud.font("luckiest-guy.woff2", 112), (255, 214, 50),
+               side=(150, 70, 10), depth=11, outline=(40, 15, 5), ow=7)
+    hud.rotated(base, L, 3, (W / 2, 180))
+    L = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(L)
+    d.rounded_rectangle((W / 2 - 250, 318, W / 2 + 250, 452), 40, fill=(20, 22, 40, 225), outline=(255, 255, 255), width=6)
+    col = (255, 90, 120) if km <= 0 else ((110, 255, 140) if km < 100 else (120, 230, 255))
+    d.text((W / 2, 348), "DISTANCE", font=hud.font("luckiest-guy.woff2", 34), fill=(255, 214, 50), anchor="mm")
+    d.text((W / 2, 405), fmt(km), font=hud.font("luckiest-guy.woff2", 78), fill=col, anchor="mm")
+    base.alpha_composite(L)
+    return base.convert("RGB")
+
 
 BALL_R = 220
 E0 = T_HIT + 0.2                          # départ de la boule
@@ -240,9 +352,13 @@ def main():
     out = Path(sys.argv[1])
     global GFEET
     GFEET = {}
-    for n_ in ("garde_respire", "mise_en_garde", "garde_cavalier", "coup_de_poing_fente", "retour_du_coup"):
+    for n_ in ("garde_cavalier", "coup_de_poing_fente", "retour_du_coup", "reception_garde", "appel_saut", "salto"):
         GFEET[n_] = clips.load(n_, GH)[1][0]
         clip(n_)
+    # passage 0:19 : Goku y regarde à droite → retourné pour regarder à gauche dès le début
+    for alias, n_ in (("tp", "arrivee_teleportation"), ("respire_g", "garde_respire")):
+        fr_, ft_ = clips.load(n_, GH, flip=True)
+        CL[alias], GFEET[alias] = fr_, ft_[0]
     hit = clip("coup_de_poing_fente")[PUNCH_HIT]
     al = np.asarray(hit)[..., 3] > 128
     ys_, xs_ = np.nonzero(al)
@@ -335,21 +451,15 @@ def main():
                     labels.append((t, "KAME HOUSE · 11 km", (255, 160, 190)))
             # Goku (au début, puis au retour)
             if t < E0 + 1.2 or t >= T_BACK:
-                if t >= T_BACK:
-                    pose = dict(gp.IDLE)
-                    pose[53] += 2 * math.sin(t * 5)
-                    gx_ = GX + 140
-                else:
-                    pose = pose_at(tt)
-                    gx_ = GX + (120 * ease((tt - T_SWING) / (T_HIT - T_SWING)) if tt >= T_SWING else 0) - (scroll if tt > T_HIT else 0)
-                gim, gname = goku_frame(tt, t, t >= T_BACK)
+                gim, fx_, ytop = goku_at(tt, t)
                 if tt >= T_SSJ:
                     gim = ssj(gim)
                 pim = gim.transpose(Image.FLIP_LEFT_RIGHT)            # monde dessiné à l'endroit puis retourné
-                fx_ = place(gname, gim)                               # bord gauche, écran final
-                xl = W - (fx_ + gim.width) - ((scroll if tt > T_HIT else 0) if t < T_BACK else 0) \
-                    + (140 if t >= T_BACK else 0)
-                px, py = int(xl), int(GROUND - GFEET[gname])
+                xl = W - (fx_ + gim.width) - ((scroll if tt > T_HIT else 0) if t < T_BACK else 0)
+                px, py = int(xl), int(ytop)
+                if tt < T_TP + 0.06 and t < T_BACK:                   # éclair de la téléportation
+                    ImageDraw.Draw(img, "RGBA").ellipse((px + pim.width / 2 - 140, py + 60, px + pim.width / 2 + 140, py + 420),
+                                                       fill=(255, 255, 255, 160))
                 gx_ = px + pim.width / 2
                 power = 0.0
                 if T_SSJ <= tt < T_HIT + 0.3 and t < T_BACK:
@@ -370,12 +480,6 @@ def main():
                     if rnd.random() < 0.45 * power:
                         debris.append([gx_ + rnd.uniform(-220, 220), GROUND - 6, rnd.uniform(-25, 25), -rnd.uniform(90, 220),
                                        t, rnd.uniform(6, 14), 2.0])
-                if t >= T_BONK:                                       # Goku assommé : il bascule, posé au sol
-                    ang = min(85, (t - T_BONK) * 260)
-                    cx0 = px + pim.width / 2
-                    pim = pim.rotate(ang, expand=True, resample=Image.BICUBIC)
-                    bot = np.nonzero(np.asarray(pim)[..., 3].max(1) > 128)[0].max()
-                    px, py = int(cx0 - pim.width / 2), int(GROUND - bot)
                 img.paste(pim, (px, py), pim)
                 d = ImageDraw.Draw(img, "RGBA")
                 if 0 <= tt - T_SSJ < 0.35 and t < T_BACK:
@@ -513,36 +617,25 @@ def main():
         debris[:] = alive
         # ---------------------------------------------------------------- retour : la boule revient et BONK
         if T_BACK <= t:
-            if t < T_BONK:
-                k = (t - T_BACK) / (T_BONK - T_BACK)
-                hx = GX + 140
-                bx = -300 + (hx - 40 + 300) * k ** 2
-                by = GROUND - 470
-                rb = ball_mid.rotate(-k * 900, resample=Image.BICUBIC)
+            # la boule revient par la droite (derrière Goku), au ras du sol ; Goku saute par-dessus (salto)
+            fxb = XC + 1400 * (T_BONK + 0.1 - t)                          # x écran final : passe sous Goku au sommet
+            if -300 < fxb < W + 300:
+                bx, by = W - fxb, GROUND - 132
+                rb = ball_mid.rotate((t - T_BACK) * 900, resample=Image.BICUBIC)
                 img.paste(rb, (int(bx - rb.width / 2), int(by - rb.height / 2)), rb)
                 d = ImageDraw.Draw(img, "RGBA")
-                for _ in range(10):
-                    y = by + rnd.uniform(-120, 120)
-                    d.line((bx - 500, y, bx - 150, y), fill=(255, 255, 255, 80), width=3)
-                post.append(lambda d: d.text((W / 2, 640), "MEANWHILE...", font=fL, fill=(255, 255, 255), anchor="mm",
-                                             stroke_width=4, stroke_fill=(20, 10, 40)))
-            else:
+                for _ in range(8):
+                    y = by + rnd.uniform(-100, 100)
+                    d.line((bx - 480, y, bx - 160, y), fill=(255, 255, 255, 80), width=3)
+            if t < T_BONK - 0.25:
+                post.append(lambda d: hud_label(d, (W / 2, 640), "MEANWHILE...", 78, (255, 255, 255), -3))
+            if 0 <= t - T_BONK < 1.3:
                 a_ = t - T_BONK
-                if a_ < 0.15:
-                    d.rectangle((0, 0, W, H), fill=(255, 255, 255, 220))
-                if a_ < 1.0:
-                    hx, hy = GX + 140, GROUND - 470
-                    for j in range(10):
-                        an = j * math.tau / 10
-                        d.line((hx, hy, hx + math.cos(an) * (80 + a_ * 260), hy + math.sin(an) * (80 + a_ * 260)),
-                               fill=(255, 230, 80, int(255 * (1 - a_))), width=8)
-                    post.append(lambda d, hx=hx, hy=hy, a_=a_: d.text(
-                        (W - hx - 330, hy + 200), "BONK!", font=F("anton.woff2", int(130 * (1 + 0.3 * max(0, 0.2 - a_)))),
-                        fill=(255, 220, 60), anchor="mm", stroke_width=6, stroke_fill=(40, 10, 10)))
-                post.append(lambda d: d.text((W / 2, 660), "IT WENT AROUND", font=F("anton.woff2", 104), fill=(255, 255, 255),
-                                             anchor="mm", stroke_width=5, stroke_fill=(20, 10, 40)))
-                post.append(lambda d: d.text((W / 2, 770), "THE WORLD", font=F("anton.woff2", 104), fill=(255, 200, 60),
-                                             anchor="mm", stroke_width=5, stroke_fill=(20, 10, 40)))
+                post.append(lambda d, a_=a_: hud_label(d, (W / 2 - 120, GROUND - 620), "DODGED!",
+                                                       int(120 * (1 + 0.35 * max(0.0, 1 - a_ / 0.12))), (110, 255, 140), -6))
+            if t >= T_BONK + 1.0:
+                post.append(lambda d: hud_label(d, (W / 2, 640), "IT WENT AROUND", 96, (255, 255, 255), -3))
+                post.append(lambda d: hud_label(d, (W / 2, 750), "THE WORLD!", 112, (255, 214, 50), -3))
                 post.append("cta")
         # ---------------------------------------------------------------- miroir : Goku frappe vers la gauche
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
@@ -556,23 +649,18 @@ def main():
         post.clear()
         if cta:
             rgba = img.convert("RGBA")
-            render.draw_rich(rgba, (W / 2, 850), "Who hits it farther? Comment 👇", F("mont900.woff2", 52),
-                             (255, 255, 255), anchor="ma", stroke_width=3, stroke_fill=(0, 0, 0))
+            render.draw_rich(rgba, (W / 2, 830), "Who hits it farther? Comment 👇", hud.font("luckiest-guy.woff2", 58),
+                             (255, 255, 255), anchor="ma", stroke_width=5, stroke_fill=(20, 10, 30))
             img = rgba.convert("RGB")
             d = ImageDraw.Draw(img, "RGBA")
         # ---------------------------------------------------------------- titre + compteur + étiquettes
-        d.text((W / 2, 70), "HOW FAR CAN GOKU", font=fT, fill="white", anchor="mt", stroke_width=4, stroke_fill=(20, 10, 40))
-        d.text((W / 2, 176), "HIT THE BALL?", font=fT, fill=(255, 200, 60), anchor="mt", stroke_width=4, stroke_fill=(20, 10, 40))
-        d.text((W / 2, 318), "DISTANCE", font=fS, fill=(200, 200, 230), anchor="mt")
-        dcol = (255, 90, 120) if km <= 0 else ((90, 255, 160) if km < 100 else (120, 230, 255))
-        d.text((W / 2, 356), fmt(km), font=fN, fill=dcol, anchor="mt", stroke_width=4, stroke_fill=(10, 10, 30))
+        img = hud_title(img, km)
+        d = ImageDraw.Draw(img, "RGBA")
         for (t0, txt, col) in labels:
             a = t - t0
             if 0 <= a < 1.6:
-                s = 1 + 0.25 * max(0.0, 1 - a / 0.15)
-                al = int(255 * min(1.0, (1.6 - a) / 0.3))
-                d.text((W / 2, 520), txt, font=F("anton.woff2", int(70 * s)), fill=col + (al,), anchor="mm",
-                       stroke_width=4, stroke_fill=(10, 10, 30, al))
+                s_ = 1 + 0.25 * max(0.0, 1 - a / 0.15)
+                hud_label(d, (W / 2, 560), txt, int(76 * s_), col, -4 if len(txt) % 2 else 4)
         # secousses
         sh = 0
         if T_CHARGE <= tt < T_HIT:
@@ -581,7 +669,7 @@ def main():
             sh = 16
         if 0 <= ee < 0.8:
             sh = 30 * (1 - ee / 0.8)
-        if abs(t - (E0 + VEG_AT * TS)) < 0.25 or 0 <= t - T_BONK < 0.4 or any(0 <= t - h_ < 0.3 for h_ in hits.values()):
+        if abs(t - (E0 + VEG_AT * TS)) < 0.25 or any(0 <= t - h_ < 0.3 for h_ in hits.values()):
             sh = 20
         if sh:
             dx, dy = rnd.randint(-int(sh), int(sh)), rnd.randint(-int(sh), int(sh))
@@ -622,8 +710,12 @@ def main():
         put(th, S("hit", 4), 0.9)
         put(th + 0.03, S("bomb", 6), 0.6)
     put(T_BACK + 0.4, S("teleport", 2), 0.6)
-    put(T_BONK, S("hit", 3), 1.0)
-    put(T_BONK + 0.05, S("ko", 1), 0.7)
+    t_j = T_BONK - (len(clip("appel_saut")) + jump_peak()) / FPS
+    put(0.0, S("teleport", 3), 0.8)                                  # apparition dans les airs
+    put(T_TP + len(clip("tp")) / FPS + T_FALL, S("hit", 5), 0.6)    # atterrissage
+    put(t_j + len(clip("appel_saut")) / FPS - 0.05, S("teleport", 4), 0.7)   # saut
+    put(T_BONK - 0.05, S("beam", 2), 0.5)                            # la boule passe dessous
+    put(t_j + (len(clip("appel_saut")) + len(clip("salto"))) / FPS, S("hit", 6), 0.4)   # réception
     lvl = float(np.percentile(np.abs(audio), 99.7)) or 1.0
     audio = audio * min(1.0, 0.75 / lvl)
     wav = out.with_suffix(".wav")
