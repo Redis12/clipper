@@ -95,3 +95,29 @@ if "sukuna" in sys.argv:                              # 07/11 : Sukuna (Shibuya,
                             title=("CAN SHIBUYA SUKUNA", "SURVIVE THE NARUTO GAUNTLET?"), theme=SUK_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.22,
                             out=OUT / "Gauntlet - Sukuna vs Naruto.mp4"))
+if "ichigo" in sys.argv:                              # 08/11 : Ichigo (Bankai, pas de changement de forme) tombe contre Madara
+    import os
+    ICH = {"name": "Ichigo", "image_path": L + "_fusion/Ichigo/6 True Bankai.jpg"}
+    ICH_THEME = {"hero": (255, 140, 40), "boss": (170, 80, 255), "accent": (255, 200, 60), "title2": (255, 150, 50),
+                 "bg": ((20, 12, 24), (4, 4, 8)), "grid": (70, 50, 40),
+                 "glows": [(0.15, 0.2, 380, (255, 120, 20)), (0.9, 0.55, 420, (120, 60, 255)), (0.4, 0.95, 360, (200, 40, 20))],
+                 "font": "tools/money_sim/fonts/anton.woff2"}
+    foes = [{"name": n, "image_path": N + p} for n, p in [
+        ("Ichiraku", "Teuchi/Teuchi.jpg"), ("TenTen", "TenTen/TenTen.jpg"), ("Sakura", "Sakura/Sakura.jpg"),
+        ("Tsunade", "Tsunade/Tsunade.png"), ("Jiraiya", "Jiraya/Jiraya.png"), ("Orochimaru", "Orochimaru/Orochimaru.jpg"),
+        ("Kakashi", "Kakashi/Kakashi.jpg"), ("Raikage", "Raikage/Raikage.jpg"), ("Minato", "Minato/Minato.jpg"),
+        ("Itachi", "Itachi/Itachi.jpg"), ("Pain", "Pain/Pain.jpg"), ("Obito", "Obito/Obito.png")]]
+    foes.append({"name": "Madara", "image_path": L + "_fusion/Madara/7 six path madara.jpg"})
+    foes.append({"name": "Naruto", "image_path": L + "_fusion/Naruto/8 SIX PATH.jpg"})   # la liste continue : pas de spoil
+    foes[0].update(gag=True, gag_s=1.3, say="Free ramen if you lose! 🍜")
+    foes[2].update(gag=True, gag_s=1.3, say="SHANNAROOO! 👊")
+    foes[8]["tp"] = True
+    foes[9]["fake"] = True
+    foes[11]["kamui"] = True
+    foes[12].update(gag=True, gag_s=1.6, say="Wake up to reality. 🌙")
+    music = os.environ.get("GAUNTLET_MUSIC") or "library/_music/Naruto Shippuden OST 1 - Track 26 - Keisei Gyakuten ( Reverse Situation ).mp3"
+    print(gauntlet.generate(ICH, foes, universe="Naruto", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
+                            base_hits=1, step_hits=0, lose_at=12, lose_after=3.0, lose_move="CHIBAKU TENSEI!",
+                            title=("CAN BANKAI ICHIGO", "SURVIVE THE NARUTO GAUNTLET?"), theme=ICH_THEME, music=music,
+                            music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.22,
+                            out=OUT / "Gauntlet - Ichigo vs Naruto.mp4"))
