@@ -1,15 +1,101 @@
-{"source": "Goku ALL Transformations (référence de l'utilisateur), 0:19 → 0:30", "fps": 30, "t0": 19.0,
+{
+ "source": "Goku ALL Transformations (référence de l'utilisateur), 0:19 → 0:30",
+ "fps": 30,
+ "t0": 19.0,
  "seq": [
-  ["arrivee_teleportation", 56, 66, "apparaît d'un coup (téléportation), flou de mouvement, se pose"],
-  ["equilibre_genou_leve", 66, 88, "debout sur une jambe, genou levé, petits ajustements d'équilibre"],
-  ["bond_arriere", 88, 96, "bondit en arrière et se réceptionne"],
-  ["debout_regarde", 96, 142, "debout, regarde devant lui, respire"],
-  ["entree_fente", 142, 150, "descend dans une fente avant"],
-  ["fente_etirement", 150, 186, "tient la fente, jambe arrière tendue, petits rebonds d'étirement"],
-  ["fente_vers_accroupi", 186, 198, "ramène les jambes, passe accroupi au centre"],
-  ["fente_laterale", 198, 237, "fente sur le côté, autre jambe tendue, s'étire"],
-  ["releve", 237, 247, "se relève de la fente"],
-  ["penche_toucher_pieds", 247, 262, "se penche en avant pour toucher ses pieds"],
-  ["redresse", 262, 272, "se redresse"],
-  ["garde_respire", 272, 329, "debout, poings devant la poitrine, respire (garde au repos)"]
- ]}
+  [
+   "arrivee_teleportation",
+   56,
+   66,
+   "apparaît d'un coup (téléportation), flou de mouvement, se pose"
+  ],
+  [
+   "equilibre_genou_leve",
+   66,
+   88,
+   "debout sur une jambe, genou levé, petits ajustements d'équilibre"
+  ],
+  [
+   "bond_arriere",
+   88,
+   96,
+   "bondit en arrière et se réceptionne"
+  ],
+  [
+   "debout_regarde",
+   96,
+   142,
+   "debout, regarde devant lui, respire"
+  ],
+  [
+   "entree_fente",
+   142,
+   150,
+   "descend dans une fente avant"
+  ],
+  [
+   "fente_etirement",
+   150,
+   186,
+   "tient la fente, jambe arrière tendue, petits rebonds d'étirement"
+  ],
+  [
+   "fente_vers_accroupi",
+   186,
+   198,
+   "ramène les jambes, passe accroupi au centre"
+  ],
+  [
+   "fente_laterale",
+   198,
+   237,
+   "fente sur le côté, autre jambe tendue, s'étire"
+  ],
+  [
+   "releve",
+   237,
+   247,
+   "se relève de la fente"
+  ],
+  [
+   "penche_toucher_pieds",
+   247,
+   262,
+   "se penche en avant pour toucher ses pieds"
+  ],
+  [
+   "redresse",
+   262,
+   272,
+   "se redresse"
+  ],
+  [
+   "garde_respire",
+   272,
+   329,
+   "debout, poings devant la poitrine, respire (garde au repos)"
+  ]
+ ],
+ "effects": {
+  "50": {
+   "fx": "ghost",
+   "pose": 60
+  },
+  "56": {
+   "fx": "blur",
+   "pose": 60
+  },
+  "58": {
+   "fx": "sparse",
+   "pose": 60
+  },
+  "64": {
+   "fx": "glitch",
+   "pose": 65
+  },
+  "67": {
+   "fx": "blur",
+   "pose": 69
+  }
+ }
+}

@@ -255,6 +255,12 @@ class PivotActor:
             if self.mirror and angles is not None:
                 o = dict(o, bends=[-x for x in (o.get("bends") or [])])
                 ft = dict(ft, segments=[dict(g, bend_rad=-g.get("bend_rad", 0.0)) for g in ft["segments"]])
+            f = (getattr(self, "lscale", None) or {}).get(s)
+            if f and angles is not None:                      # raccourci (membre vu de face) : longueurs × f
+                segs = sorted(ft["segments"], key=lambda q: q["segment_id"])
+                L0 = o.get("lengths") if o.get("len_flag") else None
+                o = dict(o, len_flag=1, lengths=[(L0[i] if L0 and i < len(L0) else g_["length"]) * f
+                                                   for i, g_ in enumerate(segs)])
             J[s], self._pts[s] = geom(o, ft, base, rot.get(s, 0.0), ang)
         return J
 
@@ -267,6 +273,7 @@ class PivotActor:
                 continue
             tgt[s] = -math.radians(deg) - self.rest_ang[s][0]          # angle écran (y vers le bas)
         rot = {}
+        ex = getattr(self, "extra", None) or {}                      # rotations en plus par morceau (recopie fine)
         for s in self.tree:
             if s in tgt:
                 rot[s] = tgt[s]
@@ -274,6 +281,8 @@ class PivotActor:
                 rot[s] = rot[self.par[s][0]]
             else:
                 rot[s] = 0.0
+            if s in ex:
+                rot[s] += math.radians(ex[s])
         return rot
 
     def draw(self, canvas, pose, x, y, rot=0.0, hair=None, alpha=1.0, ground=None, trail=0, ghost_col=None,
