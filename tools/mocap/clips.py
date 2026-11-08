@@ -29,6 +29,8 @@ def load(name, height=700.0, flip=False):
             im = im.transpose(Image.FLIP_LEFT_RIGHT)
         out.append(im)
     # sol = le point le plus bas atteint dans le mouvement (pieds au sol) : on garde la hauteur des sauts (salto)
+    if info.get("per_frame"):                    # caméra qui bouge dans la vidéo source (Saitama) : pieds image par image
+        return out, [f * k for f in info["feet_y"]]
     g = max(info["feet_y"]) * k
     feet = [g] * len(out)
     return out, feet

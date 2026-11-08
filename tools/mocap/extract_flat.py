@@ -18,7 +18,7 @@ sys.path.insert(0, str(HERE))
 import extract  # noqa: E402
 
 
-def plate(rgb, frac=0.02, tol=34):
+def plate(rgb, frac=0.02, tol=26):
     q = (rgb // 8).reshape(-1, 3)
     u, cnt = np.unique(q, axis=0, return_counts=True)
     bg = u[cnt > frac * len(q)] * 8 + 4
@@ -48,7 +48,7 @@ def run(video, t0, t1, name, box, stand_h=None):
         plf, roughf = plate(rgb)                                      # palette du décor sur l'image entière
         sub = rgb[y0:y1, x0:x1]
         pl, rough = plf[y0:y1, x0:x1], roughf[y0:y1, x0:x1]
-        rgba, a = extract.cut(sub, False, pl.astype(np.int16))
+        rgba, a = extract.cut(sub, False, pl.astype(np.int16), thr=28)
         keep = ndi.binary_dilation(rough, iterations=3)
         al = rgba[..., 3].astype(float) * keep
         lab, n = ndi.label(al > 128)
@@ -56,18 +56,24 @@ def run(video, t0, t1, name, box, stand_h=None):
             sz = ndi.sum(al > 128, lab, range(1, n + 1))
             big = ndi.binary_dilation(np.isin(lab, [i + 1 for i in range(n) if sz[i] >= 0.03 * sz.max()]), iterations=3)
             al *= big
+        c_ = rgba[..., :3].astype(int)
+        blue = (c_[..., 2] > c_[..., 0] + 25) & (c_[..., 2] > c_[..., 1] - 10)   # traits ciel/montagne (le perso n'a pas de bleu)
+        al[ndi.binary_dilation(blue, iterations=1)] = 0
         rgba[..., 3] = al.astype(np.uint8)
         a = al > 128
         if a.sum() < 400:
             continue
         full = np.zeros((rgb.shape[0], rgb.shape[1], 4), np.uint8)
         full[y0:y1, x0:x1] = rgba
-        ys, xs = np.nonzero(full[..., 3] > 128)
-        boxes.append((xs.min(), ys.min(), xs.max(), ys.max()))
+        op = full[..., 3] > 128
+        ys, xs = np.nonzero(op)
+        lit = op & (full[..., :3].astype(int).max(2) > 70)         # sans l'ombre noire sous les bottes
+        rows = np.nonzero(lit.sum(1) >= 12)[0]
+        boxes.append((xs.min(), ys.min(), xs.max(), ys.max(), rows.max() if len(rows) else ys.max()))
         ims.append(full)
     b = np.array(boxes)
     bx = (int(b[:, 0].min()) - 2, int(b[:, 1].min()) - 2, int(b[:, 2].max()) + 3, int(b[:, 3].max()) + 3)
-    feet = [int(bb[3]) - bx[1] for bb in boxes]
+    feet = [int(bb[4]) - bx[1] for bb in boxes]
     gif = []
     for i, rgba in enumerate(ims):
         im = Image.fromarray(rgba).crop(bx)
@@ -77,7 +83,7 @@ def run(video, t0, t1, name, box, stand_h=None):
         gif.append(g)
     gif[0].save(root / "apercu.gif", save_all=True, append_images=gif[1:], duration=33, loop=0)
     json.dump({"goku_h": stand_h or 0, "source": Path(video).name, "t": [t0, t1], "fps": 30, "n": len(ims),
-               "size": list(gif[0].size), "feet_y": feet, "x_in_video": bx[0]}, open(root / "info.json", "w"))
+               "size": list(gif[0].size), "feet_y": feet, "x_in_video": bx[0], "per_frame": True}, open(root / "info.json", "w"))
     return name, len(ims), gif[0].size
 
 

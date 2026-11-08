@@ -29,7 +29,7 @@ def frames(video, t0, t1, fps=30):
     return sorted(d.glob("*.png"))
 
 
-def cut(rgb, base, empty=None):
+def cut(rgb, base, empty=None, thr=60):
     """Découpe d'une image. empty = décor vide de la même prise (« clean plate » : décor fixe d'une animation 2D,
     pixels identiques d'une image à l'autre) → masque = ce qui diffère du décor, PUIS bords « dé-mélangés »
     (matting à fond connu) : un pixel de bord C = α·F + (1−α)·B, B = décor connu, F = couleur du perso la plus
@@ -44,7 +44,7 @@ def cut(rgb, base, empty=None):
     C = rgb.astype(np.float32)
     B = empty.astype(np.float32)
     d = np.abs(C - B).sum(2)
-    core = d >= 60
+    core = d >= thr
     core = ndi.binary_opening(core, iterations=1) | (core & ndi.binary_erosion(core))   # poussières de compression
     lab, n = ndi.label(ndi.binary_dilation(core, iterations=max(3, round(3 * k))), structure=np.ones((3, 3)))
     if n > 1:                                                         # le perso = gros morceaux (pas de miettes)
@@ -65,9 +65,9 @@ def cut(rgb, base, empty=None):
     ab = np.clip(((C - B) * FB).sum(2) / np.maximum(den, 1.0), 0.0, 1.0)
     ab[den < 400] = core[den < 400]                                     # perso ≈ décor : on garde le masque dur
     alpha = np.where(band, ab, alpha)
-    alpha[core & (d < 60)] = 1.0                                     # trous bouchés : opaques
+    alpha[core & (d < thr)] = 1.0                                     # trous bouchés : opaques
     alpha[alpha < 0.12] = 0
-    px = np.where((band & ~(core & (d < 60)))[..., None], F, C)
+    px = np.where((band & ~(core & (d < thr)))[..., None], F, C)
     rgba = np.dstack([np.clip(px, 0, 255).astype(np.uint8), (alpha * 255).astype(np.uint8)])
     return rgba, alpha > 0.5
 

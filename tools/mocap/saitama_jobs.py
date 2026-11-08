@@ -3,7 +3,7 @@ import extract_flat as X
 from concurrent.futures import ProcessPoolExecutor
 V = '/tmp/sai_v/src.mp4'
 JOBS = [
-    ('saitama_debout', 10.6, 13.55, (250, 150, 1200, 1080)),
+    ('saitama_debout', 11.5, 13.55, (250, 150, 1200, 1080)),
     ('saitama_super_saut', 13.55, 14.17, (250, 150, 1300, 1080)),
     ('saitama_marche', 24.0, 26.6, (100, 150, 1400, 1080)),
     ('saitama_poing_armer', 70.5, 70.95, (250, 240, 840, 1080)),
