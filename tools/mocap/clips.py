@@ -28,7 +28,9 @@ def load(name, height=700.0, flip=False):
         if flip:
             im = im.transpose(Image.FLIP_LEFT_RIGHT)
         out.append(im)
-    feet = [y * k for y in info["feet_y"]]
+    # sol = le point le plus bas atteint dans le mouvement (pieds au sol) : on garde la hauteur des sauts (salto)
+    g = max(info["feet_y"]) * k
+    feet = [g] * len(out)
     return out, feet
 
 

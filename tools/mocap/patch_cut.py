@@ -58,21 +58,23 @@ def main():
         body = (a[..., 3] > 128) & ~bm
         ys, xs = np.nonzero(E)
         best = None
-        for ang in range(0, 360, 6):
+        q = 4                                                   # recherche à 1/4 de la taille (rapide)
+        Eq, Bq = E[::q, ::q], body[::q, ::q]
+        Eq_n = max(1, Eq.sum())
+        for ang in range(0, 360, 8):
             R = T.rotate(ang, expand=True, resample=Image.BICUBIC)
-            ra = np.asarray(R)[..., 3] > 128
+            ra = (np.asarray(R)[..., 3] > 128)[::q, ::q]
             h, w = ra.shape
-            for ty in range(int(ys.min()) - h + 10, int(ys.max()) - 5, 4):
-                for tx in range(int(xs.min()) - w + 10, int(xs.max()) - 5, 4):
-                    if ty < 0 or tx < 0 or ty + h > a.shape[0] or tx + w > a.shape[1]:
+            n_ra = max(1, ra.sum())
+            for ty in range(int(ys.min()) // q - h + 3, int(ys.max()) // q - 1):
+                for tx in range(int(xs.min()) // q - w + 3, int(xs.max()) // q - 1):
+                    if ty < 0 or tx < 0 or ty + h > Eq.shape[0] or tx + w > Eq.shape[1]:
                         continue
-                    win_e = E[ty:ty + h, tx:tx + w]
-                    win_b = body[ty:ty + h, tx:tx + w]
-                    ov = (ra & win_e).sum()
-                    sc = ov / max(1, E.sum()) - 0.8 * (ra & win_b).sum() / max(1, ra.sum()) \
-                        - 0.3 * (ra & ~win_e & (np.arange(ty, ty + h)[:, None] >= top)).sum() / max(1, ra.sum())
+                    we = Eq[ty:ty + h, tx:tx + w]
+                    sc = (ra & we).sum() / Eq_n - 0.8 * (ra & Bq[ty:ty + h, tx:tx + w]).sum() / n_ra \
+                        - 0.3 * (ra & ~we)[max(0, top // q - ty):].sum() / n_ra
                     if best is None or sc > best[0]:
-                        best = (sc, ang, tx, ty)
+                        best = (sc, ang, tx * q, ty * q)
         sc, ang, tx, ty = best
         R = T.rotate(ang, expand=True, resample=Image.BICUBIC)
         im = Image.open(f).convert("RGBA")
