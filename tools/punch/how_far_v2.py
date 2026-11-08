@@ -192,6 +192,7 @@ def place(name, im):
     return ANCHOR[0] + (INFO[name]["x_in_video"] - 988) * k            # 988 = garde_cavalier
 
 import hud  # noqa: E402
+import landscape  # noqa: E402
 
 
 def hud_label(d, xy, txt, size, fill, angle=0):
@@ -389,6 +390,24 @@ def main():
     kame = kame_house().transpose(Image.FLIP_LEFT_RIGHT)          # retourné 2 fois = texte lisible
     veg = fusion.icon(str(ROOT / "library/_fusion/Vegeta/1 Base.jpg"), 230, (60, 90, 255)).transpose(Image.FLIP_LEFT_RIGHT)
     eimg = earth(330)
+    scene = landscape.PixelScene(W, H, GROUND, "nature_5")
+    PL = ROOT / "library/_decors/planets"
+    from PIL import ImageEnhance
+    earth_fr = []
+    for i in range(16):                                              # éclaircie : le côté nuit était trop sombre
+        e_ = Image.open(PL / "earth" / f"earth_{i}.png").convert("RGBA")
+        a_ = e_.getchannel("A")
+        e_ = ImageEnhance.Brightness(e_.convert("RGB")).enhance(1.75).convert("RGBA")
+        e_.putalpha(a_)
+        earth_fr.append(e_.resize((660, 660), Image.NEAREST))
+    moon_im = Image.open(PL / "moon" / "moon_0.png").convert("RGBA").resize((128, 128), Image.NEAREST)
+    sat_pl = Image.open(PL / "saturn" / "saturn_0.png").convert("RGBA").resize((292, 292), Image.NEAREST)
+    SB = ROOT / "library/_decors/space/Blue Version/layered"
+    space_bg = Image.open(SB / "blue-with-stars.png").convert("RGB")
+    space_bg = space_bg.resize((space_bg.width * 12, space_bg.height * 12), Image.NEAREST)
+    eglow = Image.new("RGBA", (900, 900), (0, 0, 0, 0))
+    ImageDraw.Draw(eglow).ellipse((90, 90, 810, 810), fill=(90, 170, 255, 150))
+    eglow = eglow.filter(ImageFilter.GaussianBlur(40))
     st = stars()
     explo = list(vfxgen.frames("explosion", 520, (255, 210, 80)))
     ring = list(vfxgen.frames("ring", 700, (255, 240, 180)))
@@ -419,33 +438,27 @@ def main():
                 scroll = (km * 1300 if km < 15 else 15 * 1300 + (km - 15) * 400)
                 tilt = ease((e - 4.2) / 3.2) if e > 4.2 else 0.0
                 sea = ease((e - 1.9) / 0.6) if e > 1.9 else 0.0
-            img = day_sky(warm)
+            shift = int(tilt * 1400)
+            img = scene.frame(scroll, shift).convert("RGBA")                 # décor pixel-art (pack de l'utilisateur)
+            gy = GROUND + shift
+            if sea > 0 and gy - 260 < H:                                 # la terre laisse place à la mer
+                sl = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+                sd = ImageDraw.Draw(sl)
+                hz = gy - 250
+                for yy in range(int(max(0, hz)), H, 6):
+                    k_ = min(1.0, (yy - hz) / 700)
+                    sd.rectangle((0, yy, W, yy + 6), fill=(int(70 - 40 * k_), int(160 - 60 * k_), int(230 - 40 * k_),
+                                                             int(255 * sea)))
+                for k in range(22):
+                    x = (k * 137 - scroll * (0.4 + 0.5 * (k % 3) / 2)) % (W + 200) - 100
+                    yy = hz + 40 + (k % 7) * 120
+                    sd.line((x, yy, x + 70 + (k % 3) * 30, yy), fill=(200, 235, 255, int(170 * sea)), width=5)
+                img.alpha_composite(sl)
             if tilt > 0:                                              # le ciel fonce, les étoiles arrivent
                 dk = Image.new("RGBA", (W, H), (2, 2, 10, int(255 * min(1, tilt * 1.15))))
                 img.alpha_composite(dk)
-            shift = int(tilt * 1400)
-            if shift < H:
-                img.alpha_composite(far.crop((int(scroll * .2) % (W * 12), 0, int(scroll * .2) % (W * 12) + W, H)), (0, shift))
-                if sea < 1:
-                    nl = near.crop((int(scroll * .5) % (W * 26), 0, int(scroll * .5) % (W * 26) + W, H))
-                    if sea > 0:
-                        nl.putalpha(nl.getchannel("A").point(lambda v, s_=sea: int(v * (1 - s_))))
-                    img.alpha_composite(nl, (0, shift))
             img = img.convert("RGB")
             d = ImageDraw.Draw(img, "RGBA")
-            gy = GROUND + shift
-            if gy < H:
-                gcol = tuple(int(a * (1 - sea) + b * sea) for a, b in zip((70, 150, 70), (30, 120, 210)))
-                d.rectangle((0, gy, W, H), fill=gcol)
-                d.line((0, gy, W, gy), fill=(190, 240, 140), width=6)
-                if sea > 0:
-                    for k in range(14):
-                        x = (k * 170 - scroll * 0.9) % (W + 200) - 100
-                        d.arc((x, gy + 20 + (k % 3) * 40, x + 120, gy + 60 + (k % 3) * 40), 200, 340,
-                              fill=(160, 210, 255, int(150 * sea)), width=3)
-                else:
-                    for gx in range(-(int(scroll) % 160), W, 160):
-                        d.line((gx, gy + 18, gx + 60, gy + 18), fill=(80, 110, 160, 160), width=3)
             if tilt > 0.2:
                 for sx, sy, sr, sa in st:
                     d.ellipse((sx - sr, sy - sr, sx + sr, sy + sr), fill=(255, 255, 255, int(255 * sa * min(1, (tilt - .2) * 2))))
@@ -498,16 +511,15 @@ def main():
                     d.rectangle((0, 0, W, H), fill=(255, 245, 180, int(235 * (1 - (tt - T_SSJ) / 0.35))))
         else:
             # ---------------------------------------------------------------- espace : tour de la Terre
-            img = Image.new("RGB", (W, H), (3, 4, 14))
-            d = ImageDraw.Draw(img, "RGBA")
-            for sx, sy, sr, sa in st:
-                d.ellipse((sx - sr, sy - sr, sx + sr, sy + sr), fill=(255, 255, 255, int(255 * sa)))
+            ox_ = int((space_bg.width - W) / 2 + 40 * math.sin(t * 0.3))      # fond spatial pixel-art (pack CC0)
+            img = space_bg.crop((ox_, 0, ox_ + W, H)).copy()
             ec = (W / 2, H * 0.6)
-            img.paste(eimg, (int(ec[0] - eimg.width / 2), int(ec[1] - eimg.height / 2)), eimg)
+            img.paste(sat_pl, (60, 560), sat_pl)                              # Saturne au loin
+            img.paste(eglow, (int(ec[0] - 450), int(ec[1] - 450)), eglow)
+            ef = earth_fr[int(t * 6) % 16]                                    # la Terre tourne (pack Orrery)
+            img.paste(ef, (int(ec[0] - 330), int(ec[1] - 330)), ef)
+            img.paste(moon_im, (790, 630), moon_im)                           # la Lune
             d = ImageDraw.Draw(img, "RGBA")
-            # Lune en easter egg
-            d.ellipse((800, 640, 900, 740), fill=(220, 220, 210))
-            d.ellipse((830, 670, 850, 690), fill=(180, 180, 170))
             k = (e - 7.4) / (SP - 7.4)
             ang = math.radians(200 - 360 * (0.15 * ease(k) + 0.85 * k))
             R = 330 + 70
