@@ -173,7 +173,7 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
     n = len(foes)
     S = W * 0.86
     ox, oy = (W - S) / 2, H * 0.215
-    hits_for = lambda i: (10 ** 6 if i == lose_at else base_hits + step_hits * i)        # noqa: E731
+    hits_for = lambda i: (10 ** 6 if i == lose_at else int(foes[i].get("hits") or base_hits + step_hits * i))  # noqa: E731  « hits » par adversaire (boss finaux pas en un coup)
     seed = seed if seed is not None else random.randrange(1_000_000)
     specials = [{k_: v for k_, v in f.items() if k_ in ("gag", "gag_s", "tp", "kamui", "say", "fake")} or None for f in foes]
     sim = simulate(seed, S, n, hits_for, specials=specials, lose_at=lose_at, lose_after=lose_after)
