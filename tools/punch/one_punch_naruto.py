@@ -120,6 +120,7 @@ def poof(d, x, y, a):
         d.ellipse((cx_ - r, cy_ - r, cx_ + r, cy_ + r), fill=(245, 245, 250, al))
 
 
+KI = {}
 POOF_AT = 0.55                             # le clone touché disparaît après ce temps de vol
 
 
@@ -242,7 +243,7 @@ def wave_x(a):
 
 def main():
     out = Path(sys.argv[1])
-    for n_ in ("garde_cavalier", "coup_de_poing_fente", "retour_du_coup"):
+    for n_ in ("garde_cavalier", "coup_de_poing_fente", "retour_du_coup", "lancer_ki"):
         clip(n_)
     hit = clip("coup_de_poing_fente")[PUNCH_HIT]
     al_ = np.asarray(hit)[..., 3] > 128
@@ -316,11 +317,14 @@ def main():
             return g[i_ if i_ < 8 else 14 - i_]
         if cut_goku:                                                  # *flick* : garde → coup → boule de ki
             k = t - T_CUT
+            # vrai geste de la vidéo (114,3 s) : mains ramenées à la hanche, puis poussée des 2 paumes
             if k < 0.6:
-                name, gim = "garde_cavalier", garde(k, 0.6)
+                i_ = min(12, int(k / 0.6 * 13))
+            elif k < 0.75:
+                i_ = 13 + int((k - 0.6) * FPS)
             else:
-                i_ = int((k - 0.6) * FPS)
-                name, gim = "coup_de_poing_fente", fr("coup_de_poing_fente", min(i_, PUNCH_HIT))
+                i_ = min(22, 17 + int((k - 0.75) * FPS))
+            name, gim = "lancer_ki", fr("lancer_ki", i_)
         elif t < t_punch:
             name, gim = "garde_cavalier", garde(t, t_punch)
         else:
@@ -366,10 +370,19 @@ def main():
             d = ImageDraw.Draw(img, "RGBA")
             if cut_goku:
                 k = t - T_CUT
-                aa_ = np.asarray(pim)[..., 3] > 128
-                hy_, hx_ = np.nonzero(aa_[: int(pim.height * 0.6)])
-                j_ = hx_.argmax()
-                hx, hy = px + hx_[j_] + 6, py + hy_[j_]                 # la main la plus en avant
+                ar_ = np.asarray(pim).astype(int)
+                skin = (np.abs(ar_[..., :3] - np.array([250, 214, 182])).sum(2) < 70) & (ar_[..., 3] > 128)
+                skin[: int(pim.height * 0.33)] = False                  # pas le visage
+                skin[int(pim.height * 0.8):] = False
+                hy_, hx_ = np.nonzero(skin)
+                if k < 0.6:                                           # mains jointes à la hanche
+                    sel = hx_ >= np.percentile(hx_, 60)
+                    hx, hy = px + hx_[sel].mean(), py + hy_[sel].mean()
+                else:                                                 # paumes poussées vers l'avant
+                    j_ = hx_.argmax()
+                    hx, hy = px + hx_[j_] + 10, py + hy_[j_]
+                    if k >= 0.75 and "palm" not in KI:
+                        KI["palm"] = (hx, hy)
                 if k < 0.75:                                          # la boule de ki se charge dans la main
                     r = 8 + 30 * ease(k / 0.6)
                     gl = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -385,15 +398,16 @@ def main():
                                 hy + math.sin(an) * (rr + 30)), fill=(255, 240, 150, 220), width=5)
                 else:
                     kk = (k - 0.75) / 0.75
-                    bx = fist_x + kk * 1100
+                    px0, fy0 = KI.get("palm", (hx, hy))
+                    bx = px0 + kk * 1100
                     for j in range(8):
-                        d.ellipse((bx - j * 40 - 30 + j * 3, fist_y - 30 + j * 3, bx - j * 40 + 30 - j * 3, fist_y + 30 - j * 3),
+                        d.ellipse((bx - j * 40 - 30 + j * 3, fy0 - 30 + j * 3, bx - j * 40 + 30 - j * 3, fy0 + 30 - j * 3),
                                   fill=(255, 235, 110, 160 - j * 18))
-                    d.ellipse((bx - 40, fist_y - 40, bx + 40, fist_y + 40), fill=(255, 240, 120, 140))
-                    d.ellipse((bx - 22, fist_y - 22, bx + 22, fist_y + 22), fill=(255, 255, 235))
+                    d.ellipse((bx - 40, fy0 - 40, bx + 40, fy0 + 40), fill=(255, 240, 120, 140))
+                    d.ellipse((bx - 22, fy0 - 22, bx + 22, fy0 + 22), fill=(255, 255, 235))
                     if kk < 0.6:
                         s_ = 1 + 0.5 * max(0.0, 1 - kk / 0.12)
-                        img = hud.label(img, (fist_x + 40, fist_y - 190), "HA!", int(120 * s_), fill=(255, 225, 50), angle=6)
+                        img = hud.label(img, (px0 + 40, fy0 - 190), "HA!", int(120 * s_), fill=(255, 225, 50), angle=6)
                         d = ImageDraw.Draw(img, "RGBA")
         # ------------------------------------------------ la file
         march = max(0.0, 1.2 - t) * 260                                # elle arrive par la droite au début
