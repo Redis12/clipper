@@ -1,0 +1,569 @@
+<title>Goku Stickman Arena</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Chakra+Petch:wght@500;700&display=swap">
+<style>
+/* Layout : une arène plein cadre (SVG 16:9) au-dessus d'une barre de commandes façon jeu de combat. Un seul look sombre, voulu. */
+:root {
+  --night: #0d0b1f;
+  --dusk: #2a1640;
+  --horizon: #e2683a;
+  --ground: #1a1328;
+  --ki-gold: #ffd23f;
+  --ki-blue: #6fd3ff;
+  --gi: #f26b1d;
+  --ink: #f6efe2;
+  --muted: #a99bc4;
+  --panel: #171230;
+  --edge: #3a2d5e;
+  --display: "Bangers", "Impact", "Arial Black", sans-serif;
+  --ui: "Chakra Petch", "Trebuchet MS", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--night);
+  color: var(--ink);
+  font-family: var(--ui);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.wrap { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--display); font-weight: 400; letter-spacing: 0.04em; font-size: clamp(26px, 4vw, 40px); margin: 0; line-height: 1; text-wrap: balance; }
+h1 span { color: var(--ki-gold); }
+.state { font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; }
+.state b { color: var(--ki-gold); font-weight: 700; }
+.stage { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; border: 1px solid var(--edge); background: var(--night); }
+.stage svg { display: block; width: 100%; height: 100%; }
+.controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.btn {
+  font: 700 15px/1.1 var(--ui);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-bottom-width: 4px;
+  border-radius: 6px;
+  padding: 14px 12px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  cursor: pointer; transition: transform .08s, border-color .15s, background .15s;
+  min-width: 0;
+}
+.btn kbd { font: 700 12px var(--ui); color: var(--night); background: var(--muted); border-radius: 4px; padding: 3px 7px; }
+.btn:hover { border-color: var(--ki-gold); }
+.btn:active, .btn.on { transform: translateY(2px); border-bottom-width: 2px; }
+.btn.on { background: #2b1f4f; border-color: var(--ki-gold); }
+.btn:focus-visible { outline: 2px solid var(--ki-blue); outline-offset: 2px; }
+.btn.k1 kbd { background: var(--ki-gold); }
+.btn.k2 kbd { background: var(--gi); }
+.btn.k3 kbd { background: var(--ki-blue); }
+.foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+.link { background: none; border: 0; color: var(--muted); font: 500 13px var(--ui); text-decoration: underline; cursor: pointer; padding: 0; }
+.link:hover { color: var(--ink); }
+@media (max-width: 560px) {
+  .controls { grid-template-columns: 1fr; }
+  .btn { padding: 12px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>GOKU <span>STICKMAN</span> ARENA</h1>
+    <div class="state" id="state">Forme : <b id="form">Base</b> · Ki <b id="kiv">0</b>%</div>
+  </header>
+
+  <div class="stage">
+    <svg id="svg" viewBox="0 0 960 540" aria-label="Arène : Goku stickman face à un poteau d'entraînement">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0d0b1f"/>
+          <stop offset=".55" stop-color="#2a1640"/>
+          <stop offset=".86" stop-color="#7a2f45"/>
+          <stop offset="1" stop-color="#e2683a"/>
+        </linearGradient>
+        <radialGradient id="ball" cx=".5" cy=".5" r=".5">
+          <stop offset="0" stop-color="#ffffff"/>
+          <stop offset=".35" stop-color="#d8f6ff"/>
+          <stop offset=".7" stop-color="#6fd3ff"/>
+          <stop offset="1" stop-color="#2a7dff" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2a7dff" stop-opacity="0"/>
+          <stop offset=".22" stop-color="#6fd3ff"/>
+          <stop offset=".42" stop-color="#e9fbff"/>
+          <stop offset=".5" stop-color="#ffffff"/>
+          <stop offset=".58" stop-color="#e9fbff"/>
+          <stop offset=".78" stop-color="#6fd3ff"/>
+          <stop offset="1" stop-color="#2a7dff" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="7" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10"/></filter>
+      </defs>
+
+      <g id="world">
+        <rect x="-40" y="-40" width="1040" height="620" fill="url(#sky)"/>
+        <g id="stars"></g>
+        <path d="M-40 400 L60 352 L150 380 L250 330 L360 372 L470 340 L560 366 L660 318 L770 362 L880 336 L1000 372 L1000 580 L-40 580 Z" fill="#1d1430"/>
+        <rect x="-40" y="430" width="1040" height="150" fill="#1a1328"/>
+        <line x1="-40" y1="430" x2="1000" y2="430" stroke="#3a2d5e" stroke-width="2"/>
+        <g id="cracks" stroke="#2b2045" stroke-width="2" fill="none">
+          <path d="M120 452 l40 10 l30 -4"/><path d="M640 470 l50 -6 l26 12"/><path d="M380 500 l34 8"/>
+        </g>
+        <g id="speed" opacity="0"></g>
+        <g id="post"></g>
+        <g id="aura"></g>
+        <g id="hero"></g>
+        <g id="fx"></g>
+        <g id="beamg"></g>
+      </g>
+      <rect id="flash" x="0" y="0" width="960" height="540" fill="#ffffff" opacity="0" pointer-events="none"/>
+      <text id="call" x="480" y="120" text-anchor="middle" font-family="Bangers, Impact, sans-serif" font-size="72" fill="#ffd23f" stroke="#0d0b1f" stroke-width="6" paint-order="stroke" opacity="0" letter-spacing="3"></text>
+    </svg>
+  </div>
+
+  <div class="controls" role="group" aria-label="Attaques">
+    <button class="btn k1" id="b1" type="button"><kbd>1</kbd> Charge de Ki</button>
+    <button class="btn k2" id="b2" type="button"><kbd>2</kbd> Coup de poing</button>
+    <button class="btn k3" id="b3" type="button"><kbd>3</kbd> Kamehameha</button>
+  </div>
+  <div class="foot">
+    <span>La charge de Ki fait passer Goku en Super Saiyan. Touches 1, 2, 3 au clavier.</span>
+    <button class="link" id="reset" type="button">Revenir en forme de base</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const svg = $("svg"), world = $("world"), hero = $("hero"), auraG = $("aura"), fxG = $("fx"), beamG = $("beamg"),
+        speedG = $("speed"), postG = $("post"), flash = $("flash"), call = $("call");
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const E = {
+    lin: t => t,
+    out: t => 1 - Math.pow(1 - t, 3),
+    inout: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+    snap: t => 1 - Math.pow(1 - t, 6),
+    back: t => { const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); }
+  };
+
+  // étoiles
+  for (let i = 0; i < 70; i++) {
+    el("circle", { cx: (i * 137.5) % 960, cy: (i * 61.7) % 300, r: i % 7 === 0 ? 1.6 : 0.9, fill: "#f6efe2", opacity: 0.25 + (i % 5) * 0.12 }, $("stars"));
+  }
+
+  // ---------------------------------------------------------------- rig (angles absolus en degrés, 0 = droite, 90 = bas)
+  const L = { torso: 74, neck: 10, head: 21, uarm: 38, farm: 36, thigh: 50, shin: 50 };
+  const GROUND = 430;
+  const P = {
+    stance:  { torso: -82, neck: -84, uaF: 32, faF: -48, uaB: 112, faB: 20, thF: 62, shF: 98, thB: 122, shB: 84, x: 0, lean: 0 },
+    breathe: { torso: -84, neck: -86, uaF: 36, faF: -44, uaB: 114, faB: 26, thF: 64, shF: 99, thB: 120, shB: 85, x: 0 },
+    charge:  { torso: -96, neck: -104, uaF: 112, faF: 50, uaB: 72, faB: 128, thF: 46, shF: 100, thB: 134, shB: 80, x: 0 },
+    scream:  { torso: -100, neck: -116, uaF: 128, faF: 40, uaB: 58, faB: 140, thF: 42, shF: 102, thB: 138, shB: 78, x: 0 },
+    jab:     { torso: -72, neck: -78, uaF: -2, faF: -2, uaB: 108, faB: -30, thF: 54, shF: 100, thB: 128, shB: 82, x: 18 },
+    cross:   { torso: -66, neck: -74, uaF: 70, faF: -60, uaB: -4, faB: -3, thF: 50, shF: 104, thB: 134, shB: 76, x: 34 },
+    hook:    { torso: -76, neck: -80, uaF: -20, faF: 40, uaB: 100, faB: -40, thF: 56, shF: 100, thB: 126, shB: 82, x: 26 },
+    upper:   { torso: -96, neck: -100, uaF: -40, faF: -96, uaB: 96, faB: 20, thF: 70, shF: 96, thB: 120, shB: 86, x: 30 },
+    kickW:   { torso: -100, neck: -96, uaF: 40, faF: -30, uaB: 160, faB: 110, thF: 10, shF: 110, thB: 98, shB: 92, x: 22 },
+    kick:    { torso: -118, neck: -104, uaF: 60, faF: 10, uaB: 190, faB: 160, thF: -14, shF: -10, thB: 96, shB: 90, x: 30 },
+    kameBk:  { torso: -104, neck: -92, uaF: 150, faF: 196, uaB: 146, faB: 192, thF: 44, shF: 102, thB: 136, shB: 78, x: -16 },
+    kameFr:  { torso: -76, neck: -80, uaF: -2, faF: 0, uaB: 2, faB: 4, thF: 48, shF: 104, thB: 138, shB: 74, x: 10 }
+  };
+  const KEYS = Object.keys(P.stance);
+  let pose = { ...P.stance };
+  const rad = d => d * Math.PI / 180;
+  const dir = (a, l) => [Math.cos(rad(a)) * l, Math.sin(rad(a)) * l];
+  const add = (p, v) => [p[0] + v[0], p[1] + v[1]];
+
+  function joints(p, baseX) {
+    const hip0 = [baseX + p.x, 0];
+    const kF = add(hip0, dir(p.thF, L.thigh)), aF = add(kF, dir(p.shF, L.shin));
+    const kB = add(hip0, dir(p.thB, L.thigh)), aB = add(kB, dir(p.shB, L.shin));
+    const low = Math.max(aF[1], aB[1]);
+    const dy = GROUND - 8 - low;                        // pieds au sol
+    const sh = v => [v[0], v[1] + dy];
+    const hip = sh(hip0);
+    const neck = add(hip, dir(p.torso, L.torso));
+    const head = add(neck, dir(p.neck, L.neck + L.head));
+    const shF = add(neck, dir(p.torso + 180, 6)), shB = add(neck, dir(p.torso + 180, 9));
+    const eF = add(shF, dir(p.uaF, L.uarm)), wF = add(eF, dir(p.faF, L.farm));
+    const eB = add(shB, dir(p.uaB, L.uarm)), wB = add(eB, dir(p.faB, L.farm));
+    return { hip, neck, head, shF, shB, eF, wF, eB, wB, kF: sh(kF), aF: sh(aF), kB: sh(kB), aB: sh(aB) };
+  }
+
+  // éléments du stickman (créés une fois)
+  const C = { skin: "#f4caa0", skinB: "#d9a97f", gi: "#f26b1d", giB: "#c9500f", blue: "#1f4fd1", blueB: "#173a9c", black: "#16121f" };
+  const mk = (stroke, w) => el("path", { fill: "none", stroke, "stroke-width": w, "stroke-linecap": "round", "stroke-linejoin": "round" }, hero);
+  const parts = {};
+  parts.armB = mk(C.skinB, 11); parts.bandB = mk(C.blueB, 13); parts.fistB = el("circle", { r: 8.5, fill: C.skinB }, hero);
+  parts.legB = mk(C.giB, 18); parts.bootB = mk(C.blueB, 15);
+  parts.torso = mk(C.gi, 26); parts.under = mk(C.blue, 12); parts.belt = mk(C.blue, 9);
+  parts.legF = mk(C.gi, 18); parts.bootF = mk(C.blue, 15);
+  parts.neck = mk(C.skin, 9);
+  parts.head = el("circle", { r: L.head, fill: C.skin }, hero);
+  parts.eye = el("path", { fill: C.black }, hero);
+  parts.hair = el("path", { fill: "#16121f", stroke: "#0d0b1f", "stroke-width": 2, "stroke-linejoin": "round" }, hero);
+  parts.armF = mk(C.skin, 11); parts.bandF = mk(C.blue, 13); parts.fistF = el("circle", { r: 8.5, fill: C.skin }, hero);
+
+  const pts = a => a.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  // cheveux de Goku : mèches en éventail vers l'arrière (le perso regarde à droite)
+  const HAIR = [[-0.15, 1.25], [0.25, 1.75], [0.7, 1.55], [1.05, 2.05], [1.45, 1.7], [1.85, 2.15], [2.3, 1.75], [2.75, 1.95], [3.15, 1.5], [3.6, 1.2]];
+  function hairPath(c, ang, ssj, t) {
+    const up = rad(ang);                                 // direction du cou → tête
+    const out = [];
+    for (let i = 0; i < HAIR.length; i++) {
+      const [a, len] = HAIR[i];
+      const base = up - Math.PI / 2 - 0.35 + a * 0.55 * (ssj ? 1.05 : 1);
+      const L1 = L.head * (ssj ? len * 1.18 + 0.12 * Math.sin(t * 22 + i) : len);
+      const b1 = base - 0.16, b2 = base + 0.16;
+      out.push([c[0] + Math.cos(b1) * L.head * 0.95, c[1] + Math.sin(b1) * L.head * 0.95]);
+      out.push([c[0] + Math.cos(base) * L1, c[1] + Math.sin(base) * L1 - (ssj ? 4 : 0)]);
+      out.push([c[0] + Math.cos(b2) * L.head * 0.95, c[1] + Math.sin(b2) * L.head * 0.95]);
+    }
+    // frange
+    out.push([c[0] + L.head * 0.65, c[1] - L.head * 0.35]);
+    out.push([c[0] + L.head * 0.2, c[1] - L.head * 0.1]);
+    out.push([c[0] - L.head * 0.2, c[1] - L.head * 0.5]);
+    return pts(out) + "Z";
+  }
+
+  // ---------------------------------------------------------------- état
+  const S = { t: 0, ssj: 0, ssjTarget: 0, ki: 0, aura: 0, auraCol: 0, shake: 0, busy: false, baseX: 300, hairMix: 0 };
+  const lowAura = () => (S.ssj > 0.5 ? 0.22 : 0);
+
+  // poteau d'entraînement
+  const post = { x: 760, wob: 0, v: 0, hp: 1 };
+  const postBase = el("rect", { x: post.x - 20, y: GROUND - 12, width: 40, height: 12, rx: 3, fill: "#3b2a1e" }, postG);
+  const postBody = el("g", {}, postG);
+  el("rect", { x: -15, y: -170, width: 30, height: 165, rx: 6, fill: "#8a5a34", stroke: "#4a2f1b", "stroke-width": 3 }, postBody);
+  el("rect", { x: -15, y: -130, width: 30, height: 9, fill: "#4a2f1b" }, postBody);
+  el("rect", { x: -15, y: -70, width: 30, height: 9, fill: "#4a2f1b" }, postBody);
+  el("rect", { x: -32, y: -118, width: 64, height: 12, rx: 6, fill: "#a5703f", stroke: "#4a2f1b", "stroke-width": 3 }, postBody);
+  const hitPost = (force) => { post.v += force; };
+
+  // ---------------------------------------------------------------- effets
+  const particles = [];   // {x,y,vx,vy,life,max,r,col,type}
+  function spark(x, y, n, col, speed = 6) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = speed * (0.4 + Math.random());
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0, max: 0.25 + Math.random() * 0.25, r: 2 + Math.random() * 2, col, type: "line" });
+    }
+  }
+  function burst(x, y, size, col) {
+    particles.push({ x, y, vx: 0, vy: 0, life: 0, max: 0.22, r: size, col, type: "star" });
+    particles.push({ x, y, vx: 0, vy: 0, life: 0, max: 0.3, r: size * 0.6, col: "#ffffff", type: "ring" });
+  }
+  const pool = [];
+  function drawParticles(dt) {
+    while (pool.length < particles.length) pool.push(el("path", {}, fxG));
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.life += dt;
+      if (p.life >= p.max) { particles.splice(i, 1); continue; }
+      p.x += p.vx * dt * 60; p.y += p.vy * dt * 60;
+      if (p.type === "rise") { p.vx *= 0.96; }
+    }
+    pool.forEach((node, i) => {
+      const p = particles[i];
+      if (!p) { node.setAttribute("d", ""); return; }
+      const k = p.life / p.max;
+      if (p.type === "line") {
+        node.setAttribute("d", `M${p.x} ${p.y} L${p.x - p.vx * 2.2} ${p.y - p.vy * 2.2}`);
+        node.setAttribute("stroke", p.col); node.setAttribute("stroke-width", p.r * (1 - k)); node.setAttribute("fill", "none");
+        node.setAttribute("stroke-linecap", "round"); node.setAttribute("opacity", 1 - k);
+      } else if (p.type === "rise") {
+        node.setAttribute("d", `M${p.x} ${p.y - p.r * 3} L${p.x + p.r * 0.8} ${p.y} L${p.x} ${p.y + p.r} L${p.x - p.r * 0.8} ${p.y} Z`);
+        node.setAttribute("fill", p.col); node.setAttribute("stroke", "none"); node.setAttribute("opacity", (1 - k) * 0.9);
+      } else if (p.type === "star") {
+        const R = p.r * (0.6 + k * 0.8), r2 = R * 0.28, s = [];
+        for (let j = 0; j < 16; j++) { const a = j * Math.PI / 8 + 0.2; const rr = j % 2 ? r2 : R * (j % 4 === 0 ? 1 : 0.65); s.push([p.x + Math.cos(a) * rr, p.y + Math.sin(a) * rr]); }
+        node.setAttribute("d", pts(s) + "Z"); node.setAttribute("fill", p.col); node.setAttribute("stroke", "#ffffff"); node.setAttribute("stroke-width", 2); node.setAttribute("opacity", 1 - k);
+      } else if (p.type === "ring") {
+        const R = p.r * (0.4 + k * 2.2);
+        node.setAttribute("d", `M${p.x - R} ${p.y} a${R} ${R} 0 1 0 ${2 * R} 0 a${R} ${R} 0 1 0 ${-2 * R} 0`);
+        node.setAttribute("fill", "none"); node.setAttribute("stroke", p.col); node.setAttribute("stroke-width", 4 * (1 - k)); node.setAttribute("opacity", 1 - k);
+      }
+    });
+  }
+
+  // aura : 3 couches de flammes qui ondulent + étincelles qui montent
+  const auraLayers = [0, 1, 2].map(i => el("path", { opacity: 0 }, auraG));
+  const auraCore = el("ellipse", { rx: 60, ry: 90, opacity: 0, filter: "url(#soft)" }, auraG);
+  function flame(cx, cy, w, h, t, seed) {
+    const out = [], n = 26;
+    for (let i = 0; i <= n; i++) {
+      const a = Math.PI + (i / n) * Math.PI;        // demi-cercle du haut
+      const lick = 1 + 0.28 * Math.sin(t * 13 + i * 1.7 + seed) + 0.18 * Math.sin(t * 21 + i * 3.1 + seed * 2);
+      const tip = i % 2 === 0 ? 1.18 : 0.92;
+      out.push([cx + Math.cos(a) * w, cy + Math.sin(a) * h * lick * tip]);
+    }
+    out.push([cx + w * 0.75, cy + h * 0.08]);
+    out.push([cx + w * 0.3, cy + h * 0.13]);
+    out.push([cx - w * 0.3, cy + h * 0.13]);
+    out.push([cx - w * 0.75, cy + h * 0.08]);
+    return pts(out) + "Z";
+  }
+  function mixCol(a, b, t) {
+    const pa = a.match(/\w\w/g).map(h => parseInt(h, 16)), pb = b.match(/\w\w/g).map(h => parseInt(h, 16));
+    return "#" + pa.map((v, i) => Math.round(lerp(v, pb[i], t)).toString(16).padStart(2, "0")).join("");
+  }
+  function drawAura(J, t) {
+    const a = clamp(S.aura, 0, 1);
+    const cx = (J.hip[0] + J.neck[0]) / 2, cy = J.hip[1] + 6;
+    const gold = S.auraCol;
+    const outer = mixCol("6fd3ff", "ffb81f", gold), mid = mixCol("bfeaff", "ffd23f", gold), inner = mixCol("ffffff", "fff4c2", gold);
+    const cols = [outer, mid, inner], ws = [70, 52, 34], hs = [205, 165, 120];
+    auraLayers.forEach((p, i) => {
+      p.setAttribute("d", flame(cx, cy, ws[i] * (0.8 + a * 0.35), hs[i] * (0.75 + a * 0.4), t, i * 2.3));
+      p.setAttribute("fill", cols[i]);
+      p.setAttribute("opacity", (a * [0.38, 0.45, 0.55][i]).toFixed(3));
+    });
+    auraCore.setAttribute("cx", cx); auraCore.setAttribute("cy", cy - 60);
+    auraCore.setAttribute("fill", outer); auraCore.setAttribute("opacity", (a * 0.55).toFixed(3));
+    if (a > 0.3 && Math.random() < a * 0.9) {
+      particles.push({ x: cx + (Math.random() - 0.5) * 120, y: cy + 10, vx: (Math.random() - 0.5) * 0.6, vy: -(4 + Math.random() * 5) * a, life: 0, max: 0.5 + Math.random() * 0.4, r: 2 + Math.random() * 2.5, col: Math.random() < 0.5 ? mid : inner, type: "rise" });
+    }
+  }
+
+  // lignes de vitesse (manga)
+  const speedLines = [];
+  for (let i = 0; i < 26; i++) speedLines.push(el("line", { stroke: "#f6efe2", "stroke-linecap": "round" }, speedG));
+  function drawSpeed(t, focusY) {
+    speedLines.forEach((ln, i) => {
+      const y = focusY - 150 + ((i * 41 + t * 900) % 300);
+      const x = ((i * 233 + t * 2600) % 1200) - 120;
+      const len = 80 + (i * 37) % 160;
+      ln.setAttribute("x1", x); ln.setAttribute("x2", x - len);
+      ln.setAttribute("y1", y); ln.setAttribute("y2", y);
+      ln.setAttribute("stroke-width", 1 + (i % 3));
+      ln.setAttribute("opacity", 0.25 + (i % 4) * 0.15);
+    });
+  }
+
+  // boule + rayon du Kamehameha
+  const ballGlow = el("circle", { r: 0, fill: "url(#ball)", opacity: 0.9, filter: "url(#glow)" }, beamG);
+  const ball = el("circle", { r: 0, fill: "url(#ball)" }, beamG);
+  const crackle = el("path", { fill: "none", stroke: "#e9fbff", "stroke-width": 2, "stroke-linecap": "round", opacity: 0 }, beamG);
+  const beamOuter = el("rect", { x: 0, y: 0, width: 0, height: 0, fill: "url(#beam)", opacity: 0, filter: "url(#glow)" }, beamG);
+  const beamCore = el("rect", { x: 0, y: 0, width: 0, height: 0, fill: "#ffffff", opacity: 0 }, beamG);
+  const beamHead = el("circle", { r: 0, fill: "url(#ball)", opacity: 0, filter: "url(#glow)" }, beamG);
+  const K = { ball: 0, beam: 0, beamLen: 0, on: false };
+
+  // ---------------------------------------------------------------- timeline
+  let track = null;                                     // {from, to, dur, ease, el}
+  const queue = [];
+  function go(to, dur, ease = "out", fn) { queue.push({ to, dur, ease, fn }); }
+  function wait(dur, fn) { queue.push({ to: null, dur, ease: "lin", fn }); }
+  function nextStep() {
+    const s = queue.shift();
+    if (!s) { track = null; return; }
+    if (s.fn) s.fn();
+    track = { from: { ...pose }, to: s.to ? { ...pose, ...s.to } : { ...pose }, dur: s.dur, ease: E[s.ease], el: 0 };
+  }
+
+  // ---------------------------------------------------------------- attaques
+  const ui = { form: $("form"), ki: $("kiv"), b: [$("b1"), $("b2"), $("b3")] };
+  function lock(i) { S.busy = true; ui.b.forEach((b, j) => b.classList.toggle("on", j === i)); }
+  function unlock() { S.busy = false; ui.b.forEach(b => b.classList.remove("on")); }
+  function say(txt, col = "#ffd23f", size = 72) { call.textContent = txt; call.setAttribute("fill", col); call.setAttribute("font-size", size); callT = 0; }
+  let callT = 99;
+
+  function chargeKi() {
+    if (S.busy) return; lock(0);
+    const toSSJ = S.ssj < 0.5;
+    go(P.charge, 0.35, "inout", () => { S.chargeOn = true; S.auraTarget = 0.7; });
+    go(P.scream, 0.5, "out", () => { say(toSSJ ? "HAAAAAA!" : "HAAAAAAAA!!", "#ffd23f", 70); S.shake = 6; });
+    wait(0.9, () => { S.auraTarget = 1; S.shake = 10; });
+    wait(0.25, () => {
+      if (toSSJ) { S.ssjTarget = 1; flashT = 0; S.shake = 18; burst((jLast.hip[0] + jLast.neck[0]) / 2, jLast.neck[1], 90, "#ffd23f"); }
+      S.auraCol = 1;
+      say(toSSJ ? "SUPER SAIYAN!" : "KI AU MAX", "#ffd23f", toSSJ ? 66 : 56);
+    });
+    wait(0.7);
+    go(P.stance, 0.45, "inout", () => { S.chargeOn = false; S.auraTarget = lowAura() || 0.22; S.ki = 100; });
+    wait(0.05, unlock);
+  }
+
+  function punches() {
+    if (S.busy) return; lock(1);
+    const dash = 360;                                   // s'avance vers le poteau
+    S.speedOn = true;
+    go({ ...P.stance, x: dash - 40 }, 0.18, "snap", () => { S.dashFrom = S.baseX; });
+    const hit = (side, force, col, label) => () => {
+      const w = side === "F" ? jLast.wF : jLast.wB;
+      burst(w[0] + 14, w[1], 34, col); spark(w[0] + 10, w[1], 10, "#ffffff", 7); hitPost(force); S.shake = 5;
+      if (label) say(label, "#f6efe2", 54);
+    };
+    const seq = [
+      [P.jab, 0.07, null], [null, 0.05, hit("F", 6, "#ffd23f")],
+      [P.cross, 0.08, null], [null, 0.05, hit("B", 9, "#ffd23f", "ORA!")],
+      [P.jab, 0.07, null], [null, 0.04, hit("F", 6, "#ffd23f")],
+      [P.hook, 0.08, null], [null, 0.05, hit("F", 9, "#ff8a3d")],
+      [P.cross, 0.07, null], [null, 0.04, hit("B", 9, "#ffd23f", "ORA ORA!")],
+      [P.upper, 0.1, null], [null, 0.06, hit("F", 12, "#ff8a3d")],
+      [P.kickW, 0.13, null], [P.kick, 0.08, null], [null, 0.1, () => { const a = jLast.aF; burst(a[0] + 18, a[1], 60, "#ffd23f"); spark(a[0], a[1], 18, "#ffffff", 9); hitPost(22); S.shake = 14; flashT = 0.12; say("BAM!", "#ffd23f", 80); }]
+    ];
+    for (const [p, d, fn] of seq) {
+      if (p) go({ ...p, x: dash + (p.x || 0) }, d, "snap"); else wait(d, fn);
+    }
+    wait(0.25);
+    go({ ...P.stance, x: 0 }, 0.35, "inout", () => { S.speedOn = false; });
+    wait(0.05, unlock);
+  }
+
+  function kamehameha() {
+    if (S.busy) return; lock(2);
+    const syl = ["KA...", "ME...", "HA...", "ME..."];
+    go(P.kameBk, 0.45, "inout", () => { K.on = true; S.auraTarget = Math.max(0.35, lowAura()); });
+    syl.forEach((s, i) => wait(0.42, () => { say(s, "#6fd3ff", 64); K.target = 0.3 + i * 0.22; S.shake = 2 + i * 2; }));
+    wait(0.25, () => { K.target = 1.15; S.shake = 9; });
+    go(P.kameFr, 0.09, "snap", () => { say("HAAAAAA!", "#ffffff", 84); });
+    wait(0.02, () => { K.beam = 1; K.beamT = 0; flashT = 0; S.shake = 22; S.speedOn = true; });
+    wait(1.35, () => { S.shake = 12; });
+    wait(0.35, () => { K.beam = 0; K.target = 0; S.speedOn = false; });
+    go(P.stance, 0.45, "inout", () => { K.on = false; S.auraTarget = lowAura(); });
+    wait(0.05, unlock);
+  }
+
+  $("b1").addEventListener("click", chargeKi);
+  $("b2").addEventListener("click", punches);
+  $("b3").addEventListener("click", kamehameha);
+  $("reset").addEventListener("click", () => { if (S.busy) return; S.ssjTarget = 0; S.auraCol = 0; S.auraTarget = 0; S.ki = 0; });
+  window.addEventListener("keydown", e => {
+    if (e.repeat) return;
+    if (e.key === "1") chargeKi(); else if (e.key === "2") punches(); else if (e.key === "3") kamehameha();
+  });
+
+  // ---------------------------------------------------------------- boucle
+  let last = performance.now(), flashT = 99, jLast = joints(pose, S.baseX);
+  S.auraTarget = 0;
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now; S.t += dt;
+    const t = S.t;
+    // pose
+    if (!track && queue.length) nextStep();
+    if (track) {
+      track.el += dt;
+      const k = track.ease(clamp(track.el / track.dur, 0, 1));
+      for (const key of KEYS) pose[key] = lerp(track.from[key], track.to[key], k);
+      if (track.el >= track.dur) { track = null; if (queue.length) nextStep(); }
+    } else if (!S.busy) {
+      const b = (Math.sin(t * 2.4) + 1) / 2;            // respiration
+      for (const key of KEYS) pose[key] = lerp(P.stance[key], P.breathe[key], b);
+    }
+    // tremblement pendant la charge
+    const tremble = S.chargeOn ? 1.6 : 0;
+    const J = joints(pose, S.baseX + (tremble ? (Math.random() - 0.5) * tremble * 2 : 0));
+    jLast = J;
+    // valeurs lissées
+    S.ssj = lerp(S.ssj, S.ssjTarget, 1 - Math.pow(0.0006, dt));
+    S.aura = lerp(S.aura, S.auraTarget ?? 0, 1 - Math.pow(0.02, dt));
+    if (S.chargeOn) S.ki = Math.min(100, S.ki + dt * 60);
+    ui.ki.textContent = Math.round(S.ki);
+    ui.form.textContent = S.ssjTarget > 0.5 ? "Super Saiyan" : "Base";
+
+    // dessin du stickman
+    const seg = (node, a, b) => node.setAttribute("d", pts([a, b]));
+    const seg3 = (node, a, b, c) => node.setAttribute("d", pts([a, b, c]));
+    seg3(parts.armB, J.shB, J.eB, J.wB);
+    const bandB0 = add(J.wB, dir(Math.atan2(J.eB[1] - J.wB[1], J.eB[0] - J.wB[0]) * 180 / Math.PI, 10));
+    seg(parts.bandB, J.wB, bandB0);
+    parts.fistB.setAttribute("cx", J.wB[0]); parts.fistB.setAttribute("cy", J.wB[1]);
+    seg3(parts.legB, J.hip, J.kB, J.aB);
+    seg(parts.bootB, add(J.aB, [0, -14]), add(J.aB, [14, 2]));
+    seg(parts.torso, add(J.hip, dir(pose.torso, 4)), add(J.neck, dir(pose.torso, -8)));
+    seg(parts.under, add(J.neck, dir(pose.torso, -10)), add(J.neck, dir(pose.torso, -2)));
+    const bl = add(J.hip, dir(pose.torso, 8));
+    seg(parts.belt, add(bl, dir(pose.torso + 90, 14)), add(bl, dir(pose.torso - 90, 14)));
+    seg3(parts.legF, J.hip, J.kF, J.aF);
+    seg(parts.bootF, add(J.aF, [0, -14]), add(J.aF, [15, 2]));
+    seg(parts.neck, J.neck, add(J.neck, dir(pose.neck, L.neck + 6)));
+    parts.head.setAttribute("cx", J.head[0]); parts.head.setAttribute("cy", J.head[1]);
+    // œil (regard vers la droite) + sourcil plus dur en SSJ
+    const ex = J.head[0] + 9, ey = J.head[1] - 2;
+    parts.eye.setAttribute("d", `M${ex - 5} ${ey - 3 - S.ssj * 2} L${ex + 6} ${ey - 1} L${ex + 5} ${ey + 2} L${ex - 3} ${ey + 1} Z`);
+    parts.eye.setAttribute("fill", S.ssj > 0.5 ? "#1a9e8f" : C.black);
+    parts.hair.setAttribute("d", hairPath(J.head, pose.neck, S.ssj > 0.35, t));
+    const hairCol = mixCol("16121f", "ffd23f", S.ssj);
+    parts.hair.setAttribute("fill", hairCol);
+    parts.hair.setAttribute("filter", S.ssj > 0.5 ? "url(#glow)" : "");
+    seg3(parts.armF, J.shF, J.eF, J.wF);
+    const bandF0 = add(J.wF, dir(Math.atan2(J.eF[1] - J.wF[1], J.eF[0] - J.wF[0]) * 180 / Math.PI, 10));
+    seg(parts.bandF, J.wF, bandF0);
+    parts.fistF.setAttribute("cx", J.wF[0]); parts.fistF.setAttribute("cy", J.wF[1]);
+
+    drawAura(J, t);
+
+    // Kamehameha
+    const hands = [(J.wF[0] + J.wB[0]) / 2, (J.wF[1] + J.wB[1]) / 2];
+    K.ball = lerp(K.ball, K.on ? (K.target || 0) : 0, 1 - Math.pow(0.004, dt));
+    const br = K.ball * 30 * (1 + 0.08 * Math.sin(t * 40));
+    [ball, ballGlow].forEach(c => { c.setAttribute("cx", hands[0] + 6); c.setAttribute("cy", hands[1]); });
+    ball.setAttribute("r", Math.max(0, br)); ballGlow.setAttribute("r", Math.max(0, br * 1.7));
+    if (K.ball > 0.15 && !K.beam) {
+      const s = []; let x = hands[0] + 6, y = hands[1];
+      for (let i = 0; i < 6; i++) { const a = Math.random() * Math.PI * 2, l = br * (0.6 + Math.random() * 0.9); s.push([x + Math.cos(a) * l, y + Math.sin(a) * l]); }
+      crackle.setAttribute("d", pts(s)); crackle.setAttribute("opacity", 0.8);
+      if (Math.random() < 0.5) particles.push({ x: hands[0] + 6 + (Math.random() - 0.5) * 140, y: hands[1] + (Math.random() - 0.5) * 140, vx: 0, vy: 0, life: 0, max: 0.3, r: 2, col: "#bfeaff", type: "line", tx: hands[0] });
+    } else crackle.setAttribute("opacity", 0);
+    // particules aspirées vers la boule
+    particles.forEach(p => { if (p.tx !== undefined) { p.vx = (hands[0] + 6 - p.x) * 0.12; p.vy = (hands[1] - p.y) * 0.12; } });
+    K.beamLen = lerp(K.beamLen, K.beam ? 1200 : 0, 1 - Math.pow(K.beam ? 0.0000001 : 0.0005, dt));
+    const bw = (K.beam ? 74 : 74 * K.beamLen / 1200) * (1 + 0.1 * Math.sin(t * 55));
+    const bx = hands[0] + 4;
+    beamOuter.setAttribute("x", bx); beamOuter.setAttribute("y", hands[1] - bw / 2);
+    beamOuter.setAttribute("width", K.beamLen); beamOuter.setAttribute("height", bw);
+    beamOuter.setAttribute("opacity", K.beamLen > 4 ? 1 : 0);
+    beamCore.setAttribute("x", bx); beamCore.setAttribute("y", hands[1] - bw * 0.16);
+    beamCore.setAttribute("width", K.beamLen); beamCore.setAttribute("height", bw * 0.32);
+    beamCore.setAttribute("opacity", K.beamLen > 4 ? 0.95 : 0);
+    beamHead.setAttribute("cx", bx + Math.min(K.beamLen, 1200)); beamHead.setAttribute("cy", hands[1]);
+    beamHead.setAttribute("r", K.beamLen > 4 && K.beamLen < 1100 ? bw * 0.9 : 0); beamHead.setAttribute("opacity", 1);
+    if (K.beam && K.beamLen > post.x - bx - 20) {
+      if (Math.random() < 0.6) spark(post.x - 10, hands[1] + (Math.random() - 0.5) * bw, 3, "#e9fbff", 8);
+      post.v += 1.6;
+    }
+    if (K.beam && Math.random() < 0.35) {
+      particles.push({ x: bx + Math.random() * 600, y: hands[1] + (Math.random() - 0.5) * bw * 1.6, vx: 14, vy: 0, life: 0, max: 0.2, r: 3, col: "#e9fbff", type: "line" });
+    }
+
+    // poteau qui encaisse
+    post.v += -post.wob * 0.12; post.v *= 0.86; post.wob += post.v * dt * 60 * 0.06;
+    postBody.setAttribute("transform", `translate(${post.x} ${GROUND - 10}) rotate(${clamp(post.wob, -30, 30)})`);
+
+    // lignes de vitesse
+    speedG.setAttribute("opacity", S.speedOn ? 0.75 : Math.max(0, (+speedG.getAttribute("opacity")) - dt * 4));
+    drawSpeed(t, J.neck[1] + 30);
+
+    drawParticles(dt);
+
+    // flash + tremblement + texte
+    flashT += dt;
+    flash.setAttribute("opacity", reduce ? 0 : Math.max(0, 0.85 - flashT * 4));
+    S.shake = Math.max(0, S.shake - dt * 30);
+    const sk = reduce ? 0 : S.shake;
+    world.setAttribute("transform", sk ? `translate(${(Math.random() - 0.5) * sk} ${(Math.random() - 0.5) * sk})` : "");
+    callT += dt;
+    const cs = callT < 0.12 ? 1.35 - callT * 2.9 : 1;
+    call.setAttribute("opacity", callT < 0.9 ? 1 : Math.max(0, 1 - (callT - 0.9) * 4));
+    call.setAttribute("transform", `translate(480 120) scale(${cs}) translate(-480 -120)`);
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
