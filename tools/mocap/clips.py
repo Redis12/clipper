@@ -1,7 +1,7 @@
 """Lecture des mouvements découpés dans la vidéo de référence (library/_mocap/clips/<nom>/, voir extract.py).
     frames, feet = clips.load("coup_de_poing_fente", height=700)   # images RGBA mises à l'échelle + bas des pieds
     clips.paste(canvas, frames[i], x_centre, y_sol, feet[i])       # pose l'image, pieds sur le sol
-Agrandissement LANCZOS (bords déjà « dé-mélangés » par extract.py : alpha doux, sans liseré) (la source fait 640×360 : Goku ≈ 250 px de haut).
+Agrandissement LANCZOS (bords déjà « dé-mélangés » par extract.py : alpha doux, sans liseré) (la source fait 640×360 : Goku ≈ 250 px de haut ; version 1080p de l'utilisateur : ≈ 750 px, info.json `goku_h`).
 """
 import json
 from pathlib import Path
@@ -20,7 +20,7 @@ def load(name, height=700.0, flip=False):
     """height = taille voulue de Goku debout (pas de l'image) : tous les mouvements gardent la même échelle."""
     d = ROOT / name
     info = json.load(open(d / "info.json"))
-    k = height / GOKU_H
+    k = height / info.get("goku_h", GOKU_H)
     out = []
     for f in sorted(d.glob("0*.png")):
         im = Image.open(f).convert("RGBA")

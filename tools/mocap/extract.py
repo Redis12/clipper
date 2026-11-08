@@ -40,22 +40,23 @@ def cut(rgb, base, empty=None):
         out = clean.clean(rgb, bg, 1.0, base).astype(np.int16)
         a = (np.abs(out - np.array(KEY)).sum(2) > 0)
         return np.dstack([rgb, (a * 255).astype(np.uint8)]), a
+    k = rgb.shape[1] / 640.0                                          # constantes réglées en 640×360
     C = rgb.astype(np.float32)
     B = empty.astype(np.float32)
     d = np.abs(C - B).sum(2)
     core = d >= 60
     core = ndi.binary_opening(core, iterations=1) | (core & ndi.binary_erosion(core))   # poussières de compression
-    lab, n = ndi.label(ndi.binary_dilation(core, iterations=3), structure=np.ones((3, 3)))
+    lab, n = ndi.label(ndi.binary_dilation(core, iterations=max(3, round(3 * k))), structure=np.ones((3, 3)))
     if n > 1:                                                         # le perso = gros morceaux (pas de miettes)
         sz = ndi.sum(core, lab, range(1, n + 1))
-        core &= np.isin(lab, [i + 1 for i in range(n) if sz[i] >= max(80, 0.02 * sz.max())])
+        core &= np.isin(lab, [i + 1 for i in range(n) if sz[i] >= max(80 * k * k, 0.02 * sz.max())])
     holes = ndi.binary_fill_holes(core) & ~core                         # petits trous (logo blanc ≈ ciel) bouchés
     hl, hn = ndi.label(holes)
     if hn:
         hs = ndi.sum(holes, hl, range(1, hn + 1))
-        core |= np.isin(hl, [i + 1 for i in range(hn) if hs[i] <= 250])
+        core |= np.isin(hl, [i + 1 for i in range(hn) if hs[i] <= 250 * k * k])
     sure = ndi.binary_erosion(core, iterations=1)
-    band = ndi.binary_dilation(core, iterations=2) & ~sure
+    band = ndi.binary_dilation(core, iterations=max(2, round(1.5 * k))) & ~sure
     _, (iy, ix) = ndi.distance_transform_edt(~sure, return_indices=True)
     F = C[iy, ix]                                                      # couleur du perso la plus proche
     FB = F - B
@@ -82,9 +83,12 @@ if __name__ == "__main__":
     for f in root.glob("*.png"):
         f.unlink()
     ims, boxes = [], []
+    W0 = 640
     for f in frames(video, t0, t1):
-        rgba, a = cut(np.asarray(Image.open(f).convert("RGB")), base, empty)
-        if a.sum() < 300:
+        rgb_ = np.asarray(Image.open(f).convert("RGB"))
+        W0 = rgb_.shape[1]
+        rgba, a = cut(rgb_, base, empty)
+        if a.sum() < 300 * (W0 / 640.0) ** 2:
             continue
         ys, xs = np.nonzero(a)
         boxes.append((xs.min(), ys.min(), xs.max(), ys.max()))
@@ -100,6 +104,6 @@ if __name__ == "__main__":
         g.paste(im, (0, 0), im)
         gif.append(g)
     gif[0].save(root / "apercu.gif", save_all=True, append_images=gif[1:], duration=33, loop=0)
-    json.dump({"source": Path(video).name, "t": [t0, t1], "fps": 30, "n": len(ims), "size": list(gif[0].size),
+    json.dump({"goku_h": round(250.0 * W0 / 640.0, 1), "source": Path(video).name, "t": [t0, t1], "fps": 30, "n": len(ims), "size": list(gif[0].size),
                "feet_y": feet, "x_in_video": box[0]}, open(root / "info.json", "w"))
     print(name, len(ims), gif[0].size)
