@@ -153,3 +153,10 @@ production : au moins un Gauntlet par jour (créneau de 18h), les autres formats
 Sur YouTube, le Gauntlet a fait beaucoup de commentaires : des gens frustrés par le résultat (« X aurait dû l'arrêter »).
 La frustration = de l'engagement. À exploiter : répondre aux commentaires dans l'heure, épingler le plus provocant,
 et faire une « Part 2 » qui répond au commentaire le plus fréquent (« You said Itachi would stop him… »).
+
+## 10. Sponsos (09/11 : mail dans la bio TikTok)
+- Mail pro dédié dans la bio (pas le perso). Beaucoup d'arnaques visent les petits créateurs : pièce jointe .zip/.exe/.scr « brief de campagne », lien qui demande de se connecter à TikTok/Google, « payez des frais pour être payé », faux noms de grandes marques depuis gmail. Règle : jamais ouvrir une pièce jointe exécutable, jamais se connecter via un lien du mail, vérifier le domaine de l'expéditeur, ne jamais payer.
+- Une vraie offre donne : marque + site, format (mention, intégration de 5 s, vidéo dédiée), nombre de vidéos, plateformes, délai, prix ou demande de tarif, contrat.
+- Avant de répondre, préparer un mini « media kit » : abonnés, vues moyennes par vidéo sur 30 jours, % de public par pays (88 % France au 05/11), meilleur format (Gauntlet).
+- Prix de départ indicatif (petits comptes, à ajuster) : de l'ordre de 10–20 € pour 1 000 vues moyennes par vidéo ; jeux mobiles / applis anime = sponsos les plus fréquents pour ce public. Demander au moins 50 % d'avance pour une première collaboration.
+- Toujours afficher le partenariat (outil « Contenu de marque » de TikTok, « Partenariat rémunéré » sur YouTube/Instagram) : obligatoire et sinon la vidéo peut être retirée.
