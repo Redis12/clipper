@@ -450,9 +450,9 @@ def draw_caption(img, b, t):
 
 
 # ------------------------------------------------------------------------------------------------- rendu
-def render(out):
+def render(out, BEATS=BEATS, VIS=VIS, actors=None, music_start=8):
     total = voice(BEATS)
-    A = Actors()
+    A = (actors or Actors)()
     bg = background()
     n = int(total * FPS)
     tmp = Path(out).with_suffix(".video.mp4")
@@ -507,9 +507,11 @@ def render(out):
             put(b["t0"] + b["dur"] * 0.45, sfx("vanish", 9), 0.35)
         if b["vis"] == "ui":
             put(b["t0"], sfx("transform"), 0.22)
+        for (at, fam, g, sd) in b.get("sfx", []):                     # bruitages propres au script : (s après début, famille, gain, graine)
+            put(b["t0"] + at, sfx(fam, sd), g)
     music = LIB / "_music" / "Delirious.mp3"
     if music.exists():
-        r_ = subprocess.run(["ffmpeg", "-v", "error", "-ss", "8", "-i", str(music), "-t", str(total), "-f", "f32le",
+        r_ = subprocess.run(["ffmpeg", "-v", "error", "-ss", str(music_start), "-i", str(music), "-t", str(total), "-f", "f32le",
                              "-ac", "1", "-ar", str(sr), "-"], capture_output=True)
         mu = np.frombuffer(r_.stdout, np.float32)
         if len(mu):
