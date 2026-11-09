@@ -125,3 +125,30 @@ if "ichigo" in sys.argv:                              # 08/11 : True Bankai Ichi
                             title=("CAN TRUE BANKAI ICHIGO", "SURVIVE THE NARUTO GAUNTLET?"), theme=ICH_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "24")), music_gain=0.26,
                             out=OUT / "Gauntlet - Ichigo vs Naruto.mp4"))
+if "toji" in sys.argv:                                # 09/11 : Toji (0 énergie occulte) bat Gojo, tombe contre Sukuna
+    import os
+    J = L + "Jujutsu Kaisen/"
+    TOJI = {"name": "Toji", "image_path": J + "Toji Fushiguro/toji.jpg"}
+    TOJI_THEME = {"hero": (120, 230, 140), "boss": (220, 30, 60), "accent": (190, 255, 120), "title2": (150, 235, 150),
+                  "bg": ((8, 26, 18), (4, 6, 6)), "grid": (40, 90, 60),
+                  "glows": [(0.15, 0.2, 380, (40, 160, 90)), (0.9, 0.55, 420, (120, 40, 160)), (0.4, 0.95, 360, (200, 20, 50))],
+                  "font": "tools/money_sim/fonts/anton.woff2"}
+    foes = [{"name": n, "image_path": J + p} for n, p in [
+        ("Nobara", "Nobara Kugisaki/nobara.png"), ("Megumi", "Megumi Fushiguro/megumi.jpg"), ("Yuji", "Yuji Itadori/Yuji.jpg"),
+        ("Maki", "Maki Zenin/makinormale.jpg"), ("Todo", "Aoi Todo/Todo.png"), ("Hanami", "Hanami/1340746.jpeg"),
+        ("Dagon", "Dagon/1340750.png"), ("Mahito", "Mahito/mahito.png"), ("Jogo", "Jogo/1350459.jpeg"),
+        ("Hakari", "Kinji Hakari/hakari.jpeg"), ("Geto", "Suguru Geto/geto.png"), ("Kashimo", "Hajime Kashimo/Kashimo.jpg"),
+        ("Yuta", "Yuta Okkotsu/yuta.jpg"), ("Gojo", "Satoru Gojo/gojo.png"), ("Mahoraga", "Mahoraga/1409410.png"),
+        ("Sukuna", "Sukuna/sukuna.jpg")]]
+    foes[1].update(gag=True, gag_s=1.5, say="...Dad?")
+    foes[6].update(gag=True, gag_s=1.4, say="Not this guy again 🐟")
+    foes[13].update(gag=True, gag_s=1.6, say="Didn't I kill you already?")
+    foes[14].update(gag=True, gag_s=1.4, say="⚙️ *the wheel turns*", gag_label="ADAPTING...")
+    foes[13]["hits"] = 3
+    foes[14]["hits"] = 3
+    music = os.environ.get("GAUNTLET_MUSIC") or "library/_music/Delirious.mp3"
+    print(gauntlet.generate(TOJI, foes, universe="Jujutsu Kaisen", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
+                            base_hits=1, step_hits=0, lose_at=15, lose_after=3.0, lose_move="DISMANTLE!",
+                            title=("CAN TOJI", "SURVIVE THE JJK GAUNTLET?"), theme=TOJI_THEME, music=music,
+                            music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
+                            out=OUT / "Gauntlet - Toji vs JJK.mp4"))
