@@ -164,3 +164,10 @@ et faire une « Part 2 » qui répond au commentaire le plus fréquent (« You s
 ## 11. Le compte a percé (09/11)
 1,7 M de vues (dit par l'utilisateur le 09/11) ; le public n'est plus surtout français, il est devenu international → tout en anglais (titres, légendes, textes). L'utilisateur ne parle pas bien anglais : pas de voix de lui en anglais ; formats « facts » = texte à l'écran sans voix, ou voix de synthèse anglaise générée par lui (CapCut / ElevenLabs).
 - Voix off (09/11) : Kokoro (kokoro-onnx, Apache 2.0, modèles sur les releases GitHub thewh1teagle/kokoro-onnx, Hugging Face bloqué dans le conteneur) ; voix choisie par l'utilisateur = **am_adam** (« on le reconnaît »).
+
+## 12. Instagram : « Confirmez que vous êtes une personne réelle » (09/11)
+Mail d'Instagram le 09/11 à 23:31 : profil animelorehq masqué tant qu'on ne confirme pas (180 jours). Un profil masqué = 0 portée → explique le plafond à ~150 vues.
+- Confirmer DEPUIS L'APPLI Instagram (pas depuis le lien du mail : les faux mails copient ce modèle). C'est l'utilisateur qui le fait (selfie vidéo / téléphone), jamais Claude.
+- Ensuite : Paramètres → Statut du compte → vérifier « Peut être recommandé aux non-abonnés ». Si non : c'est ça qui bloque la portée.
+- Pistes pour éviter une nouvelle alerte : pas 3 posts/jour d'un coup sur un compte jeune, heures décalées (déjà fait), interagir un peu à la main (commentaires, stories), bio et photo complètes.
+- Posts Buffer pendant le blocage : risquent d'échouer → les reprogrammer une fois le compte confirmé.
