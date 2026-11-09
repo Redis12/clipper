@@ -288,3 +288,15 @@ Contexte (oct. 2026) : live action saison 2 sorti le 10/03/2026 ; anime passé e
 - Testé : Blender 5.2 tourne dans le conteneur (pip `bpy`, Cycles CPU ~6 s/image), mais un mannequin fait main fait « cheap ».
 - Le jour où on s'y remet : l'utilisateur télécharge sur mixamo.com (compte Adobe gratuit) le mannequin « X Bot » en FBX + animations (Push Up, Defeated/Dying, Brick Laying, Sitting Idle) dans `library/_3d/`, Claude fait le rendu avec tête d'anime + compteurs.
 - Décision : en pause tant que les simulations marchent.
+
+## Facts (voix off Adam, 09/11) — sujets à faire
+Format « Can X even touch Y? » : question de powerscaling très débattue, 8–9 faits courts, question à 1 mot à la fin.
+1. Can Gojo's Infinity stop Saitama's punch? (le débat n°1 sur Reddit)
+2. Could Saitama survive Beerus' Hakai?
+3. How fast is Goku REALLY? (vitesse de la lumière → Ultra Instinct, chiffres de l'anime)
+4. Can Naruto even dodge Ultra Instinct?
+5. Could Goku survive Sukuna's Malevolent Shrine?
+6. Can Luffy's Gear 5 hurt Saitama? (cartoon vs one punch)
+7. 5 Ultra Instinct facts most fans don't know
+8. Why Saitama's "Serious Punch" breaks every power scale
+Saitama (modèle Stick Nodes) + Goku (clips) déjà animés → les sujets 1, 2, 6, 8 sont les plus rapides à produire.
