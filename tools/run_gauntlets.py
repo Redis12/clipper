@@ -125,7 +125,7 @@ if "ichigo" in sys.argv:                              # 08/11 : True Bankai Ichi
                             title=("CAN TRUE BANKAI ICHIGO", "SURVIVE THE NARUTO GAUNTLET?"), theme=ICH_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "24")), music_gain=0.26,
                             out=OUT / "Gauntlet - Ichigo vs Naruto.mp4"))
-if "toji" in sys.argv:                                # 09/11 : Toji (0 énergie occulte) bat Gojo, tombe contre Sukuna
+if "toji" in sys.argv:                                # 09/11 : Toji rate Jogo (pet), « Nah, I'd win », Jogo le tue (meme demandé par l'utilisateur)
     import os
     J = L + "Jujutsu Kaisen/"
     TOJI = {"name": "Toji", "image_path": J + "Toji Fushiguro/toji.jpg"}
@@ -144,11 +144,13 @@ if "toji" in sys.argv:                                # 09/11 : Toji (0 énergie
     foes[6].update(gag=True, gag_s=1.4, say="Not this guy again 🐟")
     foes[13].update(gag=True, gag_s=1.6, say="Didn't I kill you already?")
     foes[14].update(gag=True, gag_s=1.4, say="⚙️ *the wheel turns*", gag_label="ADAPTING...")
+    foes[8].update(meme=L + "_gauntlet/jogo nah id win.jpg", panel=L + "_gauntlet/jogo nah id win.jpg", gag_s=2.2,
+                   miss_sound=L + "_sounds/meme/fart with reverb.mp3", miss_gain=0.8, miss_label="FAAAH!")
     foes[13]["hits"] = 3
     foes[14]["hits"] = 3
     music = os.environ.get("GAUNTLET_MUSIC") or "library/_music/Delirious.mp3"
     print(gauntlet.generate(TOJI, foes, universe="Jujutsu Kaisen", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
-                            base_hits=1, step_hits=0, lose_at=15, lose_after=3.0, lose_move="DISMANTLE!",
+                            base_hits=1, step_hits=0, lose_at=8, lose_after=99.0, lose_move="NAH, I'D WIN.",
                             title=("CAN TOJI", "SURVIVE THE JJK GAUNTLET?"), theme=TOJI_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
                             out=OUT / "Gauntlet - Toji vs JJK.mp4"))

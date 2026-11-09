@@ -47,8 +47,18 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
     hv = S * 1.05
     hvx, hvy = math.cos(a) * hv, math.sin(a) * hv
     foe_t0 = 0.0
+    meme = {}                                             # 09/11 : il rate (pet), « Nah, I'd win », il tombe
     while foe < n_foes:
-        if lose_at is not None and foe == lose_at and t - foe_t0 >= lose_after:   # gauntlet inversé : il tombe
+        msp = specials[foe] or {}
+        if msp.get("meme"):
+            if "panel_at" in meme and "end" not in meme and t >= meme["panel_at"]:
+                gag_until = t + float(msp.get("gag_s", 2.0))
+                meme["end"] = gag_until
+                events.append(("gag", foe, t, gag_until))
+            if lose_at == foe and "end" in meme and t >= meme["end"]:
+                events.append(("lose", foe, t, hx, hy))
+                break
+        elif lose_at is not None and foe == lose_at and t - foe_t0 >= lose_after:   # gauntlet inversé : il tombe
             events.append(("lose", foe, t, hx, hy))
             break
         if pause > 0:                                     # K.O. : tout s'arrête un instant
@@ -110,6 +120,11 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
                 hx, hy = hx + hvx / hv_ * 40, hy + hvy / hv_ * 40
                 hx, hy = min(max(hx, rh), S - rh), min(max(hy, rh), S - rh)
                 continue
+            elif dist < RB + rh * 1.6 and sp.get("meme") and ("miss", foe) not in used:
+                used.add(("miss", foe))                   # il passe juste à côté : MISS + pet
+                phase_until = t + 0.6
+                meme["panel_at"] = t + 0.6
+                events.append(("miss", foe, t, phase_until))
             elif dist < RB + rh and sp.get("kamui") and ("kamui", foe) not in used:
                 used.add(("kamui", foe))                  # Obito : Kamui, Goku passe à travers
                 phase_until = t + 0.6
@@ -175,7 +190,7 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
     ox, oy = (W - S) / 2, H * 0.215
     hits_for = lambda i: (10 ** 6 if i == lose_at else int(foes[i].get("hits") or base_hits + step_hits * i))  # noqa: E731  « hits » par adversaire (boss finaux pas en un coup)
     seed = seed if seed is not None else random.randrange(1_000_000)
-    specials = [{k_: v for k_, v in f.items() if k_ in ("gag", "gag_s", "tp", "kamui", "say", "fake")} or None for f in foes]
+    specials = [{k_: v for k_, v in f.items() if k_ in ("gag", "gag_s", "tp", "kamui", "say", "fake", "meme")} or None for f in foes]
     sim = simulate(seed, S, n, hits_for, specials=specials, lose_at=lose_at, lose_after=lose_after)
     lost = next((e for e in sim["events"] if e[0] == "lose"), None)
     evs = sim["events"]
@@ -185,6 +200,10 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
         hit_by_frame.setdefault(int(h[0] * FPS), []).append(h)
     ko_by_frame = {int(x[0] * FPS): x for x in sim["kos"]}
     foe_icons = [fusion.icon(f["image_path"], 512, BOSS_COL) for f in foes]
+    meme_icon = {i: fusion.icon(f["meme"], 512, BOSS_COL) for i, f in enumerate(foes) if f.get("meme")}
+    meme_at = {e[1]: e[2] for e in sim["events"] if e[0] == "gag" and e[1] in meme_icon}
+    def icon_of(i, t_):
+        return meme_icon[i] if i in meme_icon and t_ >= meme_at.get(i, 1e9) else foe_icons[i]
     hero_icon = fusion.icon(hero["image_path"], 256, HERO_COL)
     small = [fusion.icon(f["image_path"], 96, (90, 90, 110)) for f in foes]
     if th.get("bg"):
@@ -300,7 +319,7 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                     if gnow[0][0] == "fake" and q < 0.5:
                         hide = True
                 RBd = int(RB * 2 * sc_)
-                ic = foe_icons[foe].resize((RBd, RBd), Image.LANCZOS)
+                ic = icon_of(foe, t).resize((RBd, RBd), Image.LANCZOS)
                 if hide:
                     ic.putalpha(0)
                 if any(e[0] == "kamui" and e[1] == foe and e[2] <= t < e[3] for e in evs):
@@ -345,6 +364,12 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                     if age < 0.6:
                         dl.text((ox + hx, oy + hy - 70 * k), "MISS!", font=tfont(int(44 * k)), anchor="mm",
                                 fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
+                elif kind == "miss" and 0 <= age < 0.9:
+                    dl = ImageDraw.Draw(img)
+                    s_ = 1 + 0.4 * max(0.0, 1 - age / 0.15)
+                    dl.text((ox + hx, oy + hy - 80 * k), "MISS!", font=tfont(int(62 * k * s_)), anchor="mm",
+                            fill=(255, 255, 255), stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
+                    banner(img, foes[ef].get("miss_label", "MISSED?!"), age, (255, 230, 90))
                 elif kind == "kamui" and 0 <= age < 1.1:
                     dl = ImageDraw.Draw(img)
                     for j in range(5):                           # tourbillon violet autour d'Obito
@@ -471,7 +496,7 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                 e = t - len(frames) / FPS
                 img.alpha_composite(Image.new("RGBA", (W, H), (150, 0, 0, int(120 * min(1.0, e / 0.2)))))
                 lb = frames[-1]                                   # le vainqueur reste à sa place
-                bic = foe_icons[lost[1]].resize((int(lb[2] * 2), int(lb[2] * 2)), Image.LANCZOS)
+                bic = icon_of(lost[1], t).resize((int(lb[2] * 2), int(lb[2] * 2)), Image.LANCZOS)
                 img.alpha_composite(bic, (int(ox + lb[0] - lb[2]), int(oy + lb[1] - lb[2])))
                 hs = int(rh * 2)
                 g = hero_icon.resize((hs, hs)).convert("LA").convert("RGBA")
@@ -486,7 +511,7 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                 e = t - len(frames) / FPS - 1.4
                 img.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, int(205 * min(1.0, e / 0.3)))))
                 big = int(W * 0.46)
-                img.alpha_composite(foe_icons[lost[1]].resize((big, big), Image.LANCZOS),
+                img.alpha_composite(icon_of(lost[1], t).resize((big, big), Image.LANCZOS),
                                     (int(W / 2 - big / 2), int(H * 0.36)))
                 d = ImageDraw.Draw(img)
                 d.text((W / 2, H * 0.24), f"SURVIVED {lost[1]}/{n}", font=tfont(int(86 * k)), anchor="mm",
@@ -540,9 +565,18 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
     for tt in ko_t:
         put(tt, domain.sfx("ko", mode="anime", franchise=franchise), 0.9)
         put(tt + 0.05, domain.sfx("bomb", mode="anime", seed=3, franchise=franchise), 0.8)
+    def load_snd(p_):
+        r_ = subprocess.run([ffmpeg, "-loglevel", "error", "-i", str(p_), "-f", "f32le", "-ac", "1", "-ar", str(rate), "-"],
+                            capture_output=True)
+        x_ = np.frombuffer(r_.stdout, np.float32).astype(np.float32)
+        return x_ / (float(np.percentile(np.abs(x_), 99.9)) or 1.0) if len(x_) else None
     for ev in evs:
         if ev[0] in ("tp", "kamui", "fake"):
             put(ev[2], domain.sfx("vanish", mode="anime", franchise=franchise), 0.7)
+        if ev[0] == "miss" and foes[ev[1]].get("miss_sound"):
+            put(ev[2], load_snd(foes[ev[1]]["miss_sound"]), float(foes[ev[1]].get("miss_gain", 1.0)))
+        if ev[0] == "gag" and ev[1] in meme_icon and foes[ev[1]].get("panel_sound"):
+            put(ev[2], load_snd(foes[ev[1]]["panel_sound"]), 1.0)
     if lost:
         put(lost[2], domain.sfx("ko", mode="anime", franchise=franchise), 1.0)
         put(lost[2] + 0.05, domain.sfx("bomb", mode="anime", seed=2, franchise=franchise), 0.8)
