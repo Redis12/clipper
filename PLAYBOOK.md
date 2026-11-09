@@ -160,3 +160,6 @@ et faire une « Part 2 » qui répond au commentaire le plus fréquent (« You s
 - Avant de répondre, préparer un mini « media kit » : abonnés, vues moyennes par vidéo sur 30 jours, % de public par pays (88 % France au 05/11), meilleur format (Gauntlet).
 - Prix de départ indicatif (petits comptes, à ajuster) : de l'ordre de 10–20 € pour 1 000 vues moyennes par vidéo ; jeux mobiles / applis anime = sponsos les plus fréquents pour ce public. Demander au moins 50 % d'avance pour une première collaboration.
 - Toujours afficher le partenariat (outil « Contenu de marque » de TikTok, « Partenariat rémunéré » sur YouTube/Instagram) : obligatoire et sinon la vidéo peut être retirée.
+
+## 11. Le compte a percé (09/11)
+1,7 M de vues (dit par l'utilisateur le 09/11) ; le public n'est plus surtout français, il est devenu international → tout en anglais (titres, légendes, textes). L'utilisateur ne parle pas bien anglais : pas de voix de lui en anglais ; formats « facts » = texte à l'écran sans voix, ou voix de synthèse anglaise générée par lui (CapCut / ElevenLabs).
