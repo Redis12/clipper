@@ -154,6 +154,9 @@ class Actors:
     def __init__(self):
         HT = 560
         self.sai = {n: clips.load(n, HT) for n in ("saitama_debout", "saitama_poing_armer", "saitama_poing_tendu")}
+        fr, ft = self.sai["saitama_debout"]                              # 09/11 : Saitama immobile = image fixe
+        k = len(fr) // 2
+        self.sai["saitama_debout"] = ([fr[k]], [ft[k]])
         self.gok = {n: clips.load(n, HT * 1.02, flip=True) for n in ("debout_regarde", "garde_respire")}
         self.ui = self.icon(LIB / "_fusion/Goku/7 ui.jpg", 330, (200, 210, 255))
         self.goku_ic = self.icon(LIB / "_fusion/Goku/1 Base.png", 150, (90, 200, 255))
