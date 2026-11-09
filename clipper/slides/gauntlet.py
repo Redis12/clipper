@@ -120,7 +120,7 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
                 hx, hy = hx + hvx / hv_ * 40, hy + hvy / hv_ * 40
                 hx, hy = min(max(hx, rh), S - rh), min(max(hy, rh), S - rh)
                 continue
-            elif dist < RB + rh * 1.6 and sp.get("meme") and ("miss", foe) not in used:
+            elif dist < RB + rh * 1.6 and sp.get("meme") and ("miss", foe) not in used and t - foe_t0 >= float(sp.get("miss_after", 0)):
                 used.add(("miss", foe))                   # il passe juste à côté : MISS + pet
                 phase_until = t + 0.6
                 meme["panel_at"] = t + 0.6
@@ -190,7 +190,7 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
     ox, oy = (W - S) / 2, H * 0.215
     hits_for = lambda i: (10 ** 6 if i == lose_at else int(foes[i].get("hits") or base_hits + step_hits * i))  # noqa: E731  « hits » par adversaire (boss finaux pas en un coup)
     seed = seed if seed is not None else random.randrange(1_000_000)
-    specials = [{k_: v for k_, v in f.items() if k_ in ("gag", "gag_s", "tp", "kamui", "say", "fake", "meme")} or None for f in foes]
+    specials = [{k_: v for k_, v in f.items() if k_ in ("gag", "gag_s", "tp", "kamui", "say", "fake", "meme", "miss_after")} or None for f in foes]
     sim = simulate(seed, S, n, hits_for, specials=specials, lose_at=lose_at, lose_after=lose_after)
     lost = next((e for e in sim["events"] if e[0] == "lose"), None)
     evs = sim["events"]
