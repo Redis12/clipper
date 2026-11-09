@@ -364,12 +364,8 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                     if age < 0.6:
                         dl.text((ox + hx, oy + hy - 70 * k), "MISS!", font=tfont(int(44 * k)), anchor="mm",
                                 fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
-                elif kind == "miss" and 0 <= age < 0.9:
-                    dl = ImageDraw.Draw(img)
-                    s_ = 1 + 0.4 * max(0.0, 1 - age / 0.15)
-                    dl.text((ox + hx, oy + hy - 80 * k), "MISS!", font=tfont(int(62 * k * s_)), anchor="mm",
-                            fill=(255, 255, 255), stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
-                    banner(img, foes[ef].get("miss_label", "MISSED?!"), age, (255, 230, 90))
+                elif kind == "miss" and 0 <= age < 0.9 and foes[ef].get("miss_label"):
+                    banner(img, foes[ef]["miss_label"], age, (255, 230, 90))   # 09/11 : par défaut aucun texte (le raté se voit)
                 elif kind == "kamui" and 0 <= age < 1.1:
                     dl = ImageDraw.Draw(img)
                     for j in range(5):                           # tourbillon violet autour d'Obito

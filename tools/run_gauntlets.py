@@ -145,7 +145,7 @@ if "toji" in sys.argv:                                # 09/11 : Toji rate Jogo (
     foes[13].update(gag=True, gag_s=1.6, say="Didn't I kill you already?")
     foes[14].update(gag=True, gag_s=1.4, say="⚙️ *the wheel turns*", gag_label="ADAPTING...")
     foes[8].update(meme=L + "_gauntlet/jogo nah id win.jpg", panel=L + "_gauntlet/jogo nah id win.jpg", gag_s=2.2, miss_after=1.0,
-                   miss_sound=L + "_sounds/meme/fart with reverb.mp3", miss_gain=0.8, miss_label="FAAAH!")
+                   miss_sound=L + "_sounds/meme/fart with reverb.mp3", miss_gain=0.8)
     foes[13]["hits"] = 3
     foes[14]["hits"] = 3
     music = os.environ.get("GAUNTLET_MUSIC") or "library/_music/Delirious.mp3"
