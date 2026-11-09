@@ -19,6 +19,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools" / "mocap"))
+sys.path.insert(0, str(HERE))
 import clips  # noqa: E402
 
 W, H, FPS = 1080, 1920, 30
@@ -154,9 +155,10 @@ class Actors:
     def __init__(self):
         HT = 560
         self.sai = {n: clips.load(n, HT) for n in ("saitama_debout", "saitama_poing_armer", "saitama_poing_tendu")}
-        fr, ft = self.sai["saitama_debout"]                              # 09/11 : Saitama immobile = image fixe
-        k = len(fr) // 2
-        self.sai["saitama_debout"] = ([fr[k]], [ft[k]])
+        st = Image.open(LIB / "_sticknodes/Saitama/saitama_still.png").convert("RGBA")   # 09/11 : modèle Stick Nodes
+        k_ = 545 / st.height                                              # de l'utilisateur (image fixe nette)
+        st = st.resize((round(st.width * k_), round(st.height * k_)), Image.LANCZOS)
+        self.sai["saitama_debout"] = ([st], [st.height])
         self.gok = {n: clips.load(n, HT * 1.02, flip=True) for n in ("debout_regarde", "garde_respire")}
         self.ui = self.icon(LIB / "_fusion/Goku/7 ui.jpg", 330, (200, 210, 255))
         self.goku_ic = self.icon(LIB / "_fusion/Goku/1 Base.png", 150, (90, 200, 255))
