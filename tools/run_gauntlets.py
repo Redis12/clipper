@@ -156,3 +156,30 @@ if "toji" in sys.argv:                                # 09/11 : Toji rate Jogo (
                             title=("CAN TOJI", "SURVIVE THE JJK GAUNTLET?"), theme=TOJI_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
                             out=OUT / "Gauntlet - Toji vs JJK.mp4"))
+if "gokujjk" in sys.argv:                            # 10/11 : Base Goku bat tout le JJK verse (comme vs Naruto / One Piece, 1M vues)
+    import os
+    J = L + "Jujutsu Kaisen/"
+    JJK_THEME = {"hero": (255, 170, 60), "boss": (220, 30, 70), "accent": (180, 120, 255), "title2": (255, 190, 80),
+                 "bg": ((22, 8, 40), (4, 4, 14)), "grid": (60, 40, 110),
+                 "glows": [(0.15, 0.2, 380, (140, 60, 255)), (0.9, 0.55, 420, (255, 120, 40)), (0.4, 0.95, 360, (200, 20, 60))],
+                 "font": "tools/money_sim/fonts/anton.woff2"}
+    foes = [{"name": n, "image_path": J + p} for n, p in [
+        ("Nobara", "Nobara Kugisaki/nobara.png"), ("Megumi", "Megumi Fushiguro/megumi.jpg"), ("Yuji", "Yuji Itadori/Yuji.jpg"),
+        ("Maki", "Maki Zenin/makinormale.jpg"), ("Todo", "Aoi Todo/Todo.png"), ("Hanami", "Hanami/1340746.jpeg"),
+        ("Mahito", "Mahito/mahito.png"), ("Jogo", "Jogo/1350459.jpeg"), ("Toji", "Toji Fushiguro/toji.jpg"),
+        ("Hakari", "Kinji Hakari/hakari.jpeg"), ("Yuta", "Yuta Okkotsu/yuta.jpg"), ("Mahoraga", "Mahoraga/1409410.png")]]
+    foes.append({"name": "Gojo", "image_path": L + "_gauntlet/nah id win.jpg"})
+    foes.append({"name": "Sukuna", "image_path": J + "Sukuna/sukuna.jpg"})
+    foes[2].update(gag=True, gag_s=1.3, say="BLACK FLASH! ⚡")
+    foes[4].update(gag=True, gag_s=1.4, say="What kind of women are you into? 👏")
+    foes[11].update(gag=True, gag_s=1.4, say="*clank* ⚙️", gag_label="ADAPTING...")
+    foes[12].update(gag=True, gag_s=2.2, panel=L + "_gauntlet/nah id win.jpg")
+    foes[11]["hits"] = 2
+    foes[12]["hits"] = 3
+    foes[13]["hits"] = 4
+    music = os.environ.get("GAUNTLET_MUSIC") or "library/_music/Delirious.mp3"
+    print(gauntlet.generate(GOKU, foes, universe="Jujutsu Kaisen", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
+                            base_hits=1, step_hits=0, lose_at=None,
+                            title=("CAN BASE GOKU", "BEAT THE JJK GAUNTLET?"), theme=JJK_THEME, music=music,
+                            music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
+                            out=OUT / "Gauntlet - Goku vs JJK.mp4"))
