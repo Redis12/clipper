@@ -207,7 +207,7 @@ def generate(chain: str, boss: str, hero_name: str | None = None, boss_name: str
         boss_t = {"name": boss_name or Path(boss).stem, "image_path": boss}
     if boss_t is None:
         raise ValueError(f"Forme « {boss} » introuvable dans _fusion/{chain}")
-    forms = [t for t in tiers if t is not boss_t]
+    forms = [t for t in tiers if t is not boss_t and not t.get("easter")]    # l'easter egg (Zoro perdu) n'est pas une forme
     if max_form:                                         # forme max du héros (logique : pas de Rinnegan)
         cut = next((i for i, t in enumerate(forms) if norm(t["name"]) == norm(max_form)), None)
         if cut is not None:
