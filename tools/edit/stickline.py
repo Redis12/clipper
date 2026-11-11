@@ -78,16 +78,16 @@ def rim(sil, col, width=7, strength=1.0):
     return g, pad
 
 
-def background(col):
-    """dégradé : clair en haut (couleur), sombre vers le sol, sol presque noir"""
+def background(col, gy=GROUND):
+    """mur dégradé (couleur, clair en haut) jusqu'à la ligne du sol gy, puis sol sombre"""
     y = np.arange(H, dtype=np.float32)[:, None]
     c = np.array(col, np.float32) / 255
     top = c * 0.95 + 0.05
     mid = c * 0.55
-    k = np.clip(y / GROUND, 0, 1)
+    k = np.clip(y / gy, 0, 1)
     sky = top[None, None] * (1 - k[..., None]) + mid[None, None] * k[..., None]
-    floor = np.clip(1 - (y - GROUND) / 260, 0, 1)[..., None] * mid * 0.5 + 0.03
-    a = np.where(y[..., None] < GROUND, sky, floor)
+    floor = np.clip(1 - (y - gy) / 420, 0, 1)[..., None] * mid * 0.45 + 0.03
+    a = np.where(y[..., None] < gy, sky, floor)
     a = np.broadcast_to(a, (H, W, 3)).copy()
     xx = np.arange(W, dtype=np.float32)[None, :]
     v = 1 - 0.35 * ((xx / W - 0.5) * 2) ** 2
@@ -122,142 +122,185 @@ def dust(img, t, col, seed, vx=0.0):
         d.line((x, y, x + L, y + rnd.uniform(-3, 3)), fill=c + (int(rnd.uniform(60, 170)),), width=2)
 
 
+# --------------------------------------------------------------------------------------------- caméra 3D (orbite)
+R_CIRC = 1.6          # rayon du cercle des persos (m)
+CH_M = 1.8            # taille d'un perso (m)
+F = 1370.0            # focale (px)
+HORIZON = 973.0       # ligne d'horizon à l'écran
+
+
+def project(px, pz, cam):
+    """point au sol (px, pz) → (x écran, y écran des pieds, profondeur) ; cam = (angle, distance, hauteur)"""
+    th, D, hgt = cam
+    cx, cz = D * math.sin(th), -D * math.cos(th)                 # la caméra regarde le centre (0, 0)
+    dx, dz = px - cx, pz - cz
+    fx, fz = -math.sin(th), math.cos(th)                         # axe de visée
+    rx, rz = math.cos(th), math.sin(th)                          # axe droit
+    depth = dx * fx + dz * fz
+    lat = dx * rx + dz * rz
+    return W / 2 + F * lat / depth, HORIZON + F * hgt / depth, depth
+
+
+def mix(c1, c2, k):
+    return tuple(int(a + (b - a) * k) for a, b in zip(c1, c2))
+
+
+def orbit_ease(p):
+    """départ très rapide puis long ralenti (comme la référence)"""
+    p = min(1.0, max(0.0, p))
+    return 1 - (1 - p) ** 4
+
+
 def render(out, music=LIB / "_music/Delirious.mp3", m_start=40.0):
     bt, per = beats(music, m_start, 12)
     bt = [b for b in bt if b > 0.3]
     step = 2 if per < 0.45 else 1
     n = len(CAST)
-    cuts = [0.0] + [bt[i * step] for i in range(1, n + 1)]      # cuts[n] = début du plan large
+    cuts = [0.0] + [bt[i * step] for i in range(1, n + 1)]          # cuts[n] = début du plan large
     t_wide = cuts[n]
-    end = t_wide + per * step * 3.2
+    end = t_wide + per * step * 3.4
     sils = [silhouette(s, f) for s, _, _, f in CAST]
-    rims = {}
-    bgs = [background(c) for _, _, c, _ in CAST]
-    lights = [floor_light(c) for _, _, c, _ in CAST]
-    xs = [i * GAP for i in range(n)]
-    WH = 0.22
+    cols = [c for _, _, c, _ in CAST]
+    # persos en cercle ; la caméra « devant » le perso k a l'angle ang[k]
+    ang = [-i * 2 * math.pi / n for i in range(n)]
+    pos = [(R_CIRC * math.sin(a), -R_CIRC * math.cos(a)) for a in ang]
+    MOVE = 0.75                                                       # durée d'une orbite d'un perso au suivant
     tmp = Path(tempfile.mkdtemp())
-    whips = []
+    events = []
     cache = {}
+    bg_cache = {}
+    prev_th = None
 
-    def scaled(i, z):
-        key = (i, round(z, 2))
+    def sil_at(i, h):
+        key = (i, int(h / 4))
         if key not in cache:
             s = sils[i]
-            cache[key] = s.resize((max(1, round(s.width * key[1])), max(1, round(s.height * key[1]))), Image.BILINEAR)
+            hh = max(4, key[1] * 4)
+            cache[key] = s.resize((max(1, round(s.width * hh / s.height)), hh), Image.BILINEAR)
         return cache[key]
 
-    def draw_cast(img, cam_x, z, focus, glow_col=None, gk=0.0, squeeze=1.0):
-        mid = sum(xs) / n
-        for i in range(n):
-            sx = W / 2 + (mid + (xs[i] - mid) * squeeze - cam_x) * z
-            s = scaled(i, z)
-            if sx + s.width < -50 or sx - s.width > W + 50:
-                continue
-            x0, y0 = int(sx - s.width / 2), int(GROUND - s.height + 8 * z)
-            if glow_col is not None and gk > 0:
-                key = (i, round(z, 2), "rim")
-                if key not in rims:
-                    rims[key] = rim(s, (255, 150, 90))
-                g, pad = rims[key]
-                ga = g.copy()
-                ga.putalpha(ga.getchannel("A").point(lambda v: int(v * gk)))
-                img.alpha_composite(ga, (x0 - pad, y0 - pad)) if x0 - pad >= 0 and y0 - pad >= 0 else img.paste(ga, (x0 - pad, y0 - pad), ga)
-            if x0 >= 0 and y0 >= 0 and x0 + s.width <= W:
-                img.alpha_composite(s, (x0, y0))
-            else:
-                img.paste(s, (x0, y0), s)
+    def bg(col, gy):
+        key = tuple(v // 4 for v in col) + (int(gy // 6),)
+        if key not in bg_cache:
+            bg_cache[key] = Image.fromarray((background(col, key[-1] * 6) * 255).astype(np.uint8)).convert("RGBA")
+        return bg_cache[key].copy()
+
+    def camera(t):
+        """(angle, distance, hauteur, couleur, perso en focus, vitesse 0-1, glow, plan large 0-1)"""
+        k = max(j for j in range(n + 1) if cuts[j] <= t + 1e-6)
+        if k == 0:
+            u = t
+            return ang[0] - 0.05 * u, 4.2 - 0.12 * u, 1.0, cols[0], 0, 0.0, 0.0
+        u = t - cuts[k]
+        a0 = ang[k - 1] - 0.05 * (cuts[k] - cuts[k - 1])
+        if k < n:
+            e = orbit_ease(u / MOVE)
+            th = a0 + (ang[k] - a0) * e - 0.05 * max(0.0, u - MOVE * 0.6)
+            D = 4.2 - 0.12 * max(0.0, u - 0.2) + 0.5 * math.sin(math.pi * min(1, u / MOVE))
+            sp = 1.5 * (1 - min(1, u / MOVE)) ** 5
+            return th, D, 1.0, mix(cols[k - 1], cols[k], min(1, u / (MOVE * 0.5))), k, min(1.0, sp), 0.0
+        # plan large : la caméra recule et monte, tourne encore un peu
+        e = orbit_ease(u / 0.9)
+        th = a0 - 0.6 * e
+        D = 4.2 + 3.6 * e
+        return th, D, 1.0 + 0.6 * e, mix(cols[-1], (230, 95, 80), min(1, u / 0.5)), -1, min(1.0, 3 * (1 - min(1, u / 0.9)) ** 3), e
 
     for fi in range(int(end * FPS)):
         t = fi / FPS
-        k = max(j for j in range(n + 1) if cuts[j] <= t + 1e-6)
-        whip = next((j for j in range(1, n + 1) if abs(t - cuts[j]) < WH / 2), None)
-        if whip is not None and whip < n:
-            j = whip
-            p = (t - (cuts[j] - WH / 2)) / WH
-            cam = xs[j - 1] + (xs[j] - xs[j - 1]) * (p * p * (3 - 2 * p))
-            z = 1.0 + 0.06 * (cuts[j] - cuts[j - 1])
-            ci = j - 1 if p < 0.5 else j
-            a = bgs[ci].copy()
-            img = Image.fromarray((a * 255).astype(np.uint8)).convert("RGBA")
-            draw_cast(img, cam, z, ci)
-            sp = math.sin(p * math.pi)
-            a = np.asarray(img.convert("RGB"), np.float32) / 255
-            a = hblur(a, 320 * sp)
-            a = speed_lines(a, 30, 0.45 * sp, fi)
-            img = Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).convert("RGBA")
-            if abs(p - 0.5) <= 0.5 / (WH * FPS):
-                whips.append(t)
-        elif k < n:
-            u = t - cuts[k]
-            z = 1.0 + 0.06 * u                                        # lente avancée
-            cam = xs[k] - 25 * u + (8 * math.sin(u * 2))
-            img = Image.fromarray((bgs[k] * 255).astype(np.uint8)).convert("RGBA")
-            L = lights[k]
-            img.paste(L, (int(W / 2 - L.width / 2 + (xs[k] - cam) * z), GROUND - 40), L)
-            dust(img, t, CAST[k][2], k, vx=cam * 0.3)
-            draw_cast(img, cam, z, k)
-            name_text(img, CAST[k][1], int(u / 0.05), H * 0.86, 104, glow=CAST[k][2])
-        else:
-            # plan large : la caméra recule, tout le monde, contours lumineux, « WHO WINS? »
+        th, D, hgt, col, focus, sp, wide = camera(t)
+        img = bg(col, HORIZON + F * hgt / (D + 5.0))
+        cam = (th, D, hgt)
+        # triangle de lumière au sol (tourne avec la caméra)
+        lay = Image.new("RGBA", (W // 2, H // 2), (0, 0, 0, 0))
+        dl = ImageDraw.Draw(lay)
+        lite = tuple(min(255, int(v * 0.5 + 130)) for v in col)
+        for rad, a_ in ((2.3, 210), (1.25, 140)):
+            pts = []
+            for j in range(3):
+                aa = 0.35 + j * 2 * math.pi / 3
+                x_, y_, d_ = project(rad * math.sin(aa), -rad * math.cos(aa), cam)
+                pts.append((x_ / 2, y_ / 2))
+            dl.polygon(pts, fill=(lite if rad > 2 else (255, 255, 255)) + (a_,))
+        glow = lay.filter(ImageFilter.GaussianBlur(14)).resize((W, H), Image.BILINEAR)
+        img.alpha_composite(glow)
+        img.alpha_composite(glow)
+        img.alpha_composite(lay.filter(ImageFilter.GaussianBlur(2)).resize((W, H), Image.BILINEAR))
+        dust(img, t, col, 5, vx=th * 900)
+        # persos, du plus loin au plus proche
+        items = []
+        for i, (px, pz) in enumerate(pos):
+            sx, fy, dep = project(px, pz, cam)
+            if dep < 0.6:
+                continue
+            items.append((dep, i, sx, fy, F * CH_M / dep))
+        for dep, i, sx, fy, hpx in sorted(items, reverse=True):
+            s = sil_at(i, hpx)
+            x0, y0 = int(sx - s.width / 2), int(fy - s.height)
+            if x0 > W or x0 + s.width < 0:
+                continue
+            if wide > 0.4:
+                g, pad = rim(s, (255, 150, 90), width=5)
+                ga = g.copy()
+                ga.putalpha(ga.getchannel("A").point(lambda v, k_=min(1.0, (wide - 0.4) / 0.4): int(v * k_)))
+                img.paste(ga, (x0 - pad, y0 - pad), ga)
+            img.paste(s, (x0, y0), s)
+        a = np.asarray(img.convert("RGB"), np.float32) / 255
+        if sp > 0.05:
+            a = hblur(a, 230 * sp)
+            a = speed_lines(a, 24, 0.35 * sp, fi)
+        if wide > 0:                                                  # flash à l'arrivée du plan large
             u = t - t_wide
-            e = ease(u / 0.5)
-            z = 1.0 - 0.47 * e
-            sq = 1.0 - 0.5 * e
-            mid = sum(xs) / n
-            cam = (mid + (xs[n - 1] - mid) * sq) * (1 - e) + mid * e
-            col = (230, 95, 80)
-            img = Image.fromarray((background(col) * 255).astype(np.uint8)).convert("RGBA") if "wbg" not in cache else cache["wbg"].copy()
-            cache.setdefault("wbg", img.copy())
-            L = lights[0]
-            L2 = L.resize((int(L.width * 1.4), L.height))
-            img.paste(L2, (int(W / 2 - L2.width / 2), GROUND - 40), L2)
-            dust(img, t, col, 77)
-            draw_cast(img, cam, z, -1, glow_col=True, gk=min(1.0, max(0.0, (u - 0.35) / 0.3)), squeeze=sq)
-            a = np.asarray(img.convert("RGB"), np.float32) / 255
-            if u < 0.5:
-                a = hblur(a, 160 * (1 - e))
-            fl = math.exp(-max(0, u - 0.35) * 8) if u > 0.35 else 0
-            a = a + (1 - a) * 0.7 * fl
-            img = Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).convert("RGBA")
-            name_text(img, "WHO WINS?", int(max(0, u - 0.45) / 0.06), H * 0.2, 150, glow=(255, 110, 70))
-            if abs(u - 0.35) < 0.5 / FPS:
-                whips.append(-t)                                      # impact
+            if 0.55 < u:
+                a = a + (1 - a) * 0.7 * math.exp(-(u - 0.55) * 8)
+        img = Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).convert("RGBA")
+        if focus >= 0:
+            u = t - cuts[focus]
+            if focus == 0 or u > MOVE * 0.35:
+                name_text(img, CAST[focus][1], int((u - (0 if focus == 0 else MOVE * 0.35)) / 0.05), H * 0.86, 104,
+                          glow=cols[focus])
+        else:
+            u = t - t_wide
+            name_text(img, "WHO WINS?", int(max(0, u - 0.6) / 0.06), H * 0.2, 150, glow=(255, 110, 70))
+        for j in range(1, n + 1):
+            if abs(t - cuts[j]) < 0.5 / FPS:
+                events.append(("whoosh", t))
+        if abs(t - t_wide - 0.55) < 0.5 / FPS:
+            events.append(("boom", t))
         img.convert("RGB").save(tmp / f"{fi:05d}.jpg", quality=92)
 
     # --- audio
     sr = 44100
     tot = int(end * sr) + sr
-    mix = np.zeros(tot, np.float32)
+    mixb = np.zeros(tot, np.float32)
 
     def pcm(path, ss=0.0, dur=None, gain=1.0):
         cmd = ["ffmpeg", "-v", "error", "-ss", str(ss)] + (["-t", str(dur)] if dur else []) + \
               ["-i", str(path), "-ac", "1", "-ar", str(sr), "-f", "f32le", "-"]
         return np.frombuffer(subprocess.run(cmd, capture_output=True, check=True).stdout, np.float32) * gain
 
-    def put(t, s):
-        a = int(t * sr)
-        s = s[:max(0, tot - a)]
-        mix[a:a + len(s)] += s
+    def put(t, s_):
+        a_ = int(t * sr)
+        s_ = s_[:max(0, tot - a_)]
+        mixb[a_:a_ + len(s_)] += s_
 
     put(0, pcm(music, m_start, end + 1, 0.55))
     rng = np.random.default_rng(1)
-    Lw = int(0.35 * sr)
-    env = np.sin(np.linspace(0, math.pi, Lw)) ** 2
-    wh = np.convolve(rng.standard_normal(Lw).astype(np.float32), np.ones(18) / 18, "same") * env * 0.5
-    for t in whips:
-        if t >= 0:
-            put(max(0, t - 0.17), wh)
+    Lw = int(0.5 * sr)
+    env = np.exp(-np.linspace(0, 6, Lw)) * (1 - np.exp(-np.linspace(0, 60, Lw)))
+    wh = np.convolve(rng.standard_normal(Lw).astype(np.float32), np.ones(14) / 14, "same") * env * 0.6
+    for kind, t in events:
+        if kind == "whoosh":
+            put(t, wh)
         else:
-            put(-t, pcm(SFX / "low_frequency_explosion_000.ogg", gain=0.5))
-            put(-t, pcm(SFX / "impact_punch_heavy_000.ogg", gain=0.4))
-    mix = np.tanh(mix * 1.1) * 0.9
+            put(t, pcm(SFX / "low_frequency_explosion_000.ogg", gain=0.5))
+            put(t, pcm(SFX / "impact_punch_heavy_000.ogg", gain=0.4))
+    mixb = np.tanh(mixb * 1.1) * 0.9
     wav = tmp / "a.wav"
     with wave.open(str(wav), "wb") as w_:
         w_.setnchannels(1)
         w_.setsampwidth(2)
         w_.setframerate(sr)
-        w_.writeframes((mix[:int(end * sr)] * 32767).astype(np.int16).tobytes())
+        w_.writeframes((mixb[:int(end * sr)] * 32767).astype(np.int16).tobytes())
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-framerate", str(FPS), "-i", str(tmp / "%05d.jpg"), "-i", str(wav),
                     "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", "-c:a", "aac",
                     "-b:a", "192k", "-shortest", str(out)], check=True)
