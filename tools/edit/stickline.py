@@ -162,7 +162,7 @@ def orbit_ease(p):
 def render(out, music=LIB / "_music/Delirious.mp3", m_start=40.0):
     bt, per = beats(music, m_start, 10)
     step = 2 if per < 0.45 else 1
-    INTRO = 0.55
+    INTRO = 0.95
     whips = [b for b in bt if b > INTRO + 0.4][::step][:3]          # 2 orbites vers les persos suivants + le recul final
     t_wide = whips[2]
     end = t_wide + 1.9
@@ -177,13 +177,13 @@ def render(out, music=LIB / "_music/Delirious.mp3", m_start=40.0):
     cache, bg_cache = {}, {}
 
     def theta(t):
-        th = -1.1 * (1 - orbit_ease(t / INTRO)) + DRIFT * t        # l'intro tourne vite puis la dérive ne s'arrête jamais
+        th = -3.6 * (1 - min(1.0, t / INTRO)) ** 3 + DRIFT * t        # l'intro tourne vite puis la dérive ne s'arrête jamais
         for w in whips[:2]:
             th += STEP * orbit_ease((t - w) / MOVE)
         return th
 
     def cam_at(t):
-        e = orbit_ease(t / INTRO)
+        e = 1 - (1 - min(1.0, t / INTRO)) ** 3
         D = 8.0 + (4.0 - 8.0) * e
         hgt = 6.5 + (1.05 - 6.5) * e
         th = theta(t)
@@ -233,7 +233,7 @@ def render(out, music=LIB / "_music/Delirious.mp3", m_start=40.0):
         burst = max(0.0, 1 - t / 0.4)
         if burst > 0:
             x_, y_, z_ = cam.proj((0, 0.3, 0))
-            r_ = 260 * burst / max(1.0, z_ / 4)
+            r_ = 150 * burst / max(1.0, z_ / 4)
             dl.ellipse((x_ / 2 - r_, y_ / 2 - r_ * 0.6, x_ / 2 + r_, y_ / 2 + r_ * 0.6), fill=(255, 255, 255, int(255 * burst)))
         glow = lay.filter(ImageFilter.GaussianBlur(14)).resize((W, H), Image.BILINEAR)
         img.alpha_composite(glow)
@@ -273,15 +273,10 @@ def render(out, music=LIB / "_music/Delirious.mp3", m_start=40.0):
         # flou de mouvement selon la vitesse de la caméra
         a = np.asarray(img.convert("RGB"), np.float32) / 255
         dth = abs(theta(t + 0.5 / FPS) - theta(t - 0.5 / FPS)) * FPS   # rad/s
-        sp = min(1.0, max(0.0, (dth - 0.6) / 6)) * (min(1.0, t / 0.3) if t < 0.3 else 1.0)
+        sp = min(1.0, max(0.0, (dth - 2.5) / 10)) * (0.0 if t < INTRO else 1.0)
         if sp > 0.02:
-            a = hblur(a, 260 * sp)
+            a = hblur(a, 110 * sp)
             a = speed_lines(a, 22, 0.35 * sp, fi)
-        if t < 0.12:                                                  # plongée : flou vertical
-            k_ = int(30 * (1 - t / 0.12))
-            if k_ > 2:
-                c_ = np.cumsum(np.pad(a, ((k_, k_), (0, 0), (0, 0)), mode="edge"), axis=0)
-                a = (c_[2 * k_:] - c_[:-2 * k_])[:H] / (2 * k_)
         if t > t_wide + 0.5:
             a = a + (1 - a) * 0.7 * math.exp(-(t - t_wide - 0.5) * 8)
         img = Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).convert("RGBA")
