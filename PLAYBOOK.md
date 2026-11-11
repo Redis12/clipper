@@ -171,3 +171,6 @@ Mail d'Instagram le 09/11 à 23:31 : profil animelorehq masqué tant qu'on ne co
 - Ensuite : Paramètres → Statut du compte → vérifier « Peut être recommandé aux non-abonnés ». Si non : c'est ça qui bloque la portée.
 - Pistes pour éviter une nouvelle alerte : pas 3 posts/jour d'un coup sur un compte jeune, heures décalées (déjà fait), interagir un peu à la main (commentaires, stories), bio et photo complètes.
 - Posts Buffer pendant le blocage : risquent d'échouer → les reprogrammer une fois le compte confirmé.
+
+## 13. TikTok Shop (11/11) : débloqué mais pas prioritaire
+Ouvert en Belgique depuis le 15/06/2026 (affiliés : produits d'autres marques dans la vitrine ou accrochés aux vidéos, commission par vente). Ordre de grandeur pour notre contenu : ~80–600 € pour une vidéo à 1 M de vues, presque rien en dessous, public surtout hors UE (ne peut pas acheter). Décision de l'utilisateur : pas la peine pour l'instant. À reconsidérer seulement avec un format centré produit.
