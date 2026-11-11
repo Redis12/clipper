@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools/punch"))
 sys.path.insert(0, str(HERE))
 import sticknodes as sn  # noqa: E402
+from stickfront import FrontStick  # noqa: E402
 from camedit import beats, hblur, speed_lines, name_text, ease, SFX, W, H, FPS  # noqa: E402
 
 LIB = ROOT / "library"
@@ -32,14 +33,16 @@ CHAR_H = 900                       # hauteur d'un perso au zoom 1
 GAP = 560                          # écart entre deux persos (px monde)
 
 # (source, nom, couleur du fond, miroir)
-CAST = [                                         # 3 persos max (comme la référence)
-    ("Dragon Ball/Goku (Hero Suit) Ssj3", "GOKU", (225, 85, 80), False),
-    ("Luffy/LuffyOP(Gear5)", "LUFFY", (190, 90, 210), False),
-    ("Naruto/naruto rikudou", "NARUTO", (80, 160, 230), True),
+CAST = [                                         # 3 persos max ; « front:<pose> » = notre stickman de face (stickfront.py)
+    ("front:hip", "A", (225, 85, 80), False),
+    ("front:raise", "B", (190, 90, 210), False),
+    ("front:cross", "C", (80, 160, 230), False),
 ]
 
 
 def silhouette(src, flip):
+    if src.startswith("front:"):
+        return None
     if src.startswith("png:"):
         im = Image.open(SNL / src[4:]).convert("RGBA")
     else:
@@ -168,6 +171,7 @@ def render(out, music=LIB / "_music/Delirious.mp3", m_start=40.0):
     end = t_wide + 1.9
     n = len(CAST)
     sils = [silhouette(s, f) for s, _, _, f in CAST]
+    fronts = [FrontStick(src[6:], seed=i) if src.startswith("front:") else None for i, (src, _, _, _) in enumerate(CAST)]
     cols = [c for _, _, c, _ in CAST]
     ang = [i * 2 * math.pi / n for i in range(n)]
     pos = [(R_CIRC * math.sin(a), -R_CIRC * math.cos(a)) for a in ang]
@@ -262,8 +266,12 @@ def render(out, music=LIB / "_music/Delirious.mp3", m_start=40.0):
                 continue
             items.append((z, i, fx, fy, fy - hy))
         for z, i, fx, fy, hpx in sorted(items, reverse=True):
-            s_ = sil_at(i, hpx)
-            x0, y0 = int(fx - s_.width / 2), int(fy - s_.height)
+            if sils[i] is None:                                       # stickman de face : dessiné à chaque image (respire)
+                s_, (ox, oy) = fronts[i].render(hpx, t)
+                x0, y0 = int(fx - ox), int(fy - oy)
+            else:
+                s_ = sil_at(i, hpx)
+                x0, y0 = int(fx - s_.width / 2), int(fy - s_.height)
             if wide > 0.35:
                 g, pad = rim(s_, (255, 150, 90), width=5)
                 k_ = min(1.0, (wide - 0.35) / 0.4)
