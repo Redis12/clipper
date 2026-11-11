@@ -34,9 +34,9 @@ GAP = 560                          # écart entre deux persos (px monde)
 
 # (source, nom, couleur du fond, miroir)
 CAST = [                                         # 3 persos max ; « front:<pose> » = notre stickman de face (stickfront.py)
-    ("front:hip", "A", (225, 85, 80), False),
-    ("front:raise", "B", (190, 90, 210), False),
-    ("front:cross", "C", (80, 160, 230), False),
+    ("front:shoulder", "A", (225, 85, 80), False),
+    ("front:hip", "B", (190, 90, 210), False),
+    ("front:raise", "C", (80, 160, 230), False),
 ]
 
 
