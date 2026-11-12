@@ -1,5 +1,5 @@
 """Carrousel « V vs VI » (12/11, tendance GTA 6, idée de l'utilisateur d'après un post du FC Bayern) : en haut l'ancienne
-génération (Naruto), en bas son « équivalent » de la nouvelle (JJK). Grille 2×2 par slide (1080×1350, 4:5) :
+génération (Naruto), en bas son « équivalent » de la nouvelle (JJK). 4 paires choisies par l'utilisateur. Grille 2×2 par slide (1080×1350, 4:5) :
 chiffre romain | perso. Les chiffres sont à NOTRE style (pas les logos de Rockstar) : « V » sur une ville au
 crépuscule, « VI » sur un coucher de soleil rose/violet. Têtes recadrées par faces.head_square.
 python3 tools/edit/gta_gen.py dossier_sortie
@@ -27,10 +27,6 @@ PAIRS = [
     ("Sasuke", N / "Sasuke/Sasuke.jpg", "Megumi", J / "Megumi Fushiguro/megumi.jpg"),
     ("Kakashi", N / "Kakashi/Kakashi.jpg", "Gojo", J / "Satoru Gojo/gojo.png"),
     ("Sakura", N / "Sakura/Sakura.jpg", "Nobara", J / "Nobara Kugisaki/nobara.png"),
-    ("Itachi", N / "Itachi/Itachi.jpg", "Choso", J / "Choso/choso.png"),
-    ("Jiraiya", N / "Jiraya/Jiraya.png", "Nanami", J / "Kento Nanami/nanami.jpeg"),
-    ("Orochimaru", N / "Orochimaru/Orochimaru.jpg", "Kenjaku", J / "Kenjaku/wallpaperflare.com_wallpaper(1).jpg"),
-    ("Madara", N / "Madara/Madara.jpg", "Sukuna", J / "Sukuna/sukuna.jpg"),
 ]
 
 
