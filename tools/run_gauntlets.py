@@ -183,7 +183,7 @@ if "gokujjk" in sys.argv:                            # 10/11 : Base Goku bat tou
                             title=("CAN BASE GOKU", "BEAT THE JJK GAUNTLET?"), theme=JJK_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
                             out=OUT / "Gauntlet - Goku vs JJK.mp4"))
-if "gojodb" in sys.argv:                              # 12/11 : Gojo vs Dragon Ball verse, « Nah, I'd win » devant Beerus… puis Hakai
+if "gojodb" in sys.argv:                              # 12/11 : Gojo vs Dragon Ball verse ; idée de l'utilisateur : il meurt DIRECT contre Frieza (la vidéo s'arrête net, c'est le gag)
     import os
     F = L + "_fusion/"
     GOJO = {"name": "Gojo", "image_path": L + "Jujutsu Kaisen/Satoru Gojo/gojo.png"}
@@ -197,7 +197,7 @@ if "gojodb" in sys.argv:                              # 12/11 : Gojo vs Dragon B
         ("Vegeta", F + "Vegeta/5 SSJBLUE.jpg"), ("Goku", F + "Goku/4 SSJ3.jpg"),
         ("Golden Frieza", F + "Frieza/6 GOLDEN.jpg"), ("Beast Gohan", F + "Gohan/5 Gohan Beast.jpg"),
         ("Beerus", L + "Dragon Ball Super/Beerus/Beerus.png"), ("Goku", F + "Goku/8 uimastered.jpg")]]
-    foes[0].update(gag=True, gag_s=1.3, say="Ohohoho~ a human? 🤭")
+    foes[0].update(gag=True, gag_s=1.6, say="Ohohoho~ a human? 🤭")
     foes[1].update(gag=True, gag_s=1.3, say="PERFECT! 😈")
     foes[4].update(gag=True, gag_s=1.3, say="I am the prince of all Saiyans! 👑")
     foes[8].update(gag=True, gag_s=2.2, panel=L + "_gauntlet/nah id win.jpg")
@@ -205,7 +205,7 @@ if "gojodb" in sys.argv:                              # 12/11 : Gojo vs Dragon B
         foes[i_]["hits"] = h_
     music = os.environ.get("GAUNTLET_MUSIC") or "library/_music/Delirious.mp3"
     print(gauntlet.generate(GOJO, foes, universe="Dragon Ball", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
-                            base_hits=1, step_hits=0, lose_at=8, lose_after=3.4, lose_move="HAKAI.",
+                            base_hits=1, step_hits=0, lose_at=0, lose_after=2.4, lose_move="DEATH BEAM.",
                             title=("CAN GOJO SURVIVE", "THE DRAGON BALL GAUNTLET?"), theme=GDB_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
                             out=OUT / "Gauntlet - Gojo vs Dragon Ball.mp4"))
