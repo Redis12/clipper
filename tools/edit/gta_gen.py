@@ -24,7 +24,7 @@ PW, PH = (W - 3 * GAP) // 2, (H - 3 * GAP) // 2
 
 PAIRS = [
     ("Naruto", L / "_fusion/Naruto/3 Base.jpg", "Yuji", J / "Yuji Itadori/Yuji.jpg"),
-    ("Sasuke", N / "Sasuke/Sasuke.jpg", "Megumi", J / "Megumi Fushiguro/megumi.jpg"),
+    ("Sasuke", N / "Sasuke/Sasuke.jpg", "Megumi", J / "Megumi Fushiguro/megumi2.jpg"),
     ("Kakashi", N / "Kakashi/Kakashi.jpg", "Gojo", J / "Satoru Gojo/gojo.png"),
     ("Sakura", N / "Sakura/sakura2.jpg", "Nobara", J / "Nobara Kugisaki/nobara2.jpg"),
 ]
