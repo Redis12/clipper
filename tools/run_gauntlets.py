@@ -183,3 +183,29 @@ if "gokujjk" in sys.argv:                            # 10/11 : Base Goku bat tou
                             title=("CAN BASE GOKU", "BEAT THE JJK GAUNTLET?"), theme=JJK_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
                             out=OUT / "Gauntlet - Goku vs JJK.mp4"))
+if "gojodb" in sys.argv:                              # 12/11 : Gojo vs Dragon Ball verse, « Nah, I'd win » devant Beerus… puis Hakai
+    import os
+    F = L + "_fusion/"
+    GOJO = {"name": "Gojo", "image_path": L + "Jujutsu Kaisen/Satoru Gojo/gojo.png"}
+    GDB_THEME = {"hero": (110, 200, 255), "boss": (200, 120, 255), "accent": (255, 190, 60), "title2": (120, 205, 255),
+                 "bg": ((20, 8, 40), (4, 4, 14)), "grid": (70, 40, 120),
+                 "glows": [(0.15, 0.2, 380, (140, 60, 255)), (0.9, 0.55, 420, (255, 150, 30)), (0.4, 0.95, 360, (90, 40, 200))],
+                 "font": "tools/money_sim/fonts/anton.woff2"}
+    foes = [{"name": n, "image_path": p} for n, p in [
+        ("Frieza", F + "Frieza/4 FINAL FORM.jpg"), ("Perfect Cell", F + "Cell/4 PERFECT CELLL.jpg"),
+        ("Kid Buu", F + "Buu/7 KID BUU.jpg"), ("Gohan", F + "Gohan/3 Gohan SSJ2.jpg"),
+        ("Vegeta", F + "Vegeta/5 SSJBLUE.jpg"), ("Goku", F + "Goku/4 SSJ3.jpg"),
+        ("Golden Frieza", F + "Frieza/6 GOLDEN.jpg"), ("Beast Gohan", F + "Gohan/5 Gohan Beast.jpg"),
+        ("Beerus", L + "Dragon Ball Super/Beerus/Beerus.png"), ("Goku", F + "Goku/8 uimastered.jpg")]]
+    foes[0].update(gag=True, gag_s=1.3, say="Ohohoho~ a human? 🤭")
+    foes[1].update(gag=True, gag_s=1.3, say="PERFECT! 😈")
+    foes[4].update(gag=True, gag_s=1.3, say="I am the prince of all Saiyans! 👑")
+    foes[8].update(gag=True, gag_s=2.2, panel=L + "_gauntlet/nah id win.jpg")
+    for i_, h_ in ((5, 2), (6, 2), (7, 3)):
+        foes[i_]["hits"] = h_
+    music = os.environ.get("GAUNTLET_MUSIC") or "library/_music/Delirious.mp3"
+    print(gauntlet.generate(GOJO, foes, universe="Dragon Ball", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
+                            base_hits=1, step_hits=0, lose_at=8, lose_after=3.4, lose_move="HAKAI.",
+                            title=("CAN GOJO SURVIVE", "THE DRAGON BALL GAUNTLET?"), theme=GDB_THEME, music=music,
+                            music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
+                            out=OUT / "Gauntlet - Gojo vs Dragon Ball.mp4"))
