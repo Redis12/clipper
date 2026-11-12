@@ -14,3 +14,6 @@ library/_originals/
 *.lock
 node_modules/
 library/One Piece/one-piece-mugen/
+
+# extraits téléchargés pour les edits CapCut (droits d auteur, lourds) : jamais dans le dépôt
+library/_capcut/
