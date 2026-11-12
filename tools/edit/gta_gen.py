@@ -1,6 +1,6 @@
 """Carrousel « V vs VI » (12/11, tendance GTA 6, idée de l'utilisateur d'après un post du FC Bayern) : en haut l'ancienne
 génération (Naruto), en bas son « équivalent » de la nouvelle (JJK). 4 paires choisies par l'utilisateur. Grille 2×2 par slide (1080×1350, 4:5) :
-chiffre romain | perso. Les chiffres sont à NOTRE style (pas les logos de Rockstar) : « V » sur une ville au
+chiffre romain | perso. Logos GTA V / VI fournis par l'utilisateur (library/_brand/gta/, détourés du faux damier), sinon chiffres à notre style : « V » sur une ville au
 crépuscule, « VI » sur un coucher de soleil rose/violet. Têtes recadrées par faces.head_square.
 python3 tools/edit/gta_gen.py dossier_sortie
 """
@@ -63,7 +63,7 @@ def panel_v():
                 if rnd.random() < 0.25:
                     d.rectangle((wx, wy, wx + 4, wy + 6), fill=(255, 200, 120))
         x += bw + rnd.randint(0, 6)
-    numeral(im, "V", (255, 255, 255), (20, 20, 30))
+    logo(im, "gta5") or numeral(im, "V", (255, 255, 255), (20, 20, 30))
     return im
 
 
@@ -79,8 +79,26 @@ def panel_vi():
             r = math.radians(a)
             d.line([top, (top[0] + math.cos(r) * 120 * s, top[1] + math.sin(r) * 50 * s + 30 * s)],
                    fill=(120, 60, 110, 230), width=int(14 * s))
-    numeral(im, "VI", (255, 255, 255), (90, 30, 90))
+    logo(im, "gta6") or numeral(im, "VI", (255, 255, 255), (90, 30, 90))
     return im
+
+
+def logo(im, name):
+    """logo fourni par l'utilisateur (library/_brand/gta/<name>.png, détouré) ; False s'il n'existe pas"""
+    p = L / "_brand/gta" / f"{name}.png"
+    if not p.is_file():
+        return False
+    lg = Image.open(p).convert("RGBA")
+    k = PW * 0.88 / lg.width
+    lg = lg.resize((int(lg.width * k), int(lg.height * k)), Image.LANCZOS)
+    x, y = (PW - lg.width) // 2, int(PH * 0.45 - lg.height / 2)
+    sh = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    sh.paste((0, 0, 0, 255), (x + 6, y + 10), lg.getchannel("A"))
+    sh = sh.filter(ImageFilter.GaussianBlur(10))
+    sh.putalpha(sh.getchannel("A").point(lambda v: int(v * 0.5)))
+    im.paste(sh, (0, 0), sh)
+    im.paste(lg, (x, y), lg)
+    return True
 
 
 def numeral(im, s, fill, stroke):
