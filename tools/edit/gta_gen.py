@@ -26,7 +26,7 @@ PAIRS = [
     ("Naruto", L / "_fusion/Naruto/3 Base.jpg", "Yuji", J / "Yuji Itadori/Yuji.jpg"),
     ("Sasuke", N / "Sasuke/Sasuke.jpg", "Megumi", J / "Megumi Fushiguro/megumi.jpg"),
     ("Kakashi", N / "Kakashi/Kakashi.jpg", "Gojo", J / "Satoru Gojo/gojo.png"),
-    ("Sakura", N / "Sakura/Sakura.jpg", "Nobara", J / "Nobara Kugisaki/nobara.png"),
+    ("Sakura", N / "Sakura/sakura2.jpg", "Nobara", J / "Nobara Kugisaki/nobara2.jpg"),
 ]
 
 
