@@ -262,4 +262,5 @@ def render(out, seed=4, which="mix"):
 
 
 if __name__ == "__main__":
-    render(sys.argv[1], which=sys.argv[2] if len(sys.argv) > 2 else "mix")
+    which = sys.argv[2] if len(sys.argv) > 2 else "mix"
+    render(sys.argv[1], seed={"mix": 4, "naruto": 7, "jojo": 9}.get(which, 4), which=which)   # trajets différents par édition
