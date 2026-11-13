@@ -670,5 +670,47 @@
   0.18,
   0.76,
   0.7
+ ],
+ "tail:JoJo/1 JONATHAN.jpg": [
+  0.47,
+  0.07,
+  0.73,
+  0.55
+ ],
+ "tail:JoJo/2 JOSEPH.jpg": [
+  0.42,
+  0.11,
+  0.63,
+  0.31
+ ],
+ "tail:JoJo/3 JOTARO.jpg": [
+  0.25,
+  0.3,
+  0.75,
+  0.72
+ ],
+ "tail:JoJo/4 JOSUKE.jpg": [
+  0.3,
+  0.19,
+  0.58,
+  0.42
+ ],
+ "tail:JoJo/5 GIORNO.jpg": [
+  0.44,
+  0.2,
+  0.67,
+  0.68
+ ],
+ "tail:JoJo/6 JOLYNE.jpg": [
+  0.25,
+  0.12,
+  0.71,
+  0.97
+ ],
+ "tail:JoJo/7 JOHNNY.jpg": [
+  0.18,
+  0.2,
+  0.82,
+  0.95
  ]
 }

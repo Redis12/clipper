@@ -1,0 +1,7 @@
+1 JONATHAN.jpg = Jonathan
+2 JOSEPH.jpg = Joseph
+3 JOTARO.jpg = Jotaro
+4 JOSUKE.jpg = Josuke
+5 GIORNO.jpg = Giorno
+6 JOLYNE.jpg = Jolyne
+7 JOHNNY.jpg = Johnny
