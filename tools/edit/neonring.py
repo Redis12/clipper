@@ -217,7 +217,7 @@ def render(out, music=LIB / "_music/Delirious.mp3", m_start=40.0):
 
     def theta(t):
         th = order[0] * STEP - 4.2 * (1 - ease_out(t / INTRO, 3))   # tour rapide à l'arrivée
-        th += 0.16 * t                                          # dérive continue : jamais figé
+        th += 0.16 * min(0.0, t - land) + 0.05 * max(0.0, t - land)   # dérive continue (jamais figé), lente sur le héros
         for k, w in enumerate(whips[1:], 1):
             d_ = ((order[k] - order[k - 1]) % n) * STEP
             th += d_ * ease_io((t - w + MOVE * 0.5) / MOVE)
@@ -232,7 +232,7 @@ def render(out, music=LIB / "_music/Delirious.mp3", m_start=40.0):
         D -= 0.12 * max(0.0, t - INTRO)
         if t > land:                                            # plan final : on s'approche du héros
             q = ease_out((t - land) / 1.2, 3)
-            D -= 1.6 * q
+            D -= 0.9 * q
             hgt += 0.35 * q
         th = theta(t)
         # on vise un peu le perso actif (pas le centre exact)
@@ -285,8 +285,6 @@ def render(out, music=LIB / "_music/Delirious.mp3", m_start=40.0):
         sp = min(1.0, max(0.0, (dth - 2.0) / 9))
         if sp > 0.03:
             a = hblur(a, 70 * sp)
-        if abs(t - land) < 0.25:                                # flash léger à l'arrivée sur le héros
-            a = a + (1 - a) * 0.35 * (1 - abs(t - land) / 0.25)
         img = Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).convert("RGBA")
         if t > land:
             _, name, sub, col = CAST[HERO]
