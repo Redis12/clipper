@@ -125,6 +125,12 @@ Prisons : 0 vue (contenu produit en masse / restrictions / ouverture), 1k (les i
 ## Edits CapCut (12/11)
 `library/_capcut/` (jamais dans le dépôt, `.gitignore`) : `sources/` = vidéos téléchargées PAR L'UTILISATEUR (yt-dlp sur son PC ; Claude ne télécharge pas d'extraits d'anime), `poses/<Perso>/` = extraits de 1 à 5 s découpés par Claude (ffmpeg, sans son), nommés par pose (`1_arme_epaule_sourire.mp4`…), pour les edits « sosies » (Toji / Zoro) que l'utilisateur monte dans CapCut. Attention : les vidéos « English Sub » ont les sous-titres incrustés en bas.
 
+## Snake « Guess the character » (13/11, `tools/edit/snakeguess.py`)
+D'après une vidéo « Guess the Anime » de l'utilisateur : 2 serpents de cases (2×2) parcourent une image cachée, seules les cases sous leur corps sont visibles (pop à l'arrivée, queue qui rétrécit, liseré pour les images sombres, plutôt vers le centre), repères jaunes autour des têtes, barre de temps, puis toute l'image en vague + nom + ding ; 5 tours de plus en plus durs (serpents plus courts), fin « HOW MANY DID YOU GET? ». Notes de marimba à chaque pas. Éditions : `python3 tools/edit/snakeguess.py out.mp4 mix|naruto|jojo` (graine différente par édition). Ajouter une édition = une entrée dans `SETS` + `TITLES`.
+
+## Intro néon (13/11, `tools/edit/neonring.py`)
+D'après une vidéo de référence : persos en traits lumineux (contour + traits du dessin, images en pied fond blanc dans `library/_neon/`), en cercle sur une grille dans un ciel étoilé, caméra qui arrive de loin en tournant puis passe d'un perso à l'autre sur les temps, fin sur le héros (nom en lettres-boîtes). Prototype (7 s), pas encore utilisé dans une vidéo.
+
 ## Idées de contenu
 `PLAYBOOK.md` (racine) : toutes les manips et leçons pour faire grandir un compte (YouTube, TikTok, Instagram, Buffer), à réutiliser sur un nouveau compte ; à compléter à chaque leçon. `IDEES.md` (racine) : toutes les idées de posts de l'utilisateur, consignes prêtes, comptes à surveiller, règles qui marchent. À compléter à chaque nouvelle idée.
 
