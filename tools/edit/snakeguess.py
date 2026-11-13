@@ -24,9 +24,9 @@ from clipper.slides import render as R  # noqa: E402
 LIB = ROOT / "library"
 W, H, FPS = 1080, 1920, 30
 ANTON = str(ROOT / "tools/money_sim/fonts/anton.woff2")
-AREA, CELL = 1000, 40                      # zone de l'image (px) et taille d'une case
+AREA, CELL = 960, 40                       # zone de l'image (px) et taille d'une case
 N = AREA // CELL
-AX, AY = (W - AREA) // 2, 400              # coin haut gauche de la zone
+AX, AY = (W - AREA) // 2, 330              # coin haut gauche de la zone
 EXPLORE, REVEAL = 6.5, 1.7                 # durée d'un tour : recherche puis réponse
 
 # (image, centre x du recadrage en fraction, nom, difficulté 1-5, longueur des serpents, cases par seconde)
@@ -142,7 +142,7 @@ def render(out, seed=4):
         for s in st["sn"]:
             for (x, y) in s.body:
                 for c in ((x, y), (x + 1, y), (x, y + 1), (x + 1, y + 1)):
-                    vis[c] = max(vis.get(c, 0), st["born"].get((x, y), -9))
+                    vis[c] = max(vis.get(c, -9), st["born"].get((x, y), -9))
         shrinking = [(c, t0) for c, t0 in st["dead"] if t - t0 < 0.12]
         st["dead"] = shrinking
         heads = [s.body[0] for s in st["sn"]]
@@ -182,10 +182,10 @@ def render(out, seed=4):
                     for b in range(rr.randint(2, 4)):
                         d.rectangle((cx + ox, cy + oy + b * 9, cx + ox + 26, cy + oy + b * 9 + 3), fill=YEL)
         # textes
-        text(img, "GUESS THE CHARACTER", 110, 96)
-        text(img, f"Round {k + 1}/{len(ROUNDS)} · Difficulty: " + "🔥" * diff, 245, 50, (230, 230, 230))
+        text(img, "GUESS THE CHARACTER", 80, 96)
+        text(img, f"Round {k + 1}/{len(ROUNDS)} · Difficulty: " + "🔥" * diff, 210, 50, (230, 230, 230))
         # barre de temps
-        bar_y = AY + AREA + 40
+        bar_y = AY + AREA + 30
         left = max(0.0, 1 - tr / EXPLORE)
         d.rounded_rectangle((AX, bar_y, AX + AREA, bar_y + 18), 9, fill=(40, 40, 48))
         if left > 0:
@@ -195,9 +195,9 @@ def render(out, seed=4):
             q = tr - EXPLORE - 0.15
             if q > 0:
                 sc = 1 + 0.25 * math.exp(-q * 9)
-                text(img, name, bar_y + 60, int(130 * sc), YEL, stroke=6)
+                text(img, name, bar_y + 45, int(120 * sc), YEL, stroke=6)
         else:
-            text(img, "Who is it? 🤔", bar_y + 70, 70)
+            text(img, "Who is it? 🤔", bar_y + 50, 66)
         img.save(tmp / f"{fi:05d}.jpg", quality=92)
 
     # --- audio : une petite note (marimba) tous les 2 pas, gamme pentatonique qui monte et redescend ; ding à la réponse
