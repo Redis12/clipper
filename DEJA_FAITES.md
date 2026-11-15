@@ -23,3 +23,4 @@ Mélange Sukuna/Kakashi/Itachi/Toji/L (16/11) · Find the Joestar (17/11) · Gue
 
 ## Transformations avec pouvoirs (clipper/slides/fusion_powers.py, tools/jojo/villains.py)
 JoJo Villain Transformations v3 (15/11 6 PM : ZA WARUDO, Killer Queen + Bites the Dust, King Crimson, Made in Heaven → l'univers recommence) · v2 (Made in Heaven accélère seulement) en stock
+Dragon Ball → DBZ Villains (18/11 10 PM, 16 méchants de Tao Pai Pai à Kid Buu, musique Solid State Scouter, mode « chasse »)
