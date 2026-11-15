@@ -1,0 +1,9 @@
+01 TAO PAI PAI.jpg = Tao Pai Pai
+02 COMMANDER RED.jpg = Commander Red
+03 TAMBOURINE.jpg = Tambourine
+04 KING PICCOLO.jpg = King Piccolo
+05 RADITZ.jpg = Raditz
+06 NAPPA.jpg = Nappa
+07 VEGETA.jpg = Vegeta
+08 DODORIA.jpg = Dodoria
+09 ZARBON.jpg = Zarbon
