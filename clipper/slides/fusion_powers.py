@@ -97,7 +97,8 @@ def _ball_of(sim, tier):
 
 def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | None = None, seed: int | None = None,
              out: Path | None = None, opts: dict | None = None, merge_gain: float = 0.35,
-             merge_sounds: dict | None = None, index: bool = True) -> Path:
+             merge_sounds: dict | None = None, index: bool = True, merge_sound=None,
+             music: str | None = None, music_start: float = 0.0, music_gain: float = 0.5) -> Path:
     """`merge_sounds` = {niveau: (fichier, début, durée)} : son joué à CHAQUE fusion de deux persos de ce niveau
     (15/11 : « chaque fusion des Pillar Men = le ay ay ay, 1 s ») ; sans entrée → petit « bloop ».
     `index` = rangée des formes sous le bol : déjà vues = icône, suivantes = « ? » (pas de spoil)."""
@@ -337,7 +338,14 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
     duration = n_out / fps
     vol = float(fusion.fcfg().get("volume", 0.13))
     audio = fusion.mix_events(merges_out, duration, len(tiers), None) * merge_gain * 0.0 \
-        if merge_sounds else fusion.mix_events(merges_out, duration, len(tiers), None) * merge_gain
+        if merge_sounds else fusion.mix_events(merges_out, duration, len(tiers), merge_sound) * merge_gain
+    if music:                                              # musique de fond continue (15/11 : DBZ Solid State Scouter)
+        m = _pcm(music, music_start, duration + 0.5)[:len(audio)]
+        if len(m):
+            f = int(1.5 * RATE)
+            m[-f:] *= np.linspace(1, 0, min(f, len(m)))[-len(m[-f:]):]
+            m[:int(0.3 * RATE)] *= np.linspace(0, 1, len(m[:int(0.3 * RATE)]))
+            audio[:len(m)] += m * vol * music_gain
     if merge_sounds:                                       # un son par perso, à chaque fusion (pas deux en même temps)
         bloop = fusion.mix_events  # noqa
         cache, last = {}, {}
