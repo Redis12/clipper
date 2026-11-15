@@ -103,13 +103,14 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
     `index` = rangée des formes sous le bol : déjà vues = icône, suivantes = « ? » (pas de spoil)."""
     c = dict(fusion.fcfg())
     c.update(opts or {})
-    tiers = tiers[:10]
+    tiers = tiers[:16]
     names = [t["name"] for t in tiers]
     W, H = (int(v) for v in c.get("size", [1080, 1920]))
     fps = int(c.get("fps", 30))
     seed = int(seed if seed is not None else random.randrange(1_000_000))
     sim = fusion.setup(len(tiers), W, H, seed, bounce=str(c.get("style", "bounce")) != "pile",
                        speed=float(c.get("speed", 0.6)))
+    sim.chase = bool(c.get("chase", len(tiers) > 10))   # chaînes longues : progression linéaire
     painter = fusion.Painter(sim, tiers, W, H, title)
     feeder = fusion.Feeder(sim, painter.funnel_top, c)
     out = out or fusion.out_dir() / f"fusion_powers_{seed}.mp4"

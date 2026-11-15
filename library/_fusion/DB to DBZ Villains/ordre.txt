@@ -2,8 +2,15 @@
 02 COMMANDER RED.jpg = Commander Red
 03 TAMBOURINE.jpg = Tambourine
 04 KING PICCOLO.jpg = King Piccolo
+04b PICCOLO.jpg = Piccolo
 05 RADITZ.jpg = Raditz
 06 NAPPA.jpg = Nappa
 07 VEGETA.jpg = Vegeta
 08 DODORIA.jpg = Dodoria
 09 ZARBON.jpg = Zarbon
+10 GINYU.jpg = Captain Ginyu
+11 FRIEZA.jpg = Frieza
+12 C19 C20.jpg = Android 19 & 20
+13 C17 C18.jpg = Android 17 & 18
+14 PERFECT CELL.jpg = Perfect Cell
+15 KID BUU.jpg = Kid Buu

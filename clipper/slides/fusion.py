@@ -311,6 +311,12 @@ def setup(tiers: int, W: int, H: int, seed: int, bounce: bool = True, speed: flo
 
 def spawn_tier(sim: Sim) -> int:
     """Comme Suika : on lâche surtout des petits niveaux, en privilégiant ceux qui ont un « partenaire » seul."""
+    if getattr(sim, "chase", False) and sim.best >= 2 and sim.rnd.random() < 0.6:
+        # 15/11 « chasse » (longues chaînes, 15 formes) : on lâche souvent un jumeau des plus hauts niveaux déjà vus
+        # → chaque nouvelle forme ne demande que 2-3 lâchers (progression linéaire, pas exponentielle)
+        alone = [t for t in range(max(0, sim.best - 2), sim.best + 1)
+                 if sum(1 for b in sim.balls if b.alive and b.tier == t) % 2 == 1]
+        return max(alone) if alone else max(0, sim.best - 1)
     hi = max(1, min(4, sim.top // 2, sim.best + 1))      # jamais une forme pas encore apparue (pas de spoil)
     alone = [t for t in range(hi) if sum(1 for b in sim.balls if b.alive and b.tier == t) % 2 == 1]
     if alone and sim.rnd.random() < 0.55:

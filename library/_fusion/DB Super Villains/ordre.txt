@@ -1,0 +1,4 @@
+07 BEERUS.png = Beerus
+08 GOKU BLACK.jpg = Goku Black
+09 HIT.jpg = Hit
+10 JIREN.jpg = Jiren
