@@ -32,6 +32,8 @@ MERGE = {
 if __name__ == "__main__":
     tiers = fusion.tiers_from_chain("JoJo Villains")
     out = Path(sys.argv[1])
-    seed = int(sys.argv[2]) if len(sys.argv) > 2 else 7
+    seed = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 7
+    if "--reset" in sys.argv:            # v3 (15/11) : Made in Heaven accélère jusqu'à faire recommencer l'univers
+        POWERS["Pucci"].update(reset=True, speed=6.0, reset_after=3.2, ff_seconds=2.2, after_speed=1.3)
     print(fusion_powers.generate(tiers, "JOJO VILLAIN TRANSFORMATIONS", POWERS, seed=seed, out=out,
                                  opts={"drop_every": 0.7, "drop_every_min": 0.45}, merge_sounds=MERGE))

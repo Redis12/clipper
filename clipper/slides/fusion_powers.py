@@ -53,6 +53,8 @@ def _banner(img, text, y, size, col=(255, 255, 255), alpha=1.0):
     if alpha <= 0:
         return img
     lay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    while size > 40 and render.font(size).getlength(text) > img.width * 0.9:   # trop long : plus petit
+        size -= 4
     render.draw_rich(lay, (img.width / 2, y), text, render.font(size), col + (int(255 * alpha),), anchor="mm",
                      stroke_width=max(4, size // 12), stroke_fill=(0, 0, 0, int(255 * alpha)))
     base = img.convert("RGBA")
@@ -122,6 +124,10 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
     merges_out = []                       # (temps de sortie, niveau) → petit bruitage de fusion
     sfx = []                              # (temps de sortie, tableau audio, gain)
     ring = deque(maxlen=int(2.6 * fps))   # dernières images (JPEG) pour le rembobinage
+    history = []                          # toutes les images (JPEG, 1/2) si un pouvoir « reset » existe
+    keep_all = any(v.get("reset") for v in powers.values())
+    appear = {}                           # niveau → image de sortie de sa 1re apparition
+    reset = {}                            # Made in Heaven « reset » : {"at": t_sortie, "frame": n, "p": spec}
     seen = 0                              # dernier niveau déjà « présenté »
     queue = []                            # pouvoirs en attente : [t_sim_déclenchement, nom, niveau]
     speed = 1.0
@@ -137,6 +143,8 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
         buf = io.BytesIO()                       # image SANS bandeau pour le rembobinage
         im.resize((W // 2, H // 2)).save(buf, "JPEG", quality=80)
         ring.append(buf.getvalue())
+        if keep_all:
+            history.append(buf.getvalue())
         for (b0, bd, txt, col) in banners:
             if b0 <= t_out < b0 + bd:
                 a = min(1.0, (t_out - b0) / 0.12, (b0 + bd - t_out) / 0.25)
@@ -201,6 +209,7 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
             # --- 1re apparition d'un niveau : son du perso + pouvoir programmé
             while seen < sim.best:
                 seen += 1
+                appear[seen] = n_out
                 p = powers.get(names[seen], {})
                 if p.get("sound"):
                     play(p["sound"], p.get("gain", 1.0), p.get("start", 0.0), p.get("dur"), p.get("fout", 0.5))
@@ -279,6 +288,34 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
                     play(p.get("power_sound"), 0.9, 0.0, p.get("power_dur"), 1.0)
                     banners.append((n_out / fps, 1.8, "MADE IN HEAVEN", (170, 230, 255)))
                     speed_target = float(p.get("speed", 1.5))
+                    if p.get("reset"):                     # le temps accélère tellement que l'univers recommence
+                        reset.update(at=n_out / fps + float(p.get("reset_after", 3.0)), frame=appear.get(tier, n_out), p=p)
+            # --- Made in Heaven : l'univers recommence → retour au début, puis jusqu'à l'apparition de Pucci
+            if reset.get("at") is not None and n_out / fps >= reset["at"]:
+                rp = reset.pop("p")
+                reset.pop("at")
+                play(rp.get("reset_sound"), 1.0, 0.0, None, 0.3)
+                white = Image.new("RGB", (W, H), (255, 255, 255))
+                last = draw()
+                for i in range(int(0.35 * fps)):         # tout devient blanc
+                    emit(Image.blend(last, white, (i + 1) / (0.35 * fps)))
+                frames = history[:reset["frame"]]
+                def old(j):
+                    return Image.open(io.BytesIO(frames[j])).convert("RGB").resize((W, H))
+                banners.append((n_out / fps + 0.2, 1.6, "THE UNIVERSE RESET", (190, 235, 255)))
+                for i in range(int(0.25 * fps)):         # le blanc s'efface sur la toute 1re image
+                    emit(Image.blend(white, old(0), (i + 1) / (0.25 * fps)))
+                for i in range(int(0.6 * fps)):          # le début, comme au 1er jour
+                    emit(old(min(len(frames) - 1, i)))
+                ff_n = int(float(rp.get("ff_seconds", 2.2)) * fps)
+                start = int(0.6 * fps)
+                for i in range(ff_n):                    # avance rapide jusqu'au moment où Pucci est apparu
+                    j = start + int((len(frames) - 1 - start) * ((i + 1) / ff_n) ** 1.4)
+                    emit(_tint(old(j), (200, 235, 255), 0.12))
+                speed = speed_target = float(rp.get("after_speed", 1.0))
+                prev_im[0] = None
+                for i in range(int(0.2 * fps)):
+                    emit(Image.blend(white, draw(), 0.5 + 0.5 * (i + 1) / (0.2 * fps)))
             # --- image normale
             speed += (speed_target - speed) * 0.05
             advance(speed)
