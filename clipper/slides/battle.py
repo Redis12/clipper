@@ -619,7 +619,8 @@ def soundtrack(path: Path, steals: list[float], outs: list[float], hits: list[fl
     put(win_at, S("win"), 0.9)
     lvl = float(np.percentile(np.abs(audio), 99.7)) or 1.0
     audio = audio * min(1.0, 0.75 / lvl)
-    fusion.write_wav(path, np.tanh(audio * 1.1) / math.tanh(1.1))
+    # 15/11 : l'utilisateur trouvait le son « trop haut » (−11 LUFS) → −9 dB (≈ −20 LUFS, comme les autres formats)
+    fusion.write_wav(path, np.tanh(audio * 1.1) / math.tanh(1.1) * 0.355)
 
 
 def generate(fighters: list[dict], title: str = "Which anime character wins?", links_per: int | None = None,

@@ -209,7 +209,7 @@ if "gojodb" in sys.argv:                              # 12/11 : Gojo vs Dragon B
                             title=("CAN GOJO SURVIVE", "THE DRAGON BALL GAUNTLET?"), theme=GDB_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
                             out=OUT / "Gauntlet - Gojo vs Dragon Ball.mp4"))
-if "luffynaruto" in sys.argv:                         # 13/11 : Gear 5 Luffy passe tout le Naruto verse… et perd contre le Talk no Jutsu (gag)
+if "luffynaruto" in sys.argv:                         # 15/11 : Gear 5 Luffy bat même Naruto Baryon… et perd contre Madara Six Paths (recherche : Rinnegan + régénération = ce qui l'arrête)
     import os
     LUF = {"name": "Luffy", "image_path": L + "_fusion/Luffy/6 Gear 5.jpg"}
     LUF_THEME = {"hero": (240, 240, 255), "boss": (255, 140, 40), "accent": (255, 210, 70), "title2": (255, 220, 120),
@@ -221,8 +221,8 @@ if "luffynaruto" in sys.argv:                         # 13/11 : Gear 5 Luffy pas
         ("Jiraiya", "Jiraya/Jiraya.png"), ("Orochimaru", "Orochimaru/Orochimaru.jpg"), ("Kakashi", "Kakashi/Kakashi.jpg"),
         ("Raikage", "Raikage/Raikage.jpg"), ("Minato", "Minato/Minato.jpg"), ("Itachi", "Itachi/Itachi.jpg"),
         ("Pain", "Pain/Pain.jpg"), ("Obito", "Obito/Obito.png")]]
+    foes.append({"name": "Naruto", "image_path": L + "_fusion/Naruto/9 Baryon Mode.jpg"})
     foes.append({"name": "Madara", "image_path": L + "_fusion/Madara/7 six path madara.jpg"})
-    foes.append({"name": "Naruto", "image_path": L + "_fusion/Naruto/8 SIX PATH.jpg"})
     foes[0].update(gag=True, gag_s=1.4, say="Free ramen if you lose! 🍜", gag_label="LUFFY IS EATING...")
     foes[2].update(gag=True, gag_s=1.3, say="SHANNAROOO! 👊")
     foes[4].update(gag=True, gag_s=1.4, say="What a fine vessel... 🐍")
@@ -230,10 +230,10 @@ if "luffynaruto" in sys.argv:                         # 13/11 : Gear 5 Luffy pas
     foes[8]["fake"] = True
     foes[10]["kamui"] = True
     foes[11]["hits"] = 2
-    foes[12].update(gag=True, gag_s=1.6, say="Listen Luffy... I know your pain, believe it—", gag_label="TALK NO JUTSU!")
+    foes[12].update(gag=True, gag_s=1.5, say="Wake up to reality. 🌑")
     music = os.environ.get("GAUNTLET_MUSIC") or "library/_music/Drums of Liberation x Overtaken (Gear 5 cover).mp3"
     print(gauntlet.generate(LUF, foes, universe="Naruto", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
-                            base_hits=1, step_hits=0, lose_at=12, lose_after=3.0, lose_move="TALK NO JUTSU.",
+                            base_hits=1, step_hits=0, lose_at=12, lose_after=3.4, lose_move="TENGAI SHINSEI.",
                             title=("CAN GEAR 5 LUFFY", "SURVIVE THE NARUTO GAUNTLET?"), theme=LUF_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "60")), music_gain=0.2,
                             out=OUT / "Gauntlet - Luffy vs Naruto.mp4"))
