@@ -1,7 +1,9 @@
-1 DIO P1.jpg = Dio Brando
-2 KARS.jpg = Kars
-3 DIO.jpg = DIO
-4 KIRA.jpg = Yoshikage Kira
-5 DIAVOLO.jpg = Diavolo
-6 PUCCI.jpg = Pucci
-7 VALENTINE.jpg = Valentine
+01 DIO P1.jpg = Dio Brando
+02 WAMUU.jpg = Wamuu
+03 ESIDISI.jpg = Esidisi
+04 KARS.jpg = Kars
+05 DIO.jpg = DIO
+06 KIRA.jpg = Yoshikage Kira
+07 DIAVOLO.jpg = Diavolo
+08 PUCCI.jpg = Pucci
+09 VALENTINE.jpg = Valentine
