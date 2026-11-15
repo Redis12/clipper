@@ -107,14 +107,14 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
     def emit(im):
         nonlocal n_out
         t_out = n_out / fps
+        buf = io.BytesIO()                       # image SANS bandeau pour le rembobinage
+        im.resize((W // 2, H // 2)).save(buf, "JPEG", quality=80)
+        ring.append(buf.getvalue())
         for (b0, bd, txt, col) in banners:
             if b0 <= t_out < b0 + bd:
                 a = min(1.0, (t_out - b0) / 0.12, (b0 + bd - t_out) / 0.25)
                 im = _banner(im, txt, H * 0.2, 96, col, a)
         proc.stdin.write(im.tobytes())
-        buf = io.BytesIO()
-        im.resize((W // 2, H // 2)).save(buf, "JPEG", quality=80)
-        ring.append(buf.getvalue())
         n_out += 1
 
     def play(path, gain=1.0, start=0.0, dur=None, fout=0.4, at=None):
@@ -144,13 +144,19 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
                 if b.alive:
                     r = sim.radii[b.tier] * (1.25 + 0.15 * math.sin(sim.t * 18))
                     d.ellipse((b.x - r, b.y - r, b.x + r, b.y + r), outline=(255, 70, 160, 255), width=8)
-                    d.text((b.x, b.y - r - 30), "💣", font=render.font(54), anchor="mm", fill=(255, 255, 255, 255))
+                    bx_, by_ = b.x, b.y - r - 34               # petite bombe dessinée (pas d'emoji : police)
+                    d.ellipse((bx_ - 20, by_ - 20, bx_ + 20, by_ + 20), fill=(25, 20, 30, 255), outline=(255, 70, 160, 255), width=3)
+                    d.line((bx_ + 10, by_ - 16, bx_ + 22, by_ - 30), fill=(200, 170, 120, 255), width=4)
+                    if int(sim.t * 12) % 2:
+                        d.ellipse((bx_ + 18, by_ - 36, bx_ + 30, by_ - 24), fill=(255, 220, 60, 255))
             for (x, y, t0) in booms:
                 q = (sim.t - t0) / 0.6
                 if 0 <= q < 1:
-                    for k_, colr in ((1.0, (255, 230, 120)), (0.7, (255, 140, 40)), (0.4, (255, 255, 255))):
-                        r = 40 + 260 * q * k_
-                        d.ellipse((x - r, y - r, x + r, y + r), fill=colr + (int(230 * (1 - q)),))
+                    for k_, colr in ((1.0, (255, 120, 40)), (0.75, (255, 200, 80)), (0.45, (255, 250, 220))):
+                        r = 30 + 170 * (q ** 0.5) * k_
+                        d.ellipse((x - r, y - r, x + r, y + r), fill=colr + (int(200 * (1 - q) ** 1.5),))
+                    r = 40 + 260 * q                                   # onde de choc
+                    d.ellipse((x - r, y - r, x + r, y + r), outline=(255, 230, 200, int(220 * (1 - q))), width=6)
             im = im.convert("RGB")
         return im
 
@@ -197,7 +203,7 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
                     sim.rnd.shuffle(small)
                     bombs[:] = small[:4]
                     queue.append([sim.t + 1.4, "kq_boom", tier])
-                    banners.append((n_out / fps, 1.3, "KILLER QUEEN 💣", (255, 110, 190)))
+                    banners.append((n_out / fps, 1.3, "KILLER QUEEN", (255, 110, 190)))
                 elif power == "kq_boom":
                     for b in bombs:
                         if b.alive:
@@ -223,7 +229,7 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
                         emit(Image.blend(flash, draw(), (i + 1) / 4))
                 elif power == "king_crimson":              # le temps est effacé : on saute 5 s
                     play(p.get("power_sound"), 1.0, 0.0, None, 0.1)
-                    banners.append((n_out / fps, 1.0, "KING CRIMSON", (255, 60, 60)))
+                    banners.append((n_out / fps, 0.4, "KING CRIMSON", (255, 60, 60)))
                     for i in range(int(0.35 * fps)):
                         im = draw()
                         im = _tint(ImageOps.posterize(im, 2), (200, 0, 30), 0.45 * (i + 1) / (0.35 * fps))
@@ -232,7 +238,7 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
                     skip = int(p.get("skip", 5.0) * fps)
                     for i in range(skip):                  # 5 s simulées, jamais montrées (ni entendues)
                         feeder.tick(dt * speed, sub)
-                    banners.append((n_out / fps, 0.9, "TIME ERASED", (255, 90, 90)))
+                    banners.append((n_out / fps + 0.05, 1.0, "TIME ERASED", (255, 90, 90)))
                     for i in range(int(0.25 * fps)):
                         emit(_tint(draw(), (200, 0, 30), 0.35 * (1 - i / (0.25 * fps))))
                 elif power == "made_in_heaven":            # le temps accélère (un peu)
