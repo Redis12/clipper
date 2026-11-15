@@ -138,7 +138,11 @@ def mix_events(events: list[tuple[float, int]], duration: float, tiers: int, sou
     for t, tier in events:
         if tier not in cache:
             base = bases[min(len(bases) - 1, tier * len(bases) // max(1, tiers))]
-            cache[tier] = tier_sound(base, tier, tiers, step, fat)
+            if step == 0 and fat == 0:                      # 15/11 « un son par perso » (répliques) : joué tel quel
+                pk = float(np.max(np.abs(base))) or 1.0
+                cache[tier] = (base / pk * 0.8).astype(np.float32)
+            else:
+                cache[tier] = tier_sound(base, tier, tiers, step, fat)
         s = cache[tier]
         i = int(t * RATE)
         if i >= n:

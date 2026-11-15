@@ -1,0 +1,7 @@
+1 DIO P1.jpg = Dio Brando
+2 KARS.jpg = Kars
+3 DIO.jpg = DIO
+4 KIRA.jpg = Yoshikage Kira
+5 DIAVOLO.jpg = Diavolo
+6 PUCCI.jpg = Pucci
+7 VALENTINE.jpg = Valentine
