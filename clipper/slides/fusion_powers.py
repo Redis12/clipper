@@ -65,13 +65,40 @@ def _tint(img, rgb, k):
     return Image.blend(img, over, k)
 
 
+def _index(im, painter, sim, W, H, icons):
+    """rangée des formes sous le bol : vues = icône ronde, pas encore vues = « ? » (on ne spoile pas la suite)"""
+    n = len(sim.radii)
+    size = min(96, int((W - 120) / n) - 12)
+    gap = size + 12
+    x0 = W / 2 - gap * (n - 1) / 2
+    y = int(H * 0.87)
+    im = im.convert("RGBA")
+    d = ImageDraw.Draw(im)
+    for k in range(n):
+        x = x0 + k * gap
+        box = (x - size / 2, y - size / 2, x + size / 2, y + size / 2)
+        if k <= sim.best:
+            if k not in icons:
+                icons[k] = fusion.icon(painter.tiers[k].get("image_path"), size, (90, 90, 120)).convert("RGBA")
+            im.alpha_composite(icons[k], (int(box[0]), int(box[1])))
+            d.ellipse(box, outline=(255, 214, 60, 255) if k == sim.best else (200, 200, 210, 255), width=4)
+        else:
+            d.ellipse(box, fill=(25, 25, 34, 255), outline=(90, 90, 110, 255), width=3)
+            d.text((x, y), "?", font=render.font(int(size * 0.55)), anchor="mm", fill=(160, 160, 180, 255))
+    return im.convert("RGB")
+
+
 def _ball_of(sim, tier):
     bs = [b for b in sim.balls if b.alive and b.tier == tier]
     return max(bs, key=lambda b: b.born) if bs else None
 
 
 def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | None = None, seed: int | None = None,
-             out: Path | None = None, opts: dict | None = None, merge_gain: float = 0.35) -> Path:
+             out: Path | None = None, opts: dict | None = None, merge_gain: float = 0.35,
+             merge_sounds: dict | None = None, index: bool = True) -> Path:
+    """`merge_sounds` = {niveau: (fichier, début, durée)} : son joué à CHAQUE fusion de deux persos de ce niveau
+    (15/11 : « chaque fusion des Pillar Men = le ay ay ay, 1 s ») ; sans entrée → petit « bloop ».
+    `index` = rangée des formes sous le bol : déjà vues = icône, suivantes = « ? » (pas de spoil)."""
     c = dict(fusion.fcfg())
     c.update(opts or {})
     tiers = tiers[:10]
@@ -158,8 +185,15 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
                     r = 40 + 260 * q                                   # onde de choc
                     d.ellipse((x - r, y - r, x + r, y + r), outline=(255, 230, 200, int(220 * (1 - q))), width=6)
             im = im.convert("RGB")
+        if index:
+            im = _index(im, painter, sim, W, H, icons)
+        if speed > 1.15 and prev_im[0] is not None:                 # Made in Heaven : images fantômes
+            im = Image.blend(im, prev_im[0], min(0.55, (speed - 1) * 0.4))
+        prev_im[0] = im
         return im
 
+    icons = {}
+    prev_im = [None]
     if start_sound:
         play(start_sound, 1.0, at=0.25)
     try:
@@ -264,7 +298,25 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
             proc.kill()
     duration = n_out / fps
     vol = float(fusion.fcfg().get("volume", 0.13))
-    audio = fusion.mix_events(merges_out, duration, len(tiers), None) * merge_gain
+    audio = fusion.mix_events(merges_out, duration, len(tiers), None) * merge_gain * 0.0 \
+        if merge_sounds else fusion.mix_events(merges_out, duration, len(tiers), None) * merge_gain
+    if merge_sounds:                                       # un son par perso, à chaque fusion (pas deux en même temps)
+        bloop = fusion.mix_events  # noqa
+        cache, last = {}, {}
+        for (t, tier) in merges_out:
+            src = tier - 1                                 # le niveau des 2 persos qui fusionnent
+            spec = merge_sounds.get(src)
+            if not spec:
+                continue
+            if t - last.get(src, -9) < spec[3] if len(spec) > 3 else t - last.get(src, -9) < 0.3:
+                continue
+            last[src] = t
+            if src not in cache:
+                cache[src] = _fade(_pcm(spec[0], spec[1], spec[2]), fout=min(0.25, spec[2] / 3))
+            a = cache[src]
+            i = int(t * RATE)
+            seg = a[: max(0, len(audio) - i)] * vol * 1.2
+            audio[i:i + len(seg)] += seg
     for (t, a, g) in sfx:
         i = int(t * RATE)
         seg = a[: max(0, len(audio) - i)] * g * vol * 1.6
