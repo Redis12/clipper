@@ -174,3 +174,12 @@ Mail d'Instagram le 09/11 à 23:31 : profil animelorehq masqué tant qu'on ne co
 
 ## 13. TikTok Shop (11/11) : débloqué mais pas prioritaire
 Ouvert en Belgique depuis le 15/06/2026 (affiliés : produits d'autres marques dans la vitrine ou accrochés aux vidéos, commission par vente). Ordre de grandeur pour notre contenu : ~80–600 € pour une vidéo à 1 M de vues, presque rien en dessous, public surtout hors UE (ne peut pas acheter). Décision de l'utilisateur : pas la peine pour l'instant. À reconsidérer seulement avec un format centré produit.
+
+## Analyse des stats (18/11, 147 posts Buffer, 29/10 → 17/11)
+- Total : TikTok 7,86M vues · YouTube 3,83M · Instagram 10k (~150 vues par Reel, quel que soit le format → Instagram ne pousse pas le compte).
+- TikTok, médiane par format (posts > 2 jours) : Gauntlet 193k (rétention 45 %, 3 commentaires / 1 000 vues) · Power Up 101k (max 3,3M Kid Sasuke vs Madara) · Transfo 31k (max 448k Cell) · Stickman 31k · Domain War 10k · Battle 4,6k · Snake ~2k · Carrousels ~100.
+- Les gauntlets « Base Goku vs <univers> » écrasent les autres (1,5M / 390k / 253k, 1 400 à 4 100 commentaires) : crossover + perso « faible » = débat. Un perso déjà surpuissant (Gojo, Sukuna, Ichigo, Gear 5) tient beaucoup moins (6k–42k).
+- Power Up : « Kid <héros> vs <grand méchant de sa série> » ; > 1 min, donc compatible Creator Rewards.
+- YouTube : Transfo et Power Up très forts (Kid Goku vs Beerus 549k, JoJo transfo 404k, Kid Sasuke vs Madara 339k, Vegeta transfo 325k).
+- Créneaux : 10 PM = le pire (médiane TikTok 15k contre ~30k à midi / 6 PM ; YouTube 12k contre 96k à 6 PM). En partie parce que les formats faibles étaient souvent à 10 PM.
+- Chute depuis le 14/11 : 4 jours de Battles + Snakes (2,8k → 251 vues) ; à éviter, les formats faibles semblent aussi plomber les suivants.
