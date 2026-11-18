@@ -397,7 +397,13 @@ def main(script_path, out, voice=None):
     script = json.loads(Path(script_path).read_text())
     lines = script["lines"]
     base = ROOT / script["dir"]
-    if voice:
+    vbuf = None
+    if voice == "tts":                                  # voix Kokoro am_adam générée ici (timings exacts)
+        sys.path.insert(0, str(ROOT / "tools"))
+        import tts
+        vbuf, segs = tts.lines([l["text"] for l in lines], gap=0.32)
+        voice = None
+    elif voice:
         segs, vdur = voice_timing(Path(voice), lines)
     else:
         segs = estimate_timing(lines)
@@ -414,6 +420,9 @@ def main(script_path, out, voice=None):
     ff.stdin.close()
     ff.wait()
     audio = soundtrack(lines, segs, words, total, voice, sc.kw)
+    if vbuf is not None:
+        n = min(len(audio), len(vbuf))
+        audio[:n] = np.tanh(audio[:n] * 0.55 + vbuf[:n] * 0.95)
     wav = out.with_suffix(".wav")
     fusion.write_wav(wav, audio)
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(tmp), "-i", str(wav), "-c:v", "copy", "-c:a", "aac",

@@ -268,6 +268,12 @@ def scene_rule(t, T):                                   # 19–30 s : la règle 
 
 
 SCENES = [(scene_rain, 5.0), (scene_icecream, 6.0), (scene_fact, 4.0), (scene_title, 4.0), (scene_rule, 11.0)]
+# voix (Kokoro am_adam) : (texte, début souhaité dans la scène) ; la scène s'allonge si la voix déborde
+VOICE = [[("It starts raining.", 0.3), ("Then… it doesn't.", 2.5)],
+         [("Your friend drops his ice cream.", 0.1), ("You don't even think.", 1.6), ("Back on the cone.", 3.2), ("Wait… what?", 4.3, "am_michael")],
+         [("A blink lasts a tenth of a second.", 0.1), ("You get five full seconds… of frozen time.", 1.6)],
+         [("What if you could stop time for five seconds?", 0.3)],
+         [("The world freezes.", 0.2), ("You don't.", 1.7), ("But it only recharges once an hour.", 3.3), ("So… what would you use it for?", 6.5)]]
 
 
 def soundtrack(total, cuts):
@@ -307,6 +313,18 @@ def soundtrack(total, cuts):
 
 def main(out):
     global BG1, BG2
+    sys.path.insert(0, str(ROOT / "tools"))
+    import tts
+    plan, voice_clips = [], []                         # (scène, durée, [(texte, début, fin)]) en temps de scène
+    for (fn, T), vl in zip(SCENES, VOICE):
+        cur, items = 0.0, []
+        for item in vl:
+            txt, st = item[0], item[1]
+            c = tts.say(txt, voice=item[2] if len(item) > 2 else "am_adam", speed=1.02)
+            a = max(st, cur + 0.2)
+            items.append((txt, a, a + len(c) / RATE, c))
+            cur = a + len(c) / RATE
+        plan.append((fn, max(T, cur + 0.5), items))
     BG1 = street(1)
     BG2 = street(5, sun=(0.3, 0.55))
     out = Path(out)
@@ -316,11 +334,14 @@ def main(out):
                            "-pix_fmt", "yuv420p", str(tmp)], stdin=subprocess.PIPE)
     cuts, t0 = [], 0.0
     prev = None
-    for fn, T in SCENES:
+    for fn, T, items in plan:
         cuts.append(t0)
+        for (txt, a, b, c) in items:
+            voice_clips.append((t0 + a, c))
         for i in range(int(T * FPS)):
             t = i / FPS
-            im, sub = fn(t, T)
+            im, _ = fn(t, T)
+            sub = next((txt for (txt, a, b, c) in items if a - 0.05 <= t < b + 0.3), "")
             im = im.convert("RGB")
             if prev is not None and t < 0.25:              # fondu enchaîné court entre les scènes
                 im = Image.blend(prev, im, t / 0.25)
@@ -336,7 +357,13 @@ def main(out):
     ff.stdin.close()
     ff.wait()
     wav = out.with_suffix(".wav")
-    fusion.write_wav(wav, soundtrack(t0, cuts))
+    audio = soundtrack(t0, cuts) * 0.6
+    for (ta, c) in voice_clips:                        # la voix par-dessus
+        i = int(ta * RATE)
+        n = min(len(c), len(audio) - i)
+        if n > 0:
+            audio[i:i + n] += c[:n] * 0.95
+    fusion.write_wav(wav, np.tanh(audio))
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(tmp), "-i", str(wav), "-c:v", "copy", "-c:a", "aac",
                     "-b:a", "192k", "-shortest", str(out)], check=True)
     tmp.unlink(); wav.unlink()

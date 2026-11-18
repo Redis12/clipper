@@ -134,6 +134,9 @@ Même jeu que la Fusion + par perso : son à SA 1re apparition (`powers[nom]["so
 ## Intro néon (13/11, `tools/edit/neonring.py`)
 D'après une vidéo de référence : persos en traits lumineux (contour + traits du dessin, images en pied fond blanc dans `library/_neon/`), en cercle sur une grille dans un ciel étoilé, caméra qui arrive de loin en tournant puis passe d'un perso à l'autre sur les temps, fin sur le héros (nom en lettres-boîtes). Prototype (7 s), pas encore utilisé dans une vidéo.
 
+## Voix off (Kokoro, 09/11 puis 18/11)
+`tools/tts.py` : voix Kokoro **am_adam** (choisie par l'utilisateur), modèles dans /tmp/tts téléchargés depuis les releases GitHub thewh1teagle/kokoro-onnx (Hugging Face et ElevenLabs bloqués dans le conteneur). `tts.lines(textes)` = audio + temps exacts de chaque phrase. Utilisé par `tools/explainer/explainer.py <script> <sortie> tts` (« If you had … », mascotte `tools/explainer/mascot.py`) et `tools/whatif/demo.py` (démo du format long What If). Analyse du format : `ANALYSE_WHAT_IF.md`.
+
 ## Idées de contenu
 `PLAYBOOK.md` (racine) : toutes les manips et leçons pour faire grandir un compte (YouTube, TikTok, Instagram, Buffer), à réutiliser sur un nouveau compte ; à compléter à chaque leçon. `IDEES.md` (racine) : toutes les idées de posts de l'utilisateur, consignes prêtes, comptes à surveiller, règles qui marchent. À compléter à chaque nouvelle idée.
 
