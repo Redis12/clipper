@@ -31,7 +31,7 @@ SECONDS = 60.0
 END_S = 1.6
 TARGET = 10_000
 MAX_VIS = 650
-R_BALL = 19
+R_BALL = 22
 G = 1500.0
 FONT = str(ROOT / "tools/money_sim/fonts/anton.woff2")
 NF = L / "_fusion/Naruto"
@@ -44,9 +44,9 @@ MUSIC = L / "_music/Naruto Shippuden OST 1 - Track 26 - Keisei Gyakuten ( Revers
 ORANGE, RED, GREEN = (255, 150, 30), (235, 50, 60), (70, 220, 110)
 
 # rangées de portes : y, liste de (largeur relative, multiplicateur ; 0 = Chidori ÷2)
-GATES = [(700, [(1, 2), (1, 0), (1, 3), (1, 2)]),
-         (980, [(1, 0), (1, 2), (1.2, 5), (1, 0), (1, 2)]),
-         (1260, [(1, 3), (1, 0), (1, 2), (1, 0), (1, 3)])]
+GATES = [(600, [(1, 2), (1, 0), (1, 3), (1, 2)]),
+         (900, [(1, 0), (1, 2), (1.2, 5), (1, 0), (1, 2)]),
+         (1220, [(1, 3), (1, 0), (1, 2), (1, 0), (1, 3)])]
 
 
 def F(sz):
@@ -273,6 +273,8 @@ def render_video(seed, luck, out: Path):
     form_t = {0: 0.0}
     reach = None
     smokes = []
+    shown_sas = set()
+    hero_big = icon(FORMS[0][2], 150, ORANGE)
     nframes = int(SECONDS * FPS)
     for fi in range(nframes):
         if fi:
@@ -293,7 +295,7 @@ def render_video(seed, luck, out: Path):
         text_c(d, (W / 2, 290), f"IN {math.ceil(left)} SECONDS?", F(80 if left >= 10 else int(80 + 10 * (1 - left % 1))), col)
         # compteur + barre
         tot = int(min(sim.total, 999_999))
-        text_c(d, (W / 2, 378), f"{tot:,} CLONES", F(64), (255, 230, 120), 5)
+        text_c(d, (W / 2, 378), f"{tot:,} CLONE" + ("S" if tot > 1 else ""), F(64), (255, 230, 120), 5)
         # zones touchées : flash
         for (te, kind, x, y, m) in sim.events[-60:]:
             dt_ = t - te
@@ -307,7 +309,12 @@ def render_video(seed, luck, out: Path):
                     xs = [x + random.Random(int(te * 1000) + k).uniform(-60, 60) for _ in range(5)]
                     pts = [(xs[j], y - 60 + 30 * j) for j in range(5)]
                     d.line(pts, fill=(150, 200, 255, a), width=4)
-                im.paste(sas, (int(x - 46), int(y - 120)), sas)
+                zx = next(((x0 + x1) / 2 for gy_, row in ZONES if gy_ == y for x0, x1, m_ in row if x0 <= x < x1), x)
+                key = (round(zx), y)
+                if key not in shown_sas:
+                    shown_sas.add(key)
+                    im.paste(sas, (int(zx - 46), int(y - 125)), sas)
+        shown_sas.clear()
         # clones
         ic = icons[fk]
         for i in range(len(sim.p)):
@@ -331,6 +338,17 @@ def render_video(seed, luck, out: Path):
             im.paste(b, (W // 2 - 70, int(yb - 95)), b)
             d.text((W / 2, yb + 75), FORMS[fk][1] + "!", font=F(66), fill=ORANGE + (int(255 * k),), anchor="mm",
                    stroke_width=6, stroke_fill=(0, 0, 0, int(255 * k)))
+        # accroche (1re seconde) : Naruto en grand + « KAGE BUNSHIN NO JUTSU! »
+        if t < 1.3:
+            k = 1 if t < 0.9 else (1.3 - t) / 0.4
+            hb = hero_big if k >= 1 else hero_big.copy()
+            if k < 1:
+                hb.putalpha(hb.getchannel("A").point(lambda a: int(a * k)))
+            im.paste(hb, (W // 2 - 150, BY0 + 140), hb)
+            d.text((W / 2, BY0 + 500), "KAGE BUNSHIN", font=F(96), fill=ORANGE + (int(255 * k),), anchor="mm",
+                   stroke_width=7, stroke_fill=(0, 0, 0, int(255 * k)))
+            d.text((W / 2, BY0 + 600), "NO JUTSU!", font=F(96), fill=(255, 255, 255, int(255 * k)), anchor="mm",
+                   stroke_width=7, stroke_fill=(0, 0, 0, int(255 * k)))
         # bas : forme actuelle
         d.text((W / 2, BY1 + 70), f"FORM: {FORMS[fk][1]}", font=F(48), fill=(255, 255, 255), anchor="mm",
                stroke_width=5, stroke_fill=(0, 0, 0))
