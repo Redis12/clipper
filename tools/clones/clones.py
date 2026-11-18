@@ -43,7 +43,8 @@ SFX = L / "_sfx/Naruto SFX"
 MUSIC = L / "_music/Naruto Shippuden OST 1 - Track 26 - Keisei Gyakuten ( Reverse Situation ).mp3"
 ORANGE, RED, GREEN = (255, 150, 30), (235, 50, 60), (70, 220, 110)
 
-# rangées de portes : y, liste de (largeur relative, multiplicateur ; 0 = Chidori ÷2)
+# rangées de portes : y, liste de (largeur relative, multiplicateur ; 0 = Chidori : le clone qui passe disparaît, TOUJOURS)
+CW = 1.0                                           # largeur des portes Chidori (réglée pour ~10 000 vers 58 s)
 GATES = [(600, [(1, 2), (1, 0), (1, 3), (1, 2)]),
          (900, [(1, 0), (1, 2), (1.2, 5), (1, 0), (1, 2)]),
          (1220, [(1, 3), (1, 0), (1, 2), (1, 0), (1, 3)])]
@@ -59,6 +60,8 @@ def gate_zones():
         tot = sum(w for w, _ in zs)
         x = BX0
         row = []
+        zs = [(w * (CW if m == 0 else 1), m) for w, m in zs]
+        tot = sum(w for w, _ in zs)
         for w, m in zs:
             x1 = x + (BX1 - BX0) * w / tot
             row.append((x, x1, m))
@@ -96,13 +99,17 @@ class Sim:
         self.events = []                                 # (t, kind, x, y, value)
         self.total = 1.0
         self.hist = []
+        self.tc = None                                   # moment où l'écran est plein (au-delà : poids)
+        self.total_tc = 1.0
 
     def goal(self, t):
-        """Courbe visée : luck > 1 = un peu en avance (réussite), < 1 = en retard (échec de peu)."""
-        x = min(1.0, t / (SECONDS - 1.2))
-        g = TARGET ** (x ** 0.6) * self.luck
-        dip = 0.45 * math.exp(-((x - 0.74) / 0.05) ** 2)       # le gros Chidori : on recule
-        return max(1.0, g * (1 - dip))
+        """Une fois l'écran plein : courbe exponentielle de total_tc (à tc) jusqu'à 10 000 vers 58,5 s
+        (luck > 1 = un peu en avance). Avant : rien n'est piloté, les règles s'appliquent telles quelles."""
+        if self.tc is None:
+            return float("inf")
+        end = SECONDS - 1.5
+        x = min(1.0, max(0.0, (t - self.tc) / max(1.0, end - self.tc)))
+        return self.total_tc * (TARGET * self.luck / self.total_tc) ** x
 
     def step(self, dt):
         self.t += dt
@@ -132,10 +139,6 @@ class Sim:
             self.v[bi] -= (1.55 * vn)[:, None] * nrm
             self.v[bi, 0] += self.rnd.normal(0, 35, len(bi))
             self.p[bi] += nrm * 2
-        # pilotage discret : la courbe visée (10 000 pile à la fin, avec un creux vers 75 % du temps)
-        ratio = self.total / max(1.0, self.goal(self.t))
-        q = min(1.0, max(0.03, 0.35 / max(ratio, 1e-3) ** 2))
-        chid_p = 0.15 if ratio < 0.9 else min(1.0, 0.6 * ratio)
         # portes
         new_p, new_v, new_w = [], [], []
         dead = np.zeros(len(self.p), bool)
@@ -145,20 +148,19 @@ class Sim:
                 x = self.p[i, 0]
                 mlt = next((m for x0, x1, m in row if x0 <= x < x1), 1)
                 if mlt == 0:
-                    if len(self.p) > 2 and self.rnd.random() < chid_p:
-                        self.w[i] *= 0.5
-                        if self.w[i] < 1 or self.rnd.random() < 0.5:
-                            dead[i] = True
-                        self.events.append((self.t, "chidori", x, gy, 0))
-                    continue
-                if self.rnd.random() > q:
+                    dead[i] = True                      # règle fixe : le Chidori détruit toujours le clone
+                    self.events.append((self.t, "chidori", x, gy, 0))
                     continue
                 # multiplication : on crée des clones (ou on alourdit si trop d'icônes à l'écran)
                 extra = mlt - 1
                 room = MAX_VIS - (len(self.p) + len(new_p))
                 spawn = min(extra, max(0, room))
-                if spawn < extra:
-                    self.w[i] *= (extra - spawn + 1)
+                if spawn < extra:                           # écran plein : le clone compte pour plusieurs
+                    if self.tc is None:
+                        self.tc, self.total_tc = self.t, max(1.0, float(self.w.sum()))
+                    r_ = self.goal(self.t) / max(1.0, self.total)
+                    k = 0.0 if r_ < 0.97 else min(1.0, r_ ** 6)
+                    self.w[i] *= 1 + (extra - spawn) * k
                 for k in range(spawn):
                     ang = -math.pi / 2 + (k + 1 - spawn / 2) * 0.5 + self.rnd.normal(0, 0.2)
                     new_p.append(self.p[i] + [self.rnd.normal(0, 6), 4])
@@ -204,7 +206,7 @@ def run(seed, luck):
 def pick(fail=False, tries=10):
     best = None
     for sd in range(1, tries + 1):
-        for luck in ((0.9, 0.93, 0.96) if fail else (1.0, 1.03, 1.06)):
+        for luck in ((0.9, 0.95) if fail else (0.95, 0.98, 1.0)):
             reach, tot = run(sd, luck)
             if fail:
                 ok = reach is None and 0.85 * TARGET <= tot < TARGET
