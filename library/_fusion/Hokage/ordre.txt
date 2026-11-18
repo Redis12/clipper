@@ -1,0 +1,8 @@
+# First Hokage → Seventh Hokage (18/11)
+1 HASHIRAMA.jpg = Hashirama
+2 TOBIRAMA.jpg = Tobirama
+3 HIRUZEN.jpg = Hiruzen
+4 MINATO.jpg = Minato
+5 TSUNADE.png = Tsunade
+6 KAKASHI.jpg = Kakashi
+7 NARUTO.jpg = Naruto

@@ -886,5 +886,41 @@
   0.22,
   0.68,
   0.75
+ ],
+ "tail:Hokage/1 HASHIRAMA.jpg": [
+  0.33,
+  0.12,
+  0.66,
+  0.78
+ ],
+ "tail:Hokage/2 TOBIRAMA.jpg": [
+  0.34,
+  0.14,
+  0.66,
+  0.78
+ ],
+ "tail:Hokage/3 HIRUZEN.jpg": [
+  0.34,
+  0.36,
+  0.62,
+  0.86
+ ],
+ "tail:Hokage/4 MINATO.jpg": [
+  0.3,
+  0.08,
+  0.66,
+  0.75
+ ],
+ "tail:Hokage/5 TSUNADE.png": [
+  0.28,
+  0.05,
+  0.74,
+  0.95
+ ],
+ "tail:Hokage/6 KAKASHI.jpg": [
+  0.24,
+  0.18,
+  0.76,
+  0.7
  ]
 }

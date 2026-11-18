@@ -5,6 +5,10 @@ Même jeu que la Fusion (chaîne de persos qui fusionnent), mais chaque perso a 
 - `bites_the_dust` (Kira) : Killer Queen marque des balles qui EXPLOSENT, puis la vidéo REMBOBINE (Bites the Dust)
 - `king_crimson` (Diavolo) : flash rouge, 5 s de la partie EFFACÉES (on saute), « TIME ERASED »
 - `made_in_heaven` (Pucci) : la partie ACCÉLÈRE (un peu : ×1,5) jusqu'à la fin
+Hokage (18/11, « First Hokage to Seventh ») : `wood` (Mokuton : branches qui poussent du fond et projettent
+les persos), `hiraishin` (des persos échangent leur place dans un éclair jaune), `shiki_fujin` (ombre violette :
+le Shinigami scelle 3 petits persos), `quake` (coup de poing de Tsunade : l'écran tremble, tout est projeté),
+`kamui` (tourbillon : 2 persos aspirés), `kurama` (aura orange + rugissement). Un pouvoir du niveau 0 part à 1 s.
 Les pouvoirs décalent la vidéo : le son suit le temps de SORTIE (`out_t`), pas le temps de la simulation.
     generate(tiers, powers={"DIO": {"sound": ..., "power": "timestop"}, ...}, start_sound=...)
 """
@@ -90,6 +94,131 @@ def _index(im, painter, sim, W, H, icons):
     return im.convert("RGB")
 
 
+HOKAGE = {"wood": ("MOKUTON!", (110, 220, 90)), "hiraishin": ("FLYING THUNDER GOD!", (255, 230, 60)),
+          "shiki_fujin": ("REAPER DEATH SEAL!", (190, 120, 255)), "quake": ("CHERRY BLOSSOM IMPACT!", (255, 120, 170)),
+          "kamui": ("KAMUI!", (230, 60, 70)), "kurama": ("KURAMA!", (255, 150, 30))}
+
+
+def _hokage_power(power, p, sim, ball, bx, by, fx, banners, t_out, play):
+    """Applique le pouvoir à la simulation (vraiment : les persos bougent / disparaissent) + effet à dessiner."""
+    txt, col = HOKAGE[power]
+    banners.append((t_out, 1.5, p.get("banner", txt), col))
+    play(p.get("power_sound"), p.get("power_gain", 1.0), p.get("power_start", 0.0), p.get("power_dur"), 0.3)
+    alive = [b for b in sim.balls if b.alive]
+    rnd = sim.rnd
+    if power == "wood":                                # des branches poussent du fond et projettent tout le monde
+        for b in alive:
+            b.vy -= sim.R * rnd.uniform(1.6, 2.4)
+            b.vx += sim.R * rnd.uniform(-0.6, 0.6)
+        fx.append(("wood", sim.t, [rnd.uniform(-0.8, 0.8) for _ in range(7)]))
+    elif power == "hiraishin":                         # échanges de place dans un éclair jaune
+        others = [b for b in alive if b is not ball]
+        rnd.shuffle(others)
+        pairs = []
+        for a, c in zip(others[0:6:2], others[1:6:2]):
+            pairs.append(((a.x, a.y), (c.x, c.y)))
+            a.x, c.x = c.x, a.x
+            a.y, c.y = c.y, a.y
+        if ball and others:                            # le Hokage lui-même se téléporte aussi
+            t = others[-1]
+            pairs.append(((ball.x, ball.y), (t.x, t.y)))
+            ball.x, t.x, ball.y, t.y = t.x, ball.x, t.y, ball.y
+        fx.append(("flash", sim.t, pairs))
+    elif power == "shiki_fujin":                       # le Shinigami scelle 3 petits persos
+        small = sorted([b for b in alive if b is not ball], key=lambda b: b.tier)[:3]
+        pts = [(b.x, b.y) for b in small]
+        for b in small:
+            b.alive = False
+        sim.balls = [b for b in sim.balls if b.alive]
+        fx.append(("seal", sim.t, pts))
+    elif power == "quake":                             # coup de poing : tout est projeté loin d'elle
+        for b in alive:
+            if b is ball:
+                continue
+            dx, dy = b.x - bx, b.y - by
+            dn = math.hypot(dx, dy) + 1e-6
+            k = sim.R * 3.2 * max(0.3, 1 - dn / (2 * sim.R))
+            b.vx += dx / dn * k
+            b.vy += dy / dn * k
+        fx.append(("quake", sim.t, (bx, by)))
+    elif power == "kamui":                             # tourbillon : 2 persos aspirés
+        cands = [b for b in alive if b is not ball]
+        rnd.shuffle(cands)
+        gone = cands[:2]
+        pts = [(b.x, b.y) for b in gone]
+        for b in gone:
+            b.alive = False
+        sim.balls = [b for b in sim.balls if b.alive]
+        fx.append(("kamui", sim.t, pts))
+    elif power == "kurama":
+        fx.append(("kurama", sim.t, (bx, by)))
+        fx.append(("quake", sim.t, (bx, by)))
+
+
+def _hokage_fx(im, fx, sim, W, H):
+    from PIL import ImageChops
+    im = im.convert("RGBA")
+    over = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(over)
+    shake = 0
+    for (kind, t0, data) in fx:
+        q = sim.t - t0
+        if kind == "wood" and 0 <= q < 2.2:
+            a = int(255 * min(1, (2.2 - q) / 0.5))
+            grow = min(1, q / 0.5)
+            base_y = sim.cy + sim.R * 0.95
+            for j, ang in enumerate(data):
+                x0 = sim.cx + (j - 3) * sim.R * 0.24
+                pts = [(x0, base_y)]
+                x, y = x0, base_y
+                for k in range(8):
+                    x += math.sin(ang * 3 + k * 0.9) * 18
+                    y -= sim.R * 0.17 * grow
+                    pts.append((x, y))
+                d.line(pts, fill=(110, 70, 30, a), width=26, joint="curve")
+                d.line(pts, fill=(150, 105, 50, a), width=12, joint="curve")
+                for (lx, ly) in pts[3::2]:
+                    d.ellipse((lx - 16, ly - 9, lx + 16, ly + 9), fill=(90, 200, 70, a))
+        elif kind == "flash" and 0 <= q < 0.45:
+            a = int(255 * (1 - q / 0.45))
+            for (p1, p2) in data:
+                for (x, y) in (p1, p2):
+                    r = 40 + 90 * q
+                    d.ellipse((x - r, y - r, x + r, y + r), outline=(255, 235, 80, a), width=6)
+                    d.line((x - 30, y, x + 30, y), fill=(255, 255, 200, a), width=4)
+                    d.line((x, y - 30, x, y + 30), fill=(255, 255, 200, a), width=4)
+                d.line((p1, p2), fill=(255, 230, 60, a // 2), width=8)
+        elif kind == "seal" and 0 <= q < 1.6:
+            a = int(140 * min(1, q / 0.2) * min(1, (1.6 - q) / 0.4))
+            d.rectangle((0, 0, W, H), fill=(40, 10, 60, a))
+            for (x, y) in data:
+                r = 70 * (1 - min(1, q / 1.2))
+                d.ellipse((x - r, y - r, x + r, y + r), fill=(180, 120, 255, int(a * 1.5)))
+                d.line((x, y, x + 140 * (1 - q), y - 260 * (1 - q)), fill=(230, 220, 255, a), width=5)
+        elif kind == "quake" and 0 <= q < 0.6:
+            shake = max(shake, int(28 * (1 - q / 0.6)))
+            x, y = data
+            r = 60 + 500 * q
+            d.ellipse((x - r, y - r, x + r, y + r), outline=(255, 140, 180, int(230 * (1 - q / 0.6))), width=12)
+        elif kind == "kamui" and 0 <= q < 1.0:
+            a = int(230 * (1 - q))
+            for (x, y) in data:
+                for k in range(6):
+                    ang = q * 12 + k * math.pi / 3
+                    r0 = 80 * (1 - q)
+                    d.arc((x - r0 - k * 8, y - r0 - k * 8, x + r0 + k * 8, y + r0 + k * 8),
+                          math.degrees(ang), math.degrees(ang) + 90, fill=(40, 20, 50, a), width=7)
+                d.ellipse((x - 12, y - 12, x + 12, y + 12), fill=(10, 0, 20, a))
+        elif kind == "kurama" and 0 <= q < 2.0:
+            a = int(110 * min(1, q / 0.2) * min(1, (2.0 - q) / 0.5))
+            d.ellipse((sim.cx - sim.R * 1.05, sim.cy - sim.R * 1.05, sim.cx + sim.R * 1.05, sim.cy + sim.R * 1.05),
+                      fill=(255, 130, 20, a))
+    im = Image.alpha_composite(im, over).convert("RGB")
+    if shake:
+        im = ImageChops.offset(im, sim.rnd.randint(-shake, shake), sim.rnd.randint(-shake, shake))
+    return im
+
+
 def _ball_of(sim, tier):
     bs = [b for b in sim.balls if b.alive and b.tier == tier]
     return max(bs, key=lambda b: b.born) if bs else None
@@ -138,6 +267,7 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
     bombs = []                            # balles marquées par Killer Queen
     booms = []                            # (x, y, t_sim) explosions
     playing = {}                          # son → fin (temps de sortie) : pas deux fois le même en même temps
+    fx = []                               # effets Hokage : (nom, t_sim_début, données)
 
     def emit(im):
         nonlocal n_out
@@ -195,6 +325,8 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
                     r = 40 + 260 * q                                   # onde de choc
                     d.ellipse((x - r, y - r, x + r, y + r), outline=(255, 230, 200, int(220 * (1 - q))), width=6)
             im = im.convert("RGB")
+        if fx:
+            im = _hokage_fx(im, fx, sim, W, H)
         if index:
             im = _index(im, painter, sim, W, H, icons)
         if speed > 1.15 and prev_im[0] is not None:                 # Made in Heaven : images fantômes
@@ -206,6 +338,11 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
     prev_im = [None]
     if start_sound:
         play(start_sound, 1.0, at=0.25)
+    p0 = powers.get(names[0], {})
+    if p0.get("power"):
+        queue.append([p0.get("delay", 1.0), p0["power"], 0])
+        if p0.get("sound"):
+            play(p0["sound"], p0.get("gain", 1.0), p0.get("start", 0.0), p0.get("dur"), p0.get("fout", 0.5), at=0.2)
     try:
         while True:
             # --- 1re apparition d'un niveau : son du perso + pouvoir programmé
@@ -286,6 +423,8 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
                     banners.append((n_out / fps + 0.05, 1.0, "TIME ERASED", (255, 90, 90)))
                     for i in range(int(0.25 * fps)):
                         emit(_tint(draw(), (200, 0, 30), 0.35 * (1 - i / (0.25 * fps))))
+                elif power in HOKAGE:
+                    _hokage_power(power, p, sim, ball, bx, by, fx, banners, n_out / fps, play)
                 elif power == "made_in_heaven":            # le temps accélère (un peu)
                     play(p.get("power_sound"), 0.9, 0.0, p.get("power_dur"), 1.0)
                     banners.append((n_out / fps, 1.8, "MADE IN HEAVEN", (170, 230, 255)))
