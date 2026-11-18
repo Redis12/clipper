@@ -1,0 +1,21 @@
+{
+  "title": "IF YOU HAD|GOJO'S INFINITY",
+  "dir": "library/_explainer/gojo_infinity",
+  "lines": [
+    {"text": "This punch will never touch you.", "scene": "punch"},
+    {"text": "If you had Gojo's Infinity, the space between you and the fist never runs out.", "scene": "punch"},
+    {"text": "To reach your face, it first crosses half the distance. Then half of what's left. Then half again.", "scene": "series"},
+    {"text": "Infinite halves. It never arrives.", "scene": "series"},
+    {"text": "Punches, bullets, even trucks slow down forever.", "scene": "slow"},
+    {"text": "But calculating that every second would fry a normal brain.", "scene": "brain"},
+    {"text": "That's why Gojo needs the Six Eyes, to control it perfectly.", "scene": "image", "img": "01_gojo_blindfold.jpg", "counter": ["PRECISION", "PERFECT", [120, 210, 255]]},
+    {"text": "Push the Infinity inward, and you get Blue. It pulls everything toward you.", "scene": "blue", "img": "02_blue.jpg", "key": "checker"},
+    {"text": "Reverse it, and you get Red. It blasts everything away.", "scene": "red", "img": "03_red.jpg", "key": "white"},
+    {"text": "Crash them together, and Hollow Purple erases whatever it touches.", "scene": "purple"},
+    {"text": "And inside Unlimited Void, your enemy gets infinite information, and can't move.", "scene": "image", "img": "05_unlimited_void.jpg", "glow": [170, 90, 255], "counter": ["INFORMATION", "INFINITE", [170, 90, 255]]},
+    {"text": "But there's a way around it.", "scene": "warning"},
+    {"text": "Toji's Inverted Spear cancels the technique on contact.", "scene": "image", "img": "06_toji_spear.jpg", "glow": [255, 80, 80], "counter": ["INFINITY", "CANCELLED", [255, 80, 80]]},
+    {"text": "And Sukuna stopped aiming at Gojo. He cut the space itself.", "scene": "image", "img": "../../Jujutsu Kaisen/Sukuna/sukuna.jpg", "glow": [255, 80, 80], "slash": true, "counter": ["SPACE", "CUT", [255, 80, 80]]},
+    {"text": "So the punch never lands… unless someone cuts the world in half.", "scene": "punch"}
+  ]
+}
