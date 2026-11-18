@@ -934,5 +934,77 @@
   0.02,
   0.78,
   0.17
+ ],
+ "tail:Akatsuki/01 ZETSU.jpg": [
+  0.3,
+  0.2,
+  0.75,
+  0.9
+ ],
+ "tail:Akatsuki/02 HIDAN.jpg": [
+  0.3,
+  0.15,
+  0.65,
+  0.8
+ ],
+ "tail:Akatsuki/03 SASORI.jpg": [
+  0.33,
+  0.2,
+  0.62,
+  0.75
+ ],
+ "tail:Akatsuki/04 KAKUZU.jpg": [
+  0.3,
+  0.15,
+  0.7,
+  0.85
+ ],
+ "tail:Akatsuki/05 DEIDARA.jpg": [
+  0.32,
+  0.1,
+  0.7,
+  0.6
+ ],
+ "tail:Akatsuki/06 KISAME.jpg": [
+  0.3,
+  0.15,
+  0.75,
+  0.85
+ ],
+ "tail:Akatsuki/07 KONAN.jpg": [
+  0.33,
+  0.15,
+  0.65,
+  0.7
+ ],
+ "tail:Akatsuki/08 ITACHI.jpg": [
+  0.34,
+  0.12,
+  0.64,
+  0.72
+ ],
+ "tail:Akatsuki/09 PAIN.jpg": [
+  0.33,
+  0.1,
+  0.62,
+  0.65
+ ],
+ "tail:Akatsuki/10 NAGATO.jpg": [
+  0.3,
+  0.1,
+  0.62,
+  0.8
+ ],
+ "tail:Akatsuki/11 OBITO.jpg": [
+  0.3,
+  0.05,
+  0.75,
+  0.85
+ ],
+ "tail:Akatsuki/12 MADARA.jpg": [
+  0.35,
+  0.05,
+  0.65,
+  0.75
  ]
 }

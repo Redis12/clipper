@@ -1,0 +1,13 @@
+# Akatsuki, du plus faible au plus fort (18/11)
+01 ZETSU.jpg = Zetsu
+02 HIDAN.jpg = Hidan
+03 SASORI.jpg = Sasori
+04 KAKUZU.jpg = Kakuzu
+05 DEIDARA.jpg = Deidara
+06 KISAME.jpg = Kisame
+07 KONAN.jpg = Konan
+08 ITACHI.jpg = Itachi
+09 PAIN.jpg = Pain
+10 NAGATO.jpg = Nagato
+11 OBITO.jpg = Obito
+12 MADARA.jpg = Madara

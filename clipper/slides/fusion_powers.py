@@ -97,7 +97,13 @@ def _index(im, painter, sim, W, H, icons):
 HOKAGE = {"wood": ("MOKUTON!", (110, 220, 90)), "hiraishin": ("FLYING THUNDER GOD!", (255, 230, 60)),
           "shiki_fujin": ("REAPER DEATH SEAL!", (190, 120, 255)), "quake": ("CHERRY BLOSSOM IMPACT!", (255, 120, 170)),
           "kamui": ("KAMUI!", (230, 60, 70)), "kurama": ("KURAMA!", (255, 150, 30)),
-          "shadow": ("SHADOW POSSESSION!", (150, 150, 170))}
+          "shadow": ("SHADOW POSSESSION!", (150, 150, 170)),
+          # Akatsuki (18/11)
+          "jashin": ("JASHIN RITUAL!", (220, 30, 40)), "puppet": ("PUPPET JUTSU!", (90, 180, 255)),
+          "grudge": ("EARTH GRUDGE!", (60, 60, 70)), "clay": ("ART IS AN EXPLOSION!", (255, 210, 80)),
+          "shark": ("WATER SHARK BOMB!", (60, 140, 255)), "paper": ("PAPER SHURIKEN!", (235, 235, 255)),
+          "tsukuyomi": ("TSUKUYOMI!", (230, 20, 30)), "chibaku": ("CHIBAKU TENSEI!", (150, 130, 200)),
+          "meteor": ("TENGAI SHINSEI!", (255, 120, 40))}
 
 
 def _hokage_power(power, p, sim, ball, bx, by, fx, banners, t_out, play):
@@ -154,6 +160,47 @@ def _hokage_power(power, p, sim, ball, bx, by, fx, banners, t_out, play):
     elif power == "shadow":                            # Kagemane : 4 persos attrapés par l'ombre, figés 1,2 s
         near = sorted([b for b in alive if b is not ball], key=lambda b: (b.x - bx) ** 2 + (b.y - by) ** 2)[:4]
         fx.append(("shadow", sim.t, (ball, [(b, b.x, b.y) for b in near])))
+    elif power == "jashin":                            # rituel : il emporte un perso avec lui (cercle rouge)
+        cands = sorted([b for b in alive if b is not ball], key=lambda b: (b.x - bx) ** 2 + (b.y - by) ** 2)[:1]
+        for b in cands:
+            b.alive = False
+        sim.balls = [b for b in sim.balls if b.alive]
+        fx.append(("jashin", sim.t, [(bx, by)] + [(b.x, b.y) for b in cands]))
+    elif power in ("puppet", "grudge"):                # fils de chakra : 3 persos tirés vers lui
+        near = sorted([b for b in alive if b is not ball], key=lambda b: -((b.x - bx) ** 2 + (b.y - by) ** 2))[:3]
+        for b in near:
+            dx, dy = bx - b.x, by - b.y
+            dn = math.hypot(dx, dy) + 1e-6
+            b.vx += dx / dn * sim.R * 2.4
+            b.vy += dy / dn * sim.R * 2.4
+        fx.append(("strings", sim.t, (ball, near, (90, 180, 255) if power == "puppet" else (20, 20, 25))))
+    elif power == "clay":                              # 4 araignées d'argile, puis BOUM
+        small = [b for b in alive if b is not ball]
+        rnd.shuffle(small)
+        fx.append(("clay", sim.t, small[:4]))
+    elif power == "shark":                             # l'eau monte et soulève tout le monde
+        for b in alive:
+            b.vy -= sim.R * rnd.uniform(1.0, 1.6)
+        fx.append(("water", sim.t, None))
+    elif power == "paper":                             # shuriken de papier sur 4 persos
+        tg = [b for b in alive if b is not ball]
+        rnd.shuffle(tg)
+        tg = tg[:4]
+        for b in tg:
+            b.vx += rnd.uniform(-1, 1) * sim.R * 1.5
+            b.vy -= sim.R * 0.8
+        fx.append(("paper", sim.t, (ball, [(b.x, b.y) for b in tg])))
+    elif power == "tsukuyomi":
+        fx.append(("tsukuyomi", sim.t, None))
+    elif power == "chibaku":                           # tout est attiré au centre
+        for b in alive:
+            dx, dy = sim.cx - b.x, sim.cy - b.y
+            dn = math.hypot(dx, dy) + 1e-6
+            b.vx += dx / dn * sim.R * 2.2
+            b.vy += dy / dn * sim.R * 2.2
+        fx.append(("chibaku", sim.t, None))
+    elif power == "meteor":                            # une météorite tombe au centre
+        fx.append(("meteor", sim.t, (sim.cx, sim.cy)))
     elif power == "kurama":
         fx.append(("kurama", sim.t, (bx, by)))
         fx.append(("quake", sim.t, (bx, by)))
@@ -227,6 +274,90 @@ def _hokage_fx(im, fx, sim, W, H):
                 if reach >= 1:
                     r = sim.radii[b.tier] * 1.15
                     d.ellipse((fx_ - r, fy_ - r, fx_ + r, fy_ + r), outline=(15, 15, 20, a), width=9)
+        elif kind == "jashin" and 0 <= q < 1.4:
+            a = int(230 * min(1, q / 0.15) * min(1, (1.4 - q) / 0.4))
+            x, y = data[0]
+            r = sim.R * 0.35
+            d.ellipse((x - r, y - r, x + r, y + r), outline=(220, 20, 30, a), width=8)
+            d.polygon([(x + r * math.cos(a_ * 2 * math.pi / 3 - math.pi / 2), y + r * math.sin(a_ * 2 * math.pi / 3 - math.pi / 2)) for a_ in range(3)],
+                      outline=(220, 20, 30, a))
+            for (px, py) in data[1:]:
+                rr = 60 * (1 - min(1, q))
+                d.ellipse((px - rr, py - rr, px + rr, py + rr), fill=(200, 0, 20, a))
+        elif kind == "strings" and 0 <= q < 1.0:
+            src, near, colr = data
+            if src is not None and src.alive:
+                a = int(230 * (1 - q))
+                for b in near:
+                    if b.alive:
+                        d.line((src.x, src.y, b.x, b.y), fill=colr + (a,), width=4)
+        elif kind == "clay":
+            if q < 1.2:
+                for b in data:
+                    if b.alive:
+                        r = sim.radii[b.tier] * 1.2
+                        d.ellipse((b.x - r, b.y - r, b.x + r, b.y + r), outline=(255, 230, 200, 255), width=6)
+                        d.ellipse((b.x - 14, b.y - r - 30, b.x + 14, b.y - r - 4), fill=(245, 240, 225, 255), outline=(80, 70, 60, 255), width=3)
+            elif q < 1.25 and data:
+                for b in data:                     # BOUM : une seule fois
+                    if b.alive:
+                        b.alive = False
+                        fx.append(("boom", sim.t, (b.x, b.y)))
+                sim.balls = [b for b in sim.balls if b.alive]
+                data.clear()
+        elif kind == "boom" and 0 <= q < 0.6:
+            x, y = data
+            k_ = q / 0.6
+            for kk, colr in ((1.0, (255, 120, 40)), (0.75, (255, 200, 80)), (0.45, (255, 250, 220))):
+                r = 30 + 170 * (k_ ** 0.5) * kk
+                d.ellipse((x - r, y - r, x + r, y + r), fill=colr + (int(200 * (1 - k_) ** 1.5),))
+            shake = max(shake, int(18 * (1 - k_)))
+        elif kind == "water" and 0 <= q < 2.0:
+            a = int(120 * min(1, q / 0.3) * min(1, (2.0 - q) / 0.5))
+            lvl = sim.cy + sim.R - sim.R * 1.6 * min(1, q / 0.8)
+            d.rectangle((0, lvl, W, sim.cy + sim.R + 40), fill=(30, 110, 230, a))
+            for k in range(8):
+                xx = (k * W / 8 + q * 120) % W
+                d.arc((xx - 40, lvl - 14, xx + 40, lvl + 14), 180, 360, fill=(200, 230, 255, a + 60), width=4)
+        elif kind == "paper" and 0 <= q < 0.7:
+            src, pts = data
+            a = int(255 * (1 - q / 0.7))
+            sx, sy = (src.x, src.y) if src is not None else (sim.cx, sim.cy)
+            for (px, py) in pts:
+                x = sx + (px - sx) * min(1, q / 0.3)
+                y = sy + (py - sy) * min(1, q / 0.3)
+                ang = q * 20
+                pts4 = [(x + 22 * math.cos(ang + k * math.pi / 2), y + 22 * math.sin(ang + k * math.pi / 2)) for k in range(4)]
+                d.polygon(pts4, fill=(245, 245, 255, a), outline=(120, 120, 160, a))
+        elif kind == "tsukuyomi" and 0 <= q < 1.3:
+            a = int(170 * min(1, q / 0.1) * min(1, (1.3 - q) / 0.3))
+            d.rectangle((0, 0, W, H), fill=(170, 0, 10, a))
+            r = sim.R * 0.25
+            d.ellipse((sim.cx - r, sim.cy - sim.R * 1.25 - r, sim.cx + r, sim.cy - sim.R * 1.25 + r), fill=(20, 0, 0, min(255, a + 60)))
+        elif kind == "chibaku" and 0 <= q < 1.6:
+            a = int(220 * min(1, q / 0.2) * min(1, (1.6 - q) / 0.4))
+            r = 30 + sim.R * 0.3 * min(1, q / 0.8)
+            d.ellipse((sim.cx - r, sim.cy - r, sim.cx + r, sim.cy + r), fill=(40, 30, 50, a), outline=(150, 130, 200, a), width=6)
+        elif kind == "meteor" and 0 <= q < 1.8:
+            x, y = data
+            if q < 0.8:                            # elle tombe
+                k_ = q / 0.8
+                my = -300 + (y + 300) * k_ ** 2
+                r = 90 + 60 * k_
+                d.ellipse((x - r * 1.6, my - r * 1.6, x + r * 1.6, my + r * 1.6), fill=(255, 120, 40, 90))
+                d.ellipse((x - r, my - r, x + r, my + r), fill=(110, 80, 60, 255), outline=(60, 40, 30, 255), width=6)
+            else:
+                k_ = (q - 0.8) / 1.0
+                if not data[0] is None and k_ < 0.05:
+                    for b in sim.balls:
+                        dx, dy = b.x - x, b.y - y
+                        dn = math.hypot(dx, dy) + 1e-6
+                        b.vx += dx / dn * sim.R * 3.0
+                        b.vy += dy / dn * sim.R * 3.0
+                for kk, colr in ((1.0, (255, 120, 40)), (0.7, (255, 200, 80)), (0.4, (255, 250, 220))):
+                    r = 60 + sim.R * 1.2 * (k_ ** 0.5) * kk
+                    d.ellipse((x - r, y - r, x + r, y + r), fill=colr + (int(220 * (1 - k_) ** 1.5),))
+                shake = max(shake, int(34 * (1 - k_)))
         elif kind == "kurama" and 0 <= q < 2.0:
             a = int(110 * min(1, q / 0.2) * min(1, (2.0 - q) / 0.5))
             d.ellipse((sim.cx - sim.R * 1.05, sim.cy - sim.R * 1.05, sim.cx + sim.R * 1.05, sim.cy + sim.R * 1.05),
