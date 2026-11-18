@@ -304,3 +304,15 @@ Saitama (modèle Stick Nodes) + Goku (clips) déjà animés → les sujets 1, 2,
 
 ## Abandonné
 - 18/11 : formats « Guess » (Snake, Find the Joestar, Guess the fused characters) → plus jamais (règle de l'utilisateur, ~2k vues).
+
+## Veille « concepts qui n'ont besoin que d'icônes » (18/11, recherche web)
+Genre « Ball Bouncing Brainrot » / « Will the ball escape? » (Know Your Meme : 38M et 67M de vues pour satisfying.ba11s, 4,4M CodeCraftedPhysics) ;
+modes des simulateurs du marché (Satisfying Labs, ViralBalls : Escape, Swarm, Multiply, Spiral ×5, Black Hole, Dropper = notre Fusion,
+Crusher = notre Hydraulic Press, Line War = notre Battle) ; Countryballs Marble Race (« 200 Countries, 1 Winner », tournois 2026).
+- ⭐ **Shadow Clone Multiplier** : « Can 1 Naruto become 10,000 clones? » — un Naruto descend une spirale / des portes ×2 ×5 ×10, chaque clone se multiplie ; compteur ; fin = Kurama ou Kaguya. Variantes : Sukuna qui gagne un doigt, « Can 1 Saiyan become an army? ».
+- ⭐ **Marble Race élimination** : « 50 anime characters, 1 winner » — les icônes dévalent une piste à obstacles, les derniers de chaque manche sont éliminés (modèle Countryballs). Débat garanti (« mon perso est sorti au 1er tour »).
+- **Black Hole** : le méchant (Gojo Hollow Purple, Kaguya, Sukuna Domain) grossit en avalant les persos, seuls ceux qui passent par la brèche survivent. « Who escapes Sukuna's domain? »
+- **Escape the rings** avec un perso : « Can Goku escape the 20 rings? », chaque anneau = un méchant / une saga, son à chaque rebond.
+- **Plinko tier list** : les persos tombent dans des cases S/A/B/C/D (ragebait, « Gojo in D tier?? »).
+- **Last character on the board wins** (tag TikTok existant) : l'arène rétrécit / les cases tombent, le dernier debout gagne.
+- **Infection War** (en test le 18/11, DIO vs Jonathan).
