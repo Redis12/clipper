@@ -29,5 +29,5 @@ if __name__ == "__main__":
     out = Path(sys.argv[1])
     seed = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 7
     print(fusion_powers.generate(tiers, "FIRST HOKAGE → EIGHTH HOKAGE", POWERS, seed=seed, out=out,
-                                 opts={"drop_every": 1.0, "drop_every_min": 0.6}, merge_sound=MERGE_SOUND,
+                                 opts={"drop_every": 0.7, "drop_every_min": 0.42}, merge_sound=MERGE_SOUND,
                                  music=str(MUSIC), music_gain=0.5))

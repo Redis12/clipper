@@ -479,7 +479,7 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
             speed += (speed_target - speed) * 0.05
             advance(speed)
             emit(draw())
-            if sim.done_at >= 0 and sim.t - sim.done_at >= 0.5 and not queue:
+            if sim.done_at >= 0 and sim.t - sim.done_at >= 0.5 and not queue and all(sim.t - f[1] > 1.5 for f in fx):
                 break
             if sim.t > float(c.get("max_seconds", 120)) * 2.5:
                 log.warning("fusion_powers : dernier niveau pas atteint")
