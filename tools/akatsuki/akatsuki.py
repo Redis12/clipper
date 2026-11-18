@@ -25,11 +25,15 @@ POWERS = {
 }
 MERGE_SOUND = [str(HY / f) for f in ("FGHTImpt_Anime Melee 1.ogg", "FGHTImpt_Anime Melee 3.ogg", "FGHTImpt_Anime Melee 5.ogg",
                                      "EXPLDsgn_Anime Explosion 1.ogg", "EXPLDsgn_Anime Explosion 4.ogg")]
+# 18/11 : « trop de son à l'infini » → comme JoJo : un son court par fusion, jamais plus d'un toutes les 0,9 s
+_SOFT = [HY / "FGHTImpt_Anime Melee 1.ogg", HY / "FGHTImpt_Anime Melee 3.ogg", HY / "FGHTImpt_Anime Melee 5.ogg",
+         HY / "EXPLDsgn_Anime Explosion 1.ogg"]
+MERGE = {t: (_SOFT[min(3, t * 4 // 12)], 0.0, 0.45, 0.9) for t in range(12)}
 MUSIC = ROOT / "library/_music/Naruto Shippuden OST 1 - Track 26 - Keisei Gyakuten ( Reverse Situation ).mp3"
 if __name__ == "__main__":
     tiers = fusion.tiers_from_chain("Akatsuki")
     out = Path(sys.argv[1])
     seed = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 3
     print(fusion_powers.generate(tiers, "EVERY AKATSUKI MEMBER", POWERS, seed=seed, out=out,
-                                 opts={"drop_every": 1.4, "drop_every_min": 0.8}, merge_sound=MERGE_SOUND,
+                                 opts={"drop_every": 1.4, "drop_every_min": 0.8}, merge_sounds=MERGE,
                                  music=str(MUSIC), music_gain=0.5))
