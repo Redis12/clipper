@@ -9,7 +9,7 @@ Goku (déjà fait, confirmé par l'utilisateur) · Buu (déjà fait, confirmé p
 Kid Goku vs Beerus (03/11, 353k YT) + revanche (05/11) · Kid Naruto vs Sasuke (04/11) · Kid Sasuke vs Madara (06/11, 1,9M TikTok) · Vegeta vs Kid Buu (07/11) · Kid Luffy vs Kaido (12/11, Luffy PERD, sans Gear 5) · Kid Gohan vs Cell (13/11) · (Kid Naruto vs Pain : fait le 13/11, ANNULÉ le 15/11, « pas ouf »)
 
 ## Gauntlet (« Can X survive the … gauntlet? »)
-Base Goku vs One Piece (06–07/11, 364k TikTok) · Base Goku vs Naruto (07–08/11, 1M TikTok) · Sage Naruto vs Naruto (07–08/11) · Toji vs JJK meme (09/11) · Ichigo True Bankai vs Naruto (10/11) · Sukuna vs Naruto (11/11) · Gojo vs JJK (11/11) · Base Goku vs JJK (12/11, il gagne) · Gojo vs Dragon Ball (13/11, gag Frieza) · Gear 5 Luffy vs Naruto (15/11, perd contre Naruto Baryon)
+Base Goku vs One Piece (06–07/11, 364k TikTok) · Base Goku vs Naruto (07–08/11, 1M TikTok) · Sage Naruto vs Naruto (07–08/11) · Toji vs JJK meme (09/11) · Ichigo True Bankai vs Naruto (10/11) · Sukuna vs Naruto (11/11) · Gojo vs JJK (11/11) · Base Goku vs JJK (12/11, il gagne) · Gojo vs Dragon Ball (13/11, gag Frieza) · Gear 5 Luffy vs Naruto (15/11, perd contre Naruto Baryon) · Base Goku vs EVERY anime (19/11 6 PM, 18 adversaires de 10 animes, il gagne)
 
 ## Domain War
 #3 Goku vs Vegeta · #4 Naruto vs Sasuke · #5 Gogeta vs Vegito · #6 Luffy vs Kaido · (avant : Itachi vs Pain, Gojo vs Sukuna)
