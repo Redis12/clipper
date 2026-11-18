@@ -26,7 +26,7 @@ from clipper.slides import battle, fusion, render  # noqa: E402
 L = ROOT / "library"
 W, H, FPS = 1080, 1920, 30
 AX0, AY0, AS = 60, 430, 960                 # arène carrée
-N_CIV = 170
+N_CIV = 130
 SECONDS = 50.0
 END_S = 1.6
 FONT = str(ROOT / "tools/money_sim/fonts/anton.woff2")
@@ -56,8 +56,8 @@ class Sim:
         self.v = np.column_stack([np.cos(ang), np.sin(ang)]) * 55
         self.state = np.zeros(N_CIV, int)
         self.flash = np.zeros(N_CIV)                      # temps depuis le dernier changement (pop)
-        self.r_civ = 14
-        self.R = 62
+        self.r_civ = 17
+        self.R = 70
         self.balls = []
         for k, (x, y) in enumerate([(AX0 + 220, AY0 + 230), (AX0 + AS - 220, AY0 + AS - 230)]):
             a = self.rnd.uniform(0, 2 * math.pi)
@@ -217,6 +217,8 @@ def pick_seed(tries=12, want=None):
         ch, gap, z, v = score(sd)
         if want == "hero" and v <= z or want == "villain" and z <= v:
             continue
+        if not 3 <= gap <= 14:
+            continue
         key = (min(ch, 5), -gap)
         if best is None or key > best[0]:
             best = (key, sd, ch, gap, z, v)
@@ -225,13 +227,13 @@ def pick_seed(tries=12, want=None):
 
 # --------------------------------------------------------------------------- dessin
 
-def civ_sprite(state, s=34):
+def civ_sprite(state, s=42):
     im = Image.new("RGBA", (s, s + 6), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     if state == NEUTRAL:
         body, head, eye = (200, 200, 210), (236, 214, 190), (40, 40, 50)
     elif state == ZOMBIE:
-        body, head, eye = (90, 30, 70), (120, 170, 110), (255, 40, 40)
+        body, head, eye = (150, 30, 60), (130, 220, 110), (255, 30, 30)
     else:
         body, head, eye = (255, 190, 40), (255, 228, 150), (90, 60, 0)
     d.rounded_rectangle((s * 0.18, s * 0.45, s * 0.82, s + 4), radius=int(s * 0.25), fill=body, outline=(10, 10, 15), width=2)
@@ -273,9 +275,11 @@ def text_c(d, xy, txt, f, fill, stroke=6):
 
 def draw_title(d, t_left):
     f1, f2 = F(84), F(108)
-    d.text((W / 2 - 4, 120), "CAN ", font=f1, fill=(255, 255, 255), anchor="rm", stroke_width=6, stroke_fill=(0, 0, 0))
-    d.text((W / 2 - 4, 120), "JONATHAN", font=f1, fill=HERO["col"], anchor="lm", stroke_width=6, stroke_fill=(0, 0, 0))
-    text_c(d, (W / 2, 225), "STOP DIO?", f2, VILLAIN["col"], 7)
+    w1, w2 = d.textlength("CAN ", font=f1), d.textlength(HERO["name"], font=f1)
+    x0 = W / 2 - (w1 + w2) / 2
+    d.text((x0, 120), "CAN ", font=f1, fill=(255, 255, 255), anchor="lm", stroke_width=6, stroke_fill=(0, 0, 0))
+    d.text((x0 + w1, 120), HERO["name"], font=f1, fill=HERO["col"], anchor="lm", stroke_width=6, stroke_fill=(0, 0, 0))
+    text_c(d, (W / 2, 225), f"STOP {VILLAIN['name']}?", f2, VILLAIN["col"], 7)
 
 
 def draw_bar(d, z, s):
@@ -386,7 +390,7 @@ def render_video(seed: int, out: Path):
     z, s = sim.counts()
     win = HERO if s > z else VILLAIN
     wk = 1 if s > z else 0
-    last = im.copy()
+    last = bg.copy()
     for fi in range(int(END_S * FPS)):
         k = min(1, fi / 8)
         im = Image.blend(last, Image.new("RGB", (W, H), (0, 0, 0)), 0.7 * k)
