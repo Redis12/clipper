@@ -862,5 +862,29 @@
   0.04,
   0.6,
   0.45
+ ],
+ "tail:Light Yagami/LightYagami.jpg": [
+  0.4,
+  0.03,
+  0.6,
+  0.42
+ ],
+ "tail:Joseph Joestar/joseph.jpg": [
+  0.35,
+  0.05,
+  0.8,
+  0.95
+ ],
+ "tail:Kyojuro Rengoku/Rengoku.jpg": [
+  0.42,
+  0.15,
+  0.62,
+  0.62
+ ],
+ "tail:Levi Ackerman/Levi.jpg": [
+  0.45,
+  0.22,
+  0.68,
+  0.75
  ]
 }

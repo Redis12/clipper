@@ -250,7 +250,7 @@ if "gokuall" in sys.argv:                             # 18/11 : Base Goku vs TOU
         ("Sanji", OP + "Sanji/Sanji.jpg"),
         ("Zoro", F + "Luffy/7 Zoro.jpeg"),
         ("Kakashi", N + "Kakashi/Kakashi.jpg"),
-        ("Joseph", L + "Jojo's Bizarre Adventure/Joseph Joestar/joseph.jpg"),
+        ("Joseph", F + "JoJo/2 JOSEPH.jpg"),
         ("Itachi", N + "Itachi/Itachi.jpg"),
         ("Toji", L + "Jujutsu Kaisen/Toji Fushiguro/toji.jpg"),
         ("DIO", F + "JoJo Villains/05 DIO.jpg"),
@@ -261,7 +261,7 @@ if "gokuall" in sys.argv:                             # 18/11 : Base Goku vs TOU
         ("Madara", F + "Madara/7 six path madara.jpg"),
         ("Luffy Gear 5", F + "Luffy/6 Gear 5.jpg"),
         ("Naruto", F + "Naruto/9 Baryon Mode.jpg")]]
-    foes[0].update(gag=True, gag_s=1.6, say="I wrote your name in the Death Note 📓", gag_label="40 SECONDS...")
+    foes[0].update(gag=True, gag_s=1.6, say="I wrote your name 📓", gag_label="40 SECONDS...")
     foes[3].update(gag=True, gag_s=1.3, say="Set your heart ablaze! 🔥")
     foes[4].update(gag=True, gag_s=1.6, say="Wait! Let me cook for you first 🍳", gag_label="SANJI IS COOKING...")
     foes[5].update(gag=True, gag_s=1.7, fx="lost", say="Where am I? 🗺️", gag_label="ZORO GOT LOST...")
