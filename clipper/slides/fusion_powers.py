@@ -100,7 +100,7 @@ HOKAGE = {"wood": ("MOKUTON!", (110, 220, 90)), "hiraishin": ("FLYING THUNDER GO
           "shadow": ("SHADOW POSSESSION!", (150, 150, 170)),
           # Akatsuki (18/11)
           "jashin": ("JASHIN RITUAL!", (220, 30, 40)), "puppet": ("PUPPET JUTSU!", (90, 180, 255)),
-          "grudge": ("EARTH GRUDGE!", (60, 60, 70)), "clay": ("ART IS AN EXPLOSION!", (255, 210, 80)),
+          "grudge": ("EARTH GRUDGE!", (175, 175, 190)), "clay": ("ART IS AN EXPLOSION!", (255, 210, 80)),
           "shark": ("WATER SHARK BOMB!", (60, 140, 255)), "paper": ("PAPER SHURIKEN!", (235, 235, 255)),
           "tsukuyomi": ("TSUKUYOMI!", (230, 20, 30)), "chibaku": ("CHIBAKU TENSEI!", (150, 130, 200)),
           "meteor": ("TENGAI SHINSEI!", (255, 120, 40))}
@@ -315,9 +315,14 @@ def _hokage_fx(im, fx, sim, W, H):
         elif kind == "water" and 0 <= q < 2.0:
             a = int(120 * min(1, q / 0.3) * min(1, (2.0 - q) / 0.5))
             lvl = sim.cy + sim.R - sim.R * 1.6 * min(1, q / 0.8)
-            d.rectangle((0, lvl, W, sim.cy + sim.R + 40), fill=(30, 110, 230, a))
-            for k in range(8):
-                xx = (k * W / 8 + q * 120) % W
+            ys = max(-1.0, min(1.0, (lvl - sim.cy) / sim.R))
+            a0 = math.asin(ys)
+            pts = [(sim.cx + sim.R * math.cos(t_), sim.cy + sim.R * math.sin(t_))
+                   for t_ in [a0 + (math.pi - 2 * a0) * k / 40 for k in range(41)]]
+            d.polygon(pts, fill=(30, 110, 230, a))        # l'eau reste DANS le bol
+            half = sim.R * math.cos(a0)
+            for k in range(6):
+                xx = sim.cx - half + ((k * 2 * half / 6 + q * 120) % (2 * half))
                 d.arc((xx - 40, lvl - 14, xx + 40, lvl + 14), 180, 360, fill=(200, 230, 255, a + 60), width=4)
         elif kind == "paper" and 0 <= q < 0.7:
             src, pts = data

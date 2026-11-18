@@ -30,6 +30,6 @@ if __name__ == "__main__":
     tiers = fusion.tiers_from_chain("Akatsuki")
     out = Path(sys.argv[1])
     seed = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 3
-    print(fusion_powers.generate(tiers, "WEAKEST TO STRONGEST AKATSUKI", POWERS, seed=seed, out=out,
-                                 opts={"drop_every": 0.7, "drop_every_min": 0.45}, merge_sound=MERGE_SOUND,
+    print(fusion_powers.generate(tiers, "EVERY AKATSUKI MEMBER", POWERS, seed=seed, out=out,
+                                 opts={"drop_every": 1.4, "drop_every_min": 0.8}, merge_sound=MERGE_SOUND,
                                  music=str(MUSIC), music_gain=0.5))
