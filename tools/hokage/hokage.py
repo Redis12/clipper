@@ -1,4 +1,4 @@
-"""First Hokage → Seventh Hokage (18/11) : les 7 Hokage qui fusionnent (fusion_powers), chacun son pouvoir.
+"""First Hokage → Eighth Hokage (18/11) : les 8 Hokage (Shikamaru = 8e, Boruto Two Blue Vortex) qui fusionnent (fusion_powers), chacun son pouvoir.
 python3 tools/hokage/hokage.py sortie.mp4 [graine]"""
 import sys
 from pathlib import Path
@@ -19,6 +19,7 @@ POWERS = {
     "Kakashi": {"power": "kamui", "delay": 0.5, "power_sound": NS / "sharingan.mp3"},
     "Naruto": {"power": "kurama", "delay": 0.1, "power_sound": NS / "yooooooooooooooooooooooooo-mp3cut_0lMDWCd.mp3",
                "power_dur": 2.0, "banner": "SEVENTH HOKAGE!"},
+    "Shikamaru": {"power": "shadow", "delay": 0.2, "power_sound": HANDS, "power_dur": 1.2, "banner": "EIGHTH HOKAGE!"},
 }
 MERGE_SOUND = [str(HY / f) for f in ("FGHTImpt_Anime Melee 1.ogg", "FGHTImpt_Anime Melee 3.ogg", "FGHTImpt_Anime Melee 5.ogg",
                                      "EXPLDsgn_Anime Explosion 1.ogg", "EXPLDsgn_Anime Explosion 4.ogg")]
@@ -27,6 +28,6 @@ if __name__ == "__main__":
     tiers = fusion.tiers_from_chain("Hokage")
     out = Path(sys.argv[1])
     seed = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 7
-    print(fusion_powers.generate(tiers, "FIRST HOKAGE → SEVENTH HOKAGE", POWERS, seed=seed, out=out,
+    print(fusion_powers.generate(tiers, "FIRST HOKAGE → EIGHTH HOKAGE", POWERS, seed=seed, out=out,
                                  opts={"drop_every": 1.0, "drop_every_min": 0.6}, merge_sound=MERGE_SOUND,
                                  music=str(MUSIC), music_gain=0.5))

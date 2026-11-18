@@ -96,7 +96,8 @@ def _index(im, painter, sim, W, H, icons):
 
 HOKAGE = {"wood": ("MOKUTON!", (110, 220, 90)), "hiraishin": ("FLYING THUNDER GOD!", (255, 230, 60)),
           "shiki_fujin": ("REAPER DEATH SEAL!", (190, 120, 255)), "quake": ("CHERRY BLOSSOM IMPACT!", (255, 120, 170)),
-          "kamui": ("KAMUI!", (230, 60, 70)), "kurama": ("KURAMA!", (255, 150, 30))}
+          "kamui": ("KAMUI!", (230, 60, 70)), "kurama": ("KURAMA!", (255, 150, 30)),
+          "shadow": ("SHADOW POSSESSION!", (150, 150, 170))}
 
 
 def _hokage_power(power, p, sim, ball, bx, by, fx, banners, t_out, play):
@@ -150,6 +151,9 @@ def _hokage_power(power, p, sim, ball, bx, by, fx, banners, t_out, play):
             b.alive = False
         sim.balls = [b for b in sim.balls if b.alive]
         fx.append(("kamui", sim.t, pts))
+    elif power == "shadow":                            # Kagemane : 4 persos attrapés par l'ombre, figés 1,2 s
+        near = sorted([b for b in alive if b is not ball], key=lambda b: (b.x - bx) ** 2 + (b.y - by) ** 2)[:4]
+        fx.append(("shadow", sim.t, (ball, [(b, b.x, b.y) for b in near])))
     elif power == "kurama":
         fx.append(("kurama", sim.t, (bx, by)))
         fx.append(("quake", sim.t, (bx, by)))
@@ -209,6 +213,20 @@ def _hokage_fx(im, fx, sim, W, H):
                     d.arc((x - r0 - k * 8, y - r0 - k * 8, x + r0 + k * 8, y + r0 + k * 8),
                           math.degrees(ang), math.degrees(ang) + 90, fill=(40, 20, 50, a), width=7)
                 d.ellipse((x - 12, y - 12, x + 12, y + 12), fill=(10, 0, 20, a))
+        elif kind == "shadow" and 0 <= q < 1.4:
+            src, caught = data
+            sx, sy = (src.x, src.y) if src is not None and src.alive else (sim.cx, sim.cy + sim.R * 0.8)
+            a = int(235 * min(1, q / 0.15) * min(1, (1.4 - q) / 0.3))
+            reach = min(1, q / 0.25)
+            for (b, fx_, fy_) in caught:
+                if q < 1.2 and b.alive:                # figés (l'ombre les tient)
+                    b.x, b.y, b.vx, b.vy = fx_, fy_, 0.0, 0.0
+                ex, ey = sx + (fx_ - sx) * reach, sy + (fy_ - sy) * reach
+                d.line((sx, sy, ex, ey), fill=(10, 10, 15, a), width=16)
+                d.line((sx, sy, ex, ey), fill=(40, 40, 55, a), width=6)
+                if reach >= 1:
+                    r = sim.radii[b.tier] * 1.15
+                    d.ellipse((fx_ - r, fy_ - r, fx_ + r, fy_ + r), outline=(15, 15, 20, a), width=9)
         elif kind == "kurama" and 0 <= q < 2.0:
             a = int(110 * min(1, q / 0.2) * min(1, (2.0 - q) / 0.5))
             d.ellipse((sim.cx - sim.R * 1.05, sim.cy - sim.R * 1.05, sim.cx + sim.R * 1.05, sim.cy + sim.R * 1.05),

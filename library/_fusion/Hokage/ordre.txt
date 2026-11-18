@@ -6,3 +6,4 @@
 5 TSUNADE.png = Tsunade
 6 KAKASHI.jpg = Kakashi
 7 NARUTO.jpg = Naruto
+8 SHIKAMARU.jpg = Shikamaru
