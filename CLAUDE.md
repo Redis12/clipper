@@ -138,6 +138,7 @@ D'après une vidéo de référence : persos en traits lumineux (contour + traits
 `PLAYBOOK.md` (racine) : toutes les manips et leçons pour faire grandir un compte (YouTube, TikTok, Instagram, Buffer), à réutiliser sur un nouveau compte ; à compléter à chaque leçon. `IDEES.md` (racine) : toutes les idées de posts de l'utilisateur, consignes prêtes, comptes à surveiller, règles qui marchent. À compléter à chaque nouvelle idée.
 
 ## Conventions
+- **Règle permanente de l'utilisateur (18/11) : plus JAMAIS de format « Guess »** (Snake « Guess the character », « Find the Joestar », Guess the fused characters, devinettes en général) : ~2k vues sur TikTok, ne plus en proposer ni en programmer.
 - **Règle permanente (05/11) : filigrane sur CHAQUE vidéo, tous formats** (« faut pas qu'on se fasse voler nos vues ») : anime = `render.stamp_video` (badge @ANIMELOREHQ) à la fin de tout nouveau format (Hydraulic Press, intros, montages…) ; Money Sim = son propre badge `tools/money_sim/badge_moneysim.png` via `tools/money_sim/stamp.py` (positions hors texte : sous le titre / bas de la boîte). Vérifier une image avant livraison.
 - **Règle permanente de l'utilisateur (02/11) : « optimise toujours la première seconde »** : à chaque nouveau format ou changement d'accroche, vérifier l'image 0 (persos visibles, sujet lisible sans contexte, jamais un écran vide) et l'action dans la 1re seconde.
 - Pas de module nommé comme la stdlib (d'où `selection.py`, pas `select.py`).

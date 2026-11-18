@@ -300,3 +300,7 @@ Format « Can X even touch Y? » : question de powerscaling très débattue, 8�
 7. 5 Ultra Instinct facts most fans don't know
 8. Why Saitama's "Serious Punch" breaks every power scale
 Saitama (modèle Stick Nodes) + Goku (clips) déjà animés → les sujets 1, 2, 6, 8 sont les plus rapides à produire.
+
+
+## Abandonné
+- 18/11 : formats « Guess » (Snake, Find the Joestar, Guess the fused characters) → plus jamais (règle de l'utilisateur, ~2k vues).
