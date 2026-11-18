@@ -28,10 +28,20 @@ _SOFT = [HY / "FGHTImpt_Anime Melee 1.ogg", HY / "FGHTImpt_Anime Melee 3.ogg", H
          HY / "EXPLDsgn_Anime Explosion 1.ogg"]
 MERGE = {t: (_SOFT[min(3, t * 4 // 8)], 0.0, 0.45, 0.9) for t in range(8)}
 MUSIC = ROOT / "library/_music/Naruto Shippuden OST 1 - Track 26 - Keisei Gyakuten ( Reverse Situation ).mp3"
+# 18/11 (« un son à chaque transfo, là y'a trop de son ») : UN SEUL son par perso, quand il apparaît
+# (son du pouvoir joué à l'apparition, pas en plus), et AUCUN son de fusion. UNE_FOIS
+for _p in POWERS.values():
+    if "power_sound" in _p:
+        _p["sound"] = _p.pop("power_sound")
+        _p["gain"] = _p.pop("power_gain", 1.0)
+        _p["start"] = _p.pop("power_start", 0.0)
+        if "power_dur" in _p:
+            _p["dur"] = _p.pop("power_dur")
+MERGE = None
 if __name__ == "__main__":
     tiers = fusion.tiers_from_chain("Hokage")
     out = Path(sys.argv[1])
     seed = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 7
     print(fusion_powers.generate(tiers, "FIRST HOKAGE → EIGHTH HOKAGE", POWERS, seed=seed, out=out,
-                                 opts={"drop_every": 0.7, "drop_every_min": 0.42}, merge_sounds=MERGE,
+                                 opts={"drop_every": 0.7, "drop_every_min": 0.42}, merge_sounds=None, merge_gain=0.0,
                                  music=str(MUSIC), music_gain=0.5))
