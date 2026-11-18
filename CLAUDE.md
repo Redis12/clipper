@@ -1,5 +1,7 @@
 # Clipper : CLAUDE.md
 
+> **Nouvelle conversation ? Lire d'abord `REPRISE.md`** (travail en cours, programmation, règles de l'utilisateur), puis `DEJA_FAITES.md` avant de proposer une vidéo.
+
 ## But
 Deux produits dans le même outil :
 1. **Slideshows** (priorité actuelle) : niche anime, en anglais. Claude propose des sujets, écrit les slides, choisit les images de la bibliothèque (vision), l'outil rend des carrousels 9:16 / 4:5 et un Short vidéo, puis publie sur YouTube (auto), Instagram et TikTok (auto si configurés, sinon packs à poster à la main).
