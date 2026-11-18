@@ -10,7 +10,7 @@ NS = ROOT / "library/_sfx/Naruto SFX"
 HY = ROOT / "library/_sfx/Helton Yan's Old-School Shonen SFX"
 HANDS = NS / "Naruto hand signs - QuickSounds.com.mp3"
 POWERS = {
-    "Hashirama": {"power": "wood", "delay": 1.2, "power_sound": HANDS, "power_dur": 1.2, "banner": "WOOD STYLE!"},
+    "Hashirama": {"power": "wood", "delay": 0.25, "power_sound": HANDS, "power_dur": 1.2, "banner": "WOOD STYLE!"},
     "Tobirama": {"power": "hiraishin", "delay": 0.5, "power_sound": NS / "Kunai Throw Sound Effect.mp3", "power_dur": 1.0},
     "Hiruzen": {"power": "shiki_fujin", "delay": 0.6, "power_sound": HY / "EXPLDsgn_Anime Explosion 9.ogg", "power_gain": 0.7},
     "Minato": {"power": "hiraishin", "delay": 0.4, "power_sound": NS / "Kunai Throw Sound Effect.mp3", "power_dur": 1.0,

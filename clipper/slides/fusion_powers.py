@@ -286,6 +286,7 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
     booms = []                            # (x, y, t_sim) explosions
     playing = {}                          # son → fin (temps de sortie) : pas deux fois le même en même temps
     fx = []                               # effets Hokage : (nom, t_sim_début, données)
+    last_pow = [-9.0]
 
     def emit(im):
         nonlocal n_out
@@ -374,8 +375,13 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
                     queue.append([sim.t + p.get("delay", 0.6), p["power"], seen])
             # --- pouvoirs dont c'est l'heure
             for item in [q for q in queue if sim.t >= q[0]]:
+                if item[1] in HOKAGE and sim.t - last_pow[0] < 1.7:   # jamais deux bandeaux l'un sur l'autre
+                    item[0] = last_pow[0] + 1.7
+                    continue
                 queue.remove(item)
                 _, power, tier = item
+                if power in HOKAGE:
+                    last_pow[0] = sim.t
                 p = powers.get(names[tier], {})
                 ball = _ball_of(sim, tier)
                 bx, by = (ball.x, ball.y) if ball else (sim.cx, sim.cy)
