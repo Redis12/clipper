@@ -1,0 +1,26 @@
+{
+  "title": "IF YOU HAD|GOJO'S INFINITY",
+  "pill": "GOJO'S INFINITY",
+  "dir": "library/_explainer/gojo_infinity",
+  "accent": [120, 200, 255],
+  "keywords": ["infinity", "limitless", "infinite", "forever", "fry", "six", "eyes", "blue", "red", "hollow", "purple", "erases",
+               "domain", "unlimited", "void", "freeze", "invincible", "toji's", "inverted", "spear", "sukuna's", "world", "cutting",
+               "slash", "strongest", "box"],
+  "lines": [
+    {"text": "If you woke up with Gojo's Infinity, nothing could ever touch you.", "img": "01_gojo_blindfold.jpg", "expr": "smug", "fx": "rings", "label": "INFINITY"},
+    {"text": "Your Limitless technique places an infinite space between you and everything else.", "expr": "smug", "arm": "point", "fx": "rings", "label": "LIMITLESS"},
+    {"text": "Punches, bullets, even trucks slow down forever before they reach your skin.", "expr": "happy", "fx": "bullets"},
+    {"text": "But your brain would fry in seconds.", "expr": "scared", "arm": "up", "fx": "smoke"},
+    {"text": "That's why you'd need the Six Eyes, which let you control it perfectly, and keep it on all day.", "img": "01_gojo_blindfold.jpg", "zoom": [0.55, 0.62], "expr": "neutral", "label": "SIX EYES"},
+    {"text": "Bored? Use Blue to pull everything toward you.", "img": "02_blue.jpg", "key": "checker", "expr": "smug", "arm": "point", "fx": "pull", "label": "LAPSE BLUE"},
+    {"text": "Use Red to blast it all away.", "img": "03_red.jpg", "key": "white", "expr": "happy", "arm": "point", "fx": "blast", "label": "REVERSAL RED"},
+    {"text": "Combine them, and Hollow Purple erases whatever it hits.", "expr": "shocked", "fx": "purple", "label": "HOLLOW PURPLE"},
+    {"text": "And if someone really annoys you, open your Domain.", "img": "05_unlimited_void.jpg", "expr": "smug", "label": "DOMAIN EXPANSION"},
+    {"text": "Unlimited Void floods their brain with infinite information, and they freeze.", "img": "05_unlimited_void.jpg", "zoom": [0.5, 0.5], "expr": "wink", "fx": "freeze", "label": "UNLIMITED VOID"},
+    {"text": "But you're not invincible.", "expr": "scared", "fx": "shake"},
+    {"text": "Toji's Inverted Spear can cancel your technique,", "img": "06_toji_spear.jpg", "expr": "shocked", "fx": "shatter", "label": "WEAKNESS #1"},
+    {"text": "and Sukuna's World Cutting Slash cuts through space itself.", "img": "../../Jujutsu Kaisen/Sukuna/sukuna.jpg", "expr": "scared", "arm": "up", "fx": "slash", "label": "WEAKNESS #2"},
+    {"text": "So, you'd be the strongest…", "img": "01_gojo_blindfold.jpg", "expr": "happy", "fx": "crown", "label": "THE STRONGEST"},
+    {"text": "just never open a suspicious box.", "img": "08_prison_realm.jpg", "expr": "shocked", "fx": "shake", "label": "PRISON REALM"}
+  ]
+}
