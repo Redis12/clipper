@@ -17,7 +17,7 @@ Mis à jour le 19/11. Mémoire complète : `CLAUDE.md` (outil + règles), `PLAYB
 Gauntlet 193k · Power Up 101k · Transformations 31k · Domain War 10k · Battle 4,6k · Snake/Guess ~2k. Instagram ~150 vues/post.
 
 ## Programmation
-- Ven. 20/11 : 1 PM LIBRE (DIO vs Jonathan annulé le 19/11), 6 PM Hokage, 10 PM ZA WARUDO. Rien après **sam. 21/11 6 PM**.
+- Ven. 20/11 : 1 PM LIBRE (DIO vs Jonathan annulé le 19/11), 6 PM Hokage, 10 PM LIBRE (ZA WARUDO v2/v3/v4 jugées « nulles » le 19/11, posts supprimés ; ne pas reproposer). Rien après **sam. 21/11 6 PM**.
 - **Akatsuki** (« Every Akatsuki Member », `plus tard/Transformations/`) : pas programmé, proposé ven. 20/11.
 - Post Instagram **Hokage** (`6afe0fd40a1fb75cd4165cd6`) : garde l'ancien son (l'utilisateur a refusé la modif). Ne pas y toucher sans demander.
 
