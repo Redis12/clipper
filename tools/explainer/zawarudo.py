@@ -86,10 +86,11 @@ def bullet(d, x, y, s=1.0):
 
 
 class ZaWarudo(v.Show):
-    boom_scenes = {"roller": 1.0, "clash": 0.8}
+    boom_scenes = {"roller": 1.0, "clash": 0.8, "alarm": 0.9}
     whoosh_gain = 0.09
     scene_sounds = {
         "stop": [(0.25, "library/_sounds/jojo_villains/dio time stop.mp3", 0.55)],
+        "go": [(0.25, "library/_sounds/jojo_villains/dio time stop.mp3", 0.55)],
         "bullet": [(0.85, "library/_sfx/Helton Yan's Old-School Shonen SFX/FGHTMisc_Anime Dodge 3.ogg", 0.25)],
     }
 
@@ -136,6 +137,49 @@ class ZaWarudo(v.Show):
             self.cache["_pizza"] = [(p, b) for _, p, b in parts]
         return self.cache["_pizza"]
 
+    def left(self, i, tl, dur):                       # compte à rebours des 5 secondes
+        return ("TIME LEFT", f"{max(0.0, 5 - (i - 1) - min(1, tl / max(0.4, dur))):.1f} s", YEL if i < 5 else RED)
+
+    def queue_people(self):
+        if "_queue" not in self.cache:
+            from scipy import ndimage
+            q = self.png("queue", 700)
+            a = np.asarray(q.getchannel("A")) > 60
+            lab, n = ndimage.label(ndimage.binary_closing(a, iterations=6))
+            objs = ndimage.find_objects(lab)
+            big = sorted(range(n), key=lambda i: -(objs[i][0].stop - objs[i][0].start) * (objs[i][1].stop - objs[i][1].start))[:4]
+            parts = []
+            for i in big:
+                sl = objs[i]
+                mk = Image.fromarray(((lab[sl] == i + 1) * 255).astype(np.uint8))
+                pc = q.crop((sl[1].start, sl[0].start, sl[1].stop, sl[0].stop))
+                pc.putalpha(Image.fromarray(np.minimum(np.asarray(pc.getchannel("A")), np.asarray(mk))))
+                parts.append((sl[1].start, pc))
+            parts.sort(key=lambda p: p[0])                # de gauche (fond de la file) à droite (devant)
+            self.cache["_queue"] = [pc for _, pc in parts]
+        return self.cache["_queue"]
+
+    def penalty_parts(self):
+        if "_pen" not in self.cache:
+            g = self.png("penalty", 470).copy()
+            a = np.asarray(g)
+            wh = (a[..., 0] > 215) & (a[..., 1] > 215) & (a[..., 2] > 215) & (a[..., 3] > 200)
+            wh[:, : int(g.width * 0.72)] = False
+            wh[:, int(g.width * 0.885):] = False          # pas le poteau (blanc aussi)
+            wh[int(g.height * 0.45):] = False
+            wh[: int(g.height * 0.12)] = False             # pas la barre transversale
+            ys, xs = np.nonzero(wh)
+            cx, cy = xs.mean(), ys.mean()
+            r = int(max(xs.max() - xs.min(), ys.max() - ys.min()) * 0.56)
+            ball = g.crop((int(cx - r), int(cy - r), int(cx + r), int(cy + r)))
+            mk = Image.new("L", ball.size, 0)
+            ImageDraw.Draw(mk).ellipse((0, 0, 2 * r - 1, 2 * r - 1), fill=255)
+            ball.putalpha(Image.fromarray(np.minimum(np.asarray(ball.getchannel("A")), np.asarray(mk))))
+            hole = Image.new("RGBA", ball.size, (0, 0, 0, 0))
+            g.paste(hole, (int(cx - r), int(cy - r)), mk)
+            self.cache["_pen"] = (g, ball, (cx, cy))
+        return self.cache["_pen"]
+
     def loop_counter(self):
         return ("TIME", "RUNNING", YEL)                  # = image 0 (boucle)
 
@@ -163,6 +207,79 @@ class ZaWarudo(v.Show):
                 return ("TIME", "STOPPED" if tl > t0 else "RUNNING", YEL)
             im.paste(stopped(im, 1 - ease(q)))
             return None
+        if kind == "go":                                 # hook : le temps s'arrête, 5 secondes au compteur
+            self.scene(im, "stop", q, t, tl, dur)
+            return ("TIME LEFT", "5.0 s", YEL) if tl > 0.55 else ("TIME", "RUNNING", YEL)
+        if kind == "phone":                              # le téléphone tombe… et reste en l'air
+            im.paste(stopped(im, 1))
+            k = 1 - (1 - min(1, tl / 0.5)) ** 3
+            ph = self.png("phone", 820)
+            ph = ph.rotate(-8 * (1 - k), resample=Image.BICUBIC, expand=True)
+            im.alpha_composite(ph, (int(540 - ph.width / 2), int(300 + 420 * k)))
+            d.rectangle((0, 1640, W, 1650), fill=(255, 255, 255, 60))          # le sol, juste dessous
+            if tl > 0.6:
+                kk = back(min(1, (tl - 0.6) / 0.3))
+                d.text((540, 560), "SAVED!", font=m.P("Bold", max(1, int(130 * kk))), fill=YEL + (255,), anchor="mm",
+                       stroke_width=8, stroke_fill=(20, 14, 6))
+            return self.left(1, tl, dur)
+        if kind == "queue":                              # le resquilleur passe de devant à derrière
+            im.paste(stopped(im, 1))
+            ppl = self.queue_people()
+            cutter, others = ppl[-1], ppl[:-1]
+            k = ease(min(1, max(0, (tl - 0.25) / 0.9)))
+            gap, base = 235, 1300
+            for j, pc in enumerate(others):              # les autres avancent d'une place
+                x = 200 + gap * j + gap * k
+                im.alpha_composite(pc, (int(x - pc.width / 2), base - pc.height))
+            x = (200 + gap * 3) * (1 - k) + (200 - gap * 0.15) * k
+            hop = 160 * math.sin(math.pi * k)
+            im.alpha_composite(cutter, (int(x - cutter.width / 2), int(base - cutter.height - hop)))
+            d.text((540, 540), "FRONT ->", font=m.P("Bold", 60), fill=(255, 255, 255, 140), anchor="mm")
+            return self.left(2, tl, dur)
+        if kind == "test":                               # la copie du premier de la classe
+            im.paste(stopped(im, 1))
+            z = 1 + 0.12 * ease(min(1, tl / max(0.5, dur)))
+            tp = self.png("test", int(640 * z))
+            self.halo(im, 540 + 150 * z, 930 - 210 * z, int(130 * z), (255, 80, 80), 70)
+            im.alpha_composite(tp, (int(540 - tp.width / 2), int(930 - tp.height / 2)))
+            return self.left(3, tl, dur)
+        if kind == "penalty":                            # le ballon passe des gants du gardien à la lucarne
+            im.paste(stopped(im, 1))
+            g, ball, (bx, by) = self.penalty_parts()
+            gx, gy = 540 - g.width / 2, 960 - g.height / 2
+            im.alpha_composite(g, (int(gx), int(gy)))
+            k = ease(min(1, max(0, (tl - 0.3) / 0.8)))
+            sx, sy = g.width * 0.17, g.height * 0.33             # devant les gants
+            x, y = sx + (bx - sx) * k, sy + (by - sy) * k - 80 * math.sin(math.pi * k)
+            im.alpha_composite(ball, (int(gx + x - ball.width / 2), int(gy + y - ball.height / 2)))
+            if tl > 1.15:
+                kk = back(min(1, (tl - 1.15) / 0.3))
+                d.text((540, 600), "GOAL!", font=m.P("Bold", max(1, int(150 * kk))), fill=YEL + (255,), anchor="mm",
+                       stroke_width=8, stroke_fill=(20, 14, 6))
+            return self.left(4, tl, dur)
+        if kind == "alarm":                              # le rouleau compresseur tombe sur le réveil
+            im.paste(stopped(im, 1))
+            k = ease(min(1, tl / 0.9))
+            if tl < 0.9:
+                ck = clock_img(520, 0)
+                im.alpha_composite(ck, (540 - 260, 760))
+                rr = self.png("road_roller", 900)
+                im.alpha_composite(rr, (int(540 - rr.width / 2), int(-700 + 1200 * k - rr.height / 2)))
+            else:
+                al = self.png("alarm", 600)
+                sq = 1 + 0.25 * math.exp(-(tl - 0.9) * 8)
+                al2 = al.resize((int(al.width * sq), int(al.height / sq)), Image.BILINEAR)
+                im.alpha_composite(al2, (int(540 - al2.width / 2), int(1270 - al2.height)))
+                d.text((540, 540), "ROAD ROLLER!", font=m.P("Bold", 120), fill=YEL + (255,), anchor="mm",
+                       stroke_width=8, stroke_fill=(20, 14, 6))
+                if tl < 1.05:
+                    flash(im, 255, 255, 255, int(170 * (1 - (tl - 0.9) / 0.15)))
+            return self.left(5, tl, dur)
+        if kind == "resume":                             # le temps repart : personne n'a rien vu
+            im.paste(stopped(im, 1 - ease(min(1, tl / 0.5))))
+            cf = self.png("confused", 600)
+            im.alpha_composite(cf, (int(540 - cf.width / 2), int(1300 - cf.height + 20 * math.sin(tl * 6))))
+            return ("WITNESSES", "0", YEL)
         if kind == "late":                               # réveil bloqué à 6 h 59 : tu dors 8 h de plus
             im.paste(stopped(im, 1))
             ck = clock_img(700, 59)
@@ -198,7 +315,7 @@ class ZaWarudo(v.Show):
             kq = back(min(1, tl / 0.4))
             d.text((540, 980), "?", font=m.P("Bold", max(1, int(420 * kq))), fill=YEL + (255,), anchor="mm",
                    stroke_width=12, stroke_fill=(20, 14, 6))
-            return ("YOUR MOVE", "COMMENT", YEL)
+            return ("YOUR 5 SECONDS", "COMMENT", YEL)
         if kind == "pizza":                              # les 8 parts disparaissent une à une
             im.paste(stopped(im, 1))
             pz = self.pizza_parts()

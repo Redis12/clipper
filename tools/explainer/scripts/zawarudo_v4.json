@@ -1,0 +1,18 @@
+{
+  "dir": "library/_explainer/zawarudo/simple",
+  "handle": "@ANIMELOREHQ",
+  "series": "IF YOU HAD...",
+  "lines": [
+    {"text": "You can stop time like Dio… but only for *five seconds.* Go.", "say": "You can stop time like Dee-oh... but only for five seconds. Go.", "scene": "go"},
+    {"text": "One: your phone is about to hit the floor. *Saved.*", "scene": "phone"},
+    {"text": "Two: the guy who cut the line? He's at the *back* now.", "scene": "queue"},
+    {"text": "Three: you peek at the smartest kid's *test.*", "scene": "test"},
+    {"text": "Four: your friend's penalty? It's going *in.*", "scene": "penalty"},
+    {"text": "Five: you drop a *road roller* on your alarm clock.", "scene": "alarm"},
+    {"text": "Time resumes. Nobody saw a *thing.*", "scene": "resume"},
+    {"text": "Except one guy.", "scene": "jotaro"},
+    {"text": "*Yare yare daze.*", "scene": "walk"},
+    {"text": "What would *you* do with five seconds? Comment below.", "scene": "ask"},
+    {"text": "Follow for more *If you had.*", "scene": "end"}
+  ]
+}

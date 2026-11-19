@@ -468,7 +468,7 @@ def build(script):
     import tts
     lines = script["lines"]
     parsed = [parse(l["text"]) for l in lines]
-    vbuf, segs = tts.lines([p[1] for p in parsed], gap=0.22, start=0.08)
+    vbuf, segs = tts.lines([l.get("say", p[1]) for l, p in zip(lines, parsed)], gap=0.22, start=0.08)
     words = [word_times(p[0], a, b) for p, (a, b) in zip(parsed, segs)]
     total = segs[-1][1] + 1.0
     return lines, vbuf, segs, words, total
