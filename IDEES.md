@@ -302,6 +302,19 @@ Format « Can X even touch Y? » : question de powerscaling très débattue, 8�
 Saitama (modèle Stick Nodes) + Goku (clips) déjà animés → les sujets 1, 2, 6, 8 sont les plus rapides à produire.
 
 
+## Série « If you had… » (explainers, 19/11) — DA bleu nuit + or, persos Gemini style simple sur fond vert
+- ✅ #1 Gojo's Infinity (v6 : poing qui ne touche jamais, pluie, Six Eyes, Blue/Red/Purple, Sukuna qui coupe l'écran, « 1 ou 2 », follow qui reboucle).
+- 💡 Suites : #2 the Sharingan (tu lis chaque coup avant qu'il parte), #3 Gear 5 (ton corps devient un dessin animé), #4 Ultra Instinct (ton corps esquive sans toi), #5 ZA WARUDO (le temps s'arrête : 5 s pour tout faire), #6 the Death Note.
+- Pour se démarquer des autres explainers : badge de série « IF YOU HAD... #N » ; question « 1 ou 2 » écrite dans la vidéo ; easter egg à peine visible (Sukuna dans le décor 3 images au début → on revoit pour le trouver) ; teaser du prochain épisode sur la dernière image (« Next: the Sharingan ») ; compteurs comparés au réel (« thinner than an atom ») ; une « Part 2 » qui répond au commentaire le plus fréquent.
+
+## Idées du 19/11 (jour de sortie de GTA 6, remake DBS: Beerus à l'automne 2026)
+- 💡 Power Up « Can Goku reach 5 wanted stars in under 60 seconds? » (étoiles de recherche génériques, police → SWAT → hélicos → tanks ; rien de Rockstar).
+- 💡 Fusion avec pouvoirs « DB Super Villain Transformations » (`_fusion/DB Super Villains` prêt : Beerus, Goku Black, Hit, Jiren).
+- 💡 Power Up « Can Kid Naruto beat Kaguya in under 60 seconds? ».
+- 💡 Gauntlet « Can Base Goku survive the Dragon Ball Super gauntlet? » (Beerus en boss final).
+- 💡 If you had the Sharingan (réponse au « Byakugan or Sharingan? »).
+- 🔨 If you had ZA WARUDO (choisi le 19/11).
+
 ## Abandonné
 - 18/11 : formats « Guess » (Snake, Find the Joestar, Guess the fused characters) → plus jamais (règle de l'utilisateur, ~2k vues).
 

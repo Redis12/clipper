@@ -1,0 +1,23 @@
+{
+  "title": ["IF YOU HAD", "GOJO'S INFINITY"],
+  "dir": "library/_explainer/gojo_infinity/flat",
+  "lines": [
+    {"text": "This punch will never touch you.", "scene": "punch"},
+    {"text": "Gojo's Infinity puts endless space between you and the fist.", "scene": "palm"},
+    {"text": "To reach you, it crosses half the distance. Then half of what's left. Then half again.", "scene": "zeno"},
+    {"text": "A Greek thinker named Zeno came up with this over two thousand years ago.", "scene": "zeno_talk"},
+    {"text": "Infinite halves. It never arrives.", "scene": "series"},
+    {"text": "Coins, bullets, even atoms slow down forever.", "scene": "slow"},
+    {"text": "Time keeps going. Things just never get closer.", "scene": "clock"},
+    {"text": "Running that math nonstop would fry a normal brain.", "scene": "brain"},
+    {"text": "That's why Gojo needs the Six Eyes.", "scene": "eyes"},
+    {"text": "Push the Infinity inward and you get Blue. It pulls everything in.", "scene": "blue"},
+    {"text": "Reverse it and you get Red. It blasts everything away.", "scene": "red"},
+    {"text": "Crash them together, and Hollow Purple erases whatever it touches.", "scene": "purple"},
+    {"text": "Inside his domain, you get infinite information, and you can't move.", "scene": "void"},
+    {"text": "But there's a way around it.", "scene": "warning"},
+    {"text": "Toji's Inverted Spear cancels the technique on contact.", "scene": "spear"},
+    {"text": "And Sukuna stopped aiming at Gojo. He cut the space itself.", "scene": "slash"},
+    {"text": "So the punch never lands, unless someone cuts the world in half.", "scene": "punch"}
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "dir": "library/_explainer/byakugan/simple",
+  "handle": "@ANIMELOREHQ",
+  "series": "IF YOU HAD...",
+  "lines": [
+    {"text": "If you had the *Byakugan,* no wall could hide *anything* from you.", "scene": "wall"},
+    {"text": "You'd see *almost everything* around you. All at once.", "scene": "fov"},
+    {"text": "And far. Hinata can see over *ten kilometers* away.", "scene": "range"},
+    {"text": "You'd even see the *361* chakra points inside a body.", "scene": "body"},
+    {"text": "Each one is smaller than a *needle tip.* Even the Sharingan can't see them.", "scene": "needle"},
+    {"text": "One tap from Neji, and that chakra *shuts off.*", "scene": "palm"},
+    {"text": "But there's one *blind spot.* Right behind your neck.", "scene": "blind"},
+    {"text": "Kidomaru found it, and fired *straight into it.*", "scene": "arrow"},
+    {"text": "Byakugan, or Sharingan? Comment *one* or *two.*", "scene": "choice"},
+    {"text": "Follow for more *If you had.*", "scene": "end"}
+  ]
+}

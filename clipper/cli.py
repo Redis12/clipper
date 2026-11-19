@@ -27,6 +27,17 @@ def add(url: str, run: bool = typer.Option(False, "--run", help="Traiter tout de
 
 
 @app.command()
+def analyze(src: str = typer.Argument(..., help="Fichier vidéo ou URL"),
+            out: Path = typer.Option(None, "--out", help="Dossier de sortie (défaut : data/analyze/<nom>)"),
+            seuil: float = typer.Option(0.3, "--seuil", help="Sensibilité des coupes (plus bas = plus de plans)"),
+            lang: str = typer.Option("en", "--lang", help="Langue de la voix (transcription Deepgram)"),
+            no_transcript: bool = typer.Option(False, "--no-transcript", help="Sans transcription")):
+    """Analyse une vidéo plan par plan : planches, timeline, rapport (pour décortiquer une vidéo qui marche)."""
+    from . import analyze as an
+    typer.echo(an.analyze(src, out, seuil, lang, not no_transcript))
+
+
+@app.command()
 def run(video: str = typer.Option(None, "--video", help="Seulement cette vidéo (ID YouTube)")):
     """Fait avancer le pipeline sur tout ce qui est en attente."""
     pipeline.run_all(video)

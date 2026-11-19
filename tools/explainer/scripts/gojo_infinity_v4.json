@@ -1,0 +1,55 @@
+{
+  "dir": "library/_explainer/gojo_infinity/simple",
+  "handle": "@ANIMELOREHQ",
+  "lines": [
+    {
+      "text": "If you had *Gojo's Infinity,* this punch would *never* touch you.",
+      "scene": "punch"
+    },
+    {
+      "text": "The closer it gets, the *slower* it moves. Forever.",
+      "scene": "slow"
+    },
+    {
+      "text": "Rain would *never* get you wet.",
+      "scene": "rain"
+    },
+    {
+      "text": "But your brain would track *every atom* around you, every second.",
+      "scene": "brain"
+    },
+    {
+      "text": "That's why Gojo needs the *Six Eyes.*",
+      "scene": "eyes"
+    },
+    {
+      "text": "Pull the Infinity inward, and you get *Blue.*",
+      "scene": "blue"
+    },
+    {
+      "text": "Push it outward, and you get *Red.*",
+      "scene": "red"
+    },
+    {
+      "text": "Smash them together. *Hollow Purple.*",
+      "scene": "purple"
+    },
+    {
+      "text": "So how do you *beat* it?",
+      "scene": "warning"
+    },
+    {
+      "text": "Sukuna doesn't hit you. He cuts *the space* you're standing in.",
+      "scene": "slash"
+    },
+    {
+      "text": "Infinity, or the Six Eyes? Comment *one* or *two.*",
+      "scene": "choice"
+    },
+    {
+      "text": "Follow for more *If you had.*",
+      "scene": "end"
+    }
+  ],
+  "series": "IF YOU HAD..."
+}

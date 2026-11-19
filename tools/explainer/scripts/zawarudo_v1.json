@@ -1,0 +1,17 @@
+{
+  "dir": "library/_explainer/zawarudo/simple",
+  "handle": "@ANIMELOREHQ",
+  "series": "IF YOU HAD...",
+  "lines": [
+    {"text": "If you had *ZA WARUDO,* you could *stop time.*", "scene": "stop"},
+    {"text": "At first, DIO only gets *five seconds.*", "scene": "five"},
+    {"text": "Bullets, rain, even his knives. *Everything* freezes.", "scene": "frozen"},
+    {"text": "Nobody else can see what happens inside it.", "scene": "nobody"},
+    {"text": "After drinking Joseph's blood, he reaches *nine seconds.*", "scene": "nine"},
+    {"text": "Enough time to drop a *road roller* on Jotaro.", "scene": "roller"},
+    {"text": "But one person can still move in stopped time.", "scene": "jotaro"},
+    {"text": "Star Platinum is the *same type* of Stand.", "scene": "clash"},
+    {"text": "DIO, or Jotaro? Comment *one* or *two.*", "scene": "choice"},
+    {"text": "Follow for more *If you had.*", "scene": "end"}
+  ]
+}

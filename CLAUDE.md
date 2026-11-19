@@ -49,6 +49,7 @@ clipper trends-import <captures…>    # veille : captures d'écran de posts (Ti
 clipper ulti "Satoru Gojo" --image X --move "Hollow Purple" [--clip ia.mp4]   # cinématique d'ulti seule (test, sans combat)
 clipper stats-auth                   # stats YouTube en lecture seule (une fois, chaîne animelorehq)
 clipper stats [--min-hours 24]       # bilan vidIQ « View Jail » → library/_stats/rapport_<date>.txt (+ .json)
+clipper analyze <vidéo|URL>          # analyse plan par plan → data/analyze/<nom>/ (rapport.md, planches, timeline.png)
 pytest -q                            # tests (ffmpeg requis)
 scripts/install_publish_task.ps1     # Windows : `clipper publish` toutes les heures
 ```
@@ -138,6 +139,12 @@ D'après une vidéo de référence : persos en traits lumineux (contour + traits
 
 ## Voix off (Kokoro, 09/11 puis 18/11)
 `tools/tts.py` : voix Kokoro **am_adam** (choisie par l'utilisateur), modèles dans /tmp/tts téléchargés depuis les releases GitHub thewh1teagle/kokoro-onnx (Hugging Face et ElevenLabs bloqués dans le conteneur). `tts.lines(textes)` = audio + temps exacts de chaque phrase. Utilisé par `tools/explainer/explainer.py <script> <sortie> tts` (« If you had … », mascotte `tools/explainer/mascot.py`) et `tools/whatif/demo.py` (démo du format long What If). Analyse du format : `ANALYSE_WHAT_IF.md`.
+
+## Explainers « If you had… » (19/11, `tools/explainer/infinity_v4.py`)
+DA validée : fond bleu nuit dégradé + poussière d'étoiles, texte Poppins Light/Bold (4 mots max à la fois, rétrécit si trop large, `*mot*` = gras), compteur doré en bas à gauche (au-dessus du filigrane), badge « IF YOU HAD... » (sans numéro, règle du 19/11), carte « 1 ou 2 » avant la fin, fin « Follow for more If you had » sur le plan de l'image 0 → le bouton redevient le compteur de l'image 0 (boucle parfaite, `loop_counter`). Persos = PNG générés par l'utilisateur sur Gemini (style simple, fond vert #00FF00, une image par message) détourés par `tools/explainer/key_green.py` (distance à la couleur du fond, garde les éléments verts du perso). Un épisode = sous-classe de `Show` avec ses scènes (`byakugan.py`, `zawarudo.py`), `boom_scenes`, `scene_sounds`. Flashs : toujours `flash()` (un rectangle RGBA sur toile RGBA remplace les pixels au lieu de mélanger). Rendu : `python3 tools/explainer/<épisode>.py <script.json> <sortie.mp4> [--preview]`. Vérification : `clipper analyze`.
+
+## Analyse vidéo (19/11, `clipper/analyze.py`)
+`clipper analyze <vidéo|URL>` : coupes franches (filtre scene) + changements progressifs (comparaison à la 1re image du plan, `soft_cuts`), fusion des coupes rapprochées, 3 images par plan, palette, mouvement, luminosité, flashs, volume, transcription Deepgram si clé → `data/analyze/<nom>/` (rapport.md, scenes.json, timeline.png, planche_NN.png, frame0.png). Claude lit ensuite les planches. Limite : les plans sombres et proches se fondent parfois (Byakugan : 7 plans trouvés sur 10).
 
 ## Idées de contenu
 `PLAYBOOK.md` (racine) : toutes les manips et leçons pour faire grandir un compte (YouTube, TikTok, Instagram, Buffer), à réutiliser sur un nouveau compte ; à compléter à chaque leçon. `IDEES.md` (racine) : toutes les idées de posts de l'utilisateur, consignes prêtes, comptes à surveiller, règles qui marchent. À compléter à chaque nouvelle idée.
