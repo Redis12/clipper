@@ -87,12 +87,31 @@ def bullet(d, x, y, s=1.0):
 
 class ZaWarudo(v.Show):
     boom_scenes = {"roller": 1.0, "clash": 0.8}
+    whoosh_gain = 0.09
     scene_sounds = {
         "stop": [(0.25, "library/_sounds/jojo_villains/dio time stop.mp3", 0.55)],
-        "walk": [(0.25 + 0.42 * i, "library/_sfx/Helton Yan's Old-School Shonen SFX/FGHTBf_Anime Land 3.ogg", 0.35) for i in range(6)],
-        "ora": [(0.05 + 0.11 * i, "library/_sfx/Helton Yan's Old-School Shonen SFX/FGHTImpt_Anime Melee {}.ogg".format(1 + i % 7), 0.22) for i in range(18)],
-        "moves": [(0.0, "library/_sfx/Helton Yan's Old-School Shonen SFX/FGHTImpt_Anime Melee 5.ogg", 0.3)],
+        "bullet": [(0.85, "library/_sfx/Helton Yan's Old-School Shonen SFX/FGHTMisc_Anime Dodge 3.ogg", 0.25)],
     }
+
+    def png(self, name, h, flip=False):
+        """Les images Gemini coupent parfois le perso au bord (bras tranché net) : on fond ces bords dans le décor."""
+        key = ("_f", name, int(h), flip)
+        if key not in self.cache:
+            im = super().png(name, h, flip).copy()
+            a = np.asarray(im.getchannel("A")).astype(np.float32)
+            hh, ww = a.shape
+            op = a > 128
+            ramp_w = max(2, int(ww * 0.22))
+            ramp_h = max(2, int(hh * 0.12))
+            if op[:, 0].mean() > 0.08:
+                a[:, :ramp_w] *= np.linspace(0, 1, ramp_w)[None, :] ** 1.4
+            if op[:, -1].mean() > 0.08:
+                a[:, -ramp_w:] *= np.linspace(1, 0, ramp_w)[None, :] ** 1.4
+            if op[0].mean() > 0.08:
+                a[:ramp_h] *= np.linspace(0, 1, ramp_h)[:, None]
+            im.putalpha(Image.fromarray(a.astype(np.uint8)))
+            self.cache[key] = im
+        return self.cache[key]
 
     def __init__(self, script):
         super().__init__(script)
@@ -144,11 +163,42 @@ class ZaWarudo(v.Show):
                 return ("TIME", "STOPPED" if tl > t0 else "RUNNING", YEL)
             im.paste(stopped(im, 1 - ease(q)))
             return None
-        if kind == "late":                               # l'horloge bloquée à 8 h 59
+        if kind == "late":                               # réveil bloqué à 6 h 59 : tu dors 8 h de plus
             im.paste(stopped(im, 1))
             ck = clock_img(700, 59)
             im.alpha_composite(ck, (540 - 350, 640))
-            return ("LATE", "NEVER", YEL)
+            for i in range(3):                           # « Zzz » qui montent
+                k = (tl * 0.7 + i / 3) % 1
+                d.text((760 + 60 * i, 640 - 260 * k), "z", font=m.P("Bold", int(70 + 40 * i)),
+                       fill=(200, 210, 255, int(255 * (1 - k))), anchor="mm")
+            return ("EXTRA SLEEP", f"+{min(8, int(1 + 8 * tl / max(0.5, dur)))} h", YEL)
+        if kind == "dark":                               # la lumière s'arrête aussi : noir total
+            k = ease(min(1, tl / 0.8))
+            im.paste(stopped(im, 1))
+            flash(im, 0, 0, 0, int(235 * k))
+            rnd = random.Random(3)
+            for _ in range(60):                          # photons figés
+                x, y = rnd.uniform(60, W - 60), rnd.uniform(420, 1600)
+                r = rnd.uniform(3, 7)
+                d.ellipse((x - r, y - r, x + r, y + r), fill=(255, 215, 90, int(200 * k)))
+            return ("LIGHT SPEED", "0 m/s", YEL)
+        if kind == "air":                                # l'air devient solide : impossible de respirer
+            im.paste(stopped(im, 1))
+            self.char(im, "dio_shocked", 540, H + 60, 1400, t, tl / 0.2)
+            k = ease(min(1, tl / 0.6))
+            for gx in range(70, W, 95):                  # molécules d'air figées, en grille
+                for gy in range(440, 1640, 95):
+                    o = 6 * math.sin(gx * 0.7 + gy)
+                    d.ellipse((gx + o - 9, gy - 9, gx + o + 9, gy + 9), fill=(160, 210, 255, int(150 * k)))
+            return ("OXYGEN", "0%", RED)
+        if kind == "ask":                                # et toi ?
+            im.paste(stopped(im, 1))
+            ck = clock_img(560, 9)
+            im.alpha_composite(ck, (540 - 280, 700))
+            kq = back(min(1, tl / 0.4))
+            d.text((540, 980), "?", font=m.P("Bold", max(1, int(420 * kq))), fill=YEL + (255,), anchor="mm",
+                   stroke_width=12, stroke_fill=(20, 14, 6))
+            return ("YOUR MOVE", "COMMENT", YEL)
         if kind == "pizza":                              # les 8 parts disparaissent une à une
             im.paste(stopped(im, 1))
             pz = self.pizza_parts()

@@ -126,6 +126,7 @@ class Show:
         self.atoms = [(rnd.uniform(80, W - 80), rnd.uniform(520, 1500), rnd.uniform(0, 6)) for _ in range(22)]
 
     boom_scenes: dict = {}
+    whoosh_gain = 0.16
     scene_sounds: dict = {}                               # scène → [(décalage s, fichier, volume)]
 
     def loop_counter(self):
@@ -557,7 +558,7 @@ def main(script_path, out, preview=False, show_cls=None):
     hum = np.sin(2 * math.pi * 55 * tt) * 0.035 + np.sin(2 * math.pi * 82.5 * tt) * 0.022 + np.sin(2 * math.pi * 110 * tt) * 0.012
     buf += hum.astype(np.float32)
     for ln, (a, b) in zip(lines, segs):
-        add(whoosh, max(0, a - 0.12), 0.16)
+        add(whoosh, max(0, a - 0.12), sh.whoosh_gain)
         if ln["scene"] in sh.boom_scenes:
             add(boom, a + sh.boom_scenes[ln["scene"]], 0.33)
         for off, path, g in sh.scene_sounds.get(ln["scene"], []):

@@ -1,0 +1,17 @@
+{
+  "dir": "library/_explainer/zawarudo/simple",
+  "handle": "@ANIMELOREHQ",
+  "series": "IF YOU HAD...",
+  "lines": [
+    {"text": "If you could stop time like *Dio,*", "scene": "stop"},
+    {"text": "you'd sleep *eight* more hours before your alarm.", "scene": "late"},
+    {"text": "Walk through the rain, and stay *dry.*", "scene": "rain"},
+    {"text": "Catch a *bullet* with two fingers.", "scene": "bullet"},
+    {"text": "Drop a *road roller* on your worst enemy.", "scene": "roller"},
+    {"text": "But fun fact: light would freeze too. You'd be *blind.*", "scene": "dark"},
+    {"text": "And the air turns *solid.* No breathing.", "scene": "air"},
+    {"text": "Oh, and Jotaro can *still* walk up to you.", "scene": "walk"},
+    {"text": "What would *you* do if you could stop time?", "scene": "ask"},
+    {"text": "Comment below, and follow for more *If you had.*", "scene": "end"}
+  ]
+}
