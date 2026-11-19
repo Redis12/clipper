@@ -87,13 +87,35 @@ def bullet(d, x, y, s=1.0):
 
 class ZaWarudo(v.Show):
     boom_scenes = {"roller": 1.0, "clash": 0.8}
-    scene_sounds = {"stop": [(0.25, "library/_sounds/jojo_villains/dio time stop.mp3", 0.55)]}
+    scene_sounds = {
+        "stop": [(0.25, "library/_sounds/jojo_villains/dio time stop.mp3", 0.55)],
+        "walk": [(0.25 + 0.42 * i, "library/_sfx/Helton Yan's Old-School Shonen SFX/FGHTBf_Anime Land 3.ogg", 0.35) for i in range(6)],
+        "ora": [(0.05 + 0.11 * i, "library/_sfx/Helton Yan's Old-School Shonen SFX/FGHTImpt_Anime Melee {}.ogg".format(1 + i % 7), 0.22) for i in range(18)],
+        "moves": [(0.0, "library/_sfx/Helton Yan's Old-School Shonen SFX/FGHTImpt_Anime Melee 5.ogg", 0.3)],
+    }
 
     def __init__(self, script):
         super().__init__(script)
         rnd = random.Random(5)
         self.drops = [(rnd.uniform(40, W - 40), rnd.uniform(380, 1560)) for _ in range(70)]
         self.knives = [(rnd.uniform(-0.4, 0.4)) for _ in range(9)]
+
+    def pizza_parts(self):
+        if "_pizza" not in self.cache:
+            from scipy import ndimage
+            pz = self.png("pizza", 900)
+            a = np.asarray(pz.getchannel("A")) > 100
+            lab, n = ndimage.label(a)
+            parts = []
+            for i, sl in enumerate(ndimage.find_objects(lab)):
+                mk = Image.fromarray(((lab[sl] == i + 1) * 255).astype(np.uint8))
+                piece = pz.crop((sl[1].start, sl[0].start, sl[1].stop, sl[0].stop))
+                piece.putalpha(Image.fromarray(np.minimum(np.asarray(piece.getchannel("A")), np.asarray(mk))))
+                ang = math.atan2((sl[0].start + sl[0].stop) / 2 - 450, (sl[1].start + sl[1].stop) / 2 - 450)
+                parts.append((ang, piece, (sl[1].start, sl[0].start)))
+            parts.sort(key=lambda p: p[0])
+            self.cache["_pizza"] = [(p, b) for _, p, b in parts]
+        return self.cache["_pizza"]
 
     def loop_counter(self):
         return ("TIME", "RUNNING", YEL)                  # = image 0 (boucle)
@@ -122,6 +144,70 @@ class ZaWarudo(v.Show):
                 return ("TIME", "STOPPED" if tl > t0 else "RUNNING", YEL)
             im.paste(stopped(im, 1 - ease(q)))
             return None
+        if kind == "late":                               # l'horloge bloquée à 8 h 59
+            im.paste(stopped(im, 1))
+            ck = clock_img(700, 59)
+            im.alpha_composite(ck, (540 - 350, 640))
+            return ("LATE", "NEVER", YEL)
+        if kind == "pizza":                              # les 8 parts disparaissent une à une
+            im.paste(stopped(im, 1))
+            pz = self.pizza_parts()
+            n = min(8, int(tl / max(0.2, (dur - 0.3) / 8)))
+            for i, (part, box) in enumerate(pz):
+                if i < n:
+                    continue
+                im.alpha_composite(part, (540 - 450 + box[0], 1000 - 450 + box[1]))
+            if 0 < n <= 8:                               # petit « pop » sur la dernière mangée
+                d.text((540, 480), "CHOMP!", font=m.P("Bold", 90), fill=YEL + (255,), anchor="mm", stroke_width=6, stroke_fill=(20, 14, 6))
+            return ("SLICES LEFT", str(8 - n), YEL)
+        if kind == "rain":                               # pluie figée (image Gemini), elle ne tombe pas
+            im.paste(stopped(im, 1))
+            r = self.png("raindrops", H - 420)                 # sous la zone du texte
+            for x in range(-r.width // 2, W + r.width, r.width):
+                im.alpha_composite(r, (int(x + 30 * math.sin(t * 0.3)), 420))
+            return ("YOU GET WET", "0%", YEL)
+        if kind == "bullet":
+            im.paste(stopped(im, 1))
+            if tl < 0.9:                                 # la balle ralentit puis s'arrête
+                b = self.png("bullet", 330)
+                x = -300 + 700 * (1 - (1 - min(1, tl / 0.9)) ** 3)
+                im.alpha_composite(b, (int(x), 900))
+                return ("BULLET SPEED", f"{int(1700 * (1 - min(1, tl / 0.9)) ** 2)} mph", YEL)
+            hb = self.png("hand_bullet", 1000)
+            k = back(min(1, (tl - 0.9) / 0.3))
+            h2 = hb.resize((max(1, int(hb.width * k)), max(1, int(hb.height * k))), Image.BILINEAR)
+            im.alpha_composite(h2, (int(540 - h2.width / 2), int(1000 - h2.height / 2)))
+            return ("BULLET SPEED", "0 mph", YEL)
+        if kind == "moves":                              # DIO choqué, l'écran tremble
+            im.paste(stopped(im, 1))
+            sh = 12 * math.exp(-tl * 3)
+            self.char(im, "dio_shocked", 540 + sh * math.sin(t * 60), H + 60, 1400, t, tl / 0.15)
+            return ("SOMEONE", "MOVED", RED)
+        if kind == "walk":                               # Jotaro avance vers toi, pas lourds
+            im.paste(stopped(im, 1))
+            k = ease(min(1, tl / max(0.5, dur)))
+            h = 1150 + 900 * k
+            self.halo(im, 540, 1200, int(380 + 200 * k), (150, 110, 255), 80)
+            jw = self.png("jotaro_walk", int(h))
+            bob = 10 * abs(math.sin(tl * 5))
+            im.alpha_composite(jw, (int(540 - jw.width / 2), int(H + 40 - h * 0.86 - bob)))
+            return ("DISTANCE", f"{max(0.5, 6 * (1 - k)):.1f} m", PURP)
+        if kind == "ora":                                # rafale de poings + ORA
+            im.paste(stopped(im, 1))
+            sp = self.png("star_platinum", 1350)
+            rnd = random.Random(int(t * 20))
+            fist = sp.crop((0, int(sp.height * 0.55), int(sp.width * 0.62), sp.height))
+            for _ in range(7):                           # poings fantômes
+                f2 = fist.copy()
+                f2.putalpha(f2.getchannel("A").point(lambda a: int(a * 0.55)))
+                im.alpha_composite(f2, (int(rnd.uniform(-120, 420)), int(rnd.uniform(650, 1250))))
+            jx = rnd.uniform(-14, 14)
+            im.alpha_composite(sp, (int(W - sp.width + 60 + jx), int(H + 60 - 1350 + rnd.uniform(-8, 8))))
+            for i in range(5):
+                x, y = rnd.uniform(120, 960), rnd.uniform(450, 1500)
+                d.text((x, y), "ORA", font=m.P("Bold", int(rnd.uniform(70, 130))), fill=(235, 180, 255, 255), anchor="mm",
+                       stroke_width=6, stroke_fill=(30, 10, 50))
+            return ("HITS", f"{int(tl * 22)}", PURP)
         if kind == "five":
             im.paste(stopped(im, 1))
             self.char(im, "dio_face", 720, H + 60, 1200, t, tl / 0.3)
@@ -188,7 +274,7 @@ class ZaWarudo(v.Show):
                     flash(im, 255, 255, 255, int(70 * hit))
             return ("STAND TYPE", "SAME", WHITE)
         if kind == "choice":
-            for j, (x0, lab, col, name) in enumerate(((60, "DIO", YEL, "dio_eyes"), (560, "JOTARO", PURP, "jotaro"))):
+            for j, (x0, lab, col, name) in enumerate(((60, "DIO", YEL, "dio_face"), (560, "JOTARO", PURP, "jotaro"))):
                 k = back(min(1, max(0, (tl - 0.15 * j) / 0.35)))
                 if k <= 0:
                     continue
@@ -196,8 +282,8 @@ class ZaWarudo(v.Show):
                 pm = Image.new("L", (pw, ph), 0)
                 ImageDraw.Draw(pm).rounded_rectangle((0, 0, pw - 1, ph - 1), radius=44, fill=255)
                 bgp = Image.new("RGBA", (pw, ph), (16, 26, 58, 255))
-                e = self.png(name, 1150 if j == 0 else 1500)
-                yoff = -0.30 if j == 0 else -0.03
+                e = self.png(name, 1500)
+                yoff = -0.03
                 bgp.alpha_composite(e, (int(pw / 2 - e.width / 2), int(e.height * yoff)))
                 panel = Image.new("RGBA", (pw, ph), (0, 0, 0, 0))
                 panel.paste(bgp, (0, 0), pm)

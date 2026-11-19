@@ -1,0 +1,19 @@
+{
+  "dir": "library/_explainer/zawarudo/simple",
+  "handle": "@ANIMELOREHQ",
+  "series": "IF YOU HAD...",
+  "lines": [
+    {"text": "If you could stop time like *DIO,*", "scene": "stop"},
+    {"text": "you'd *never* be late again.", "scene": "late"},
+    {"text": "Eat the *whole* pizza before anyone blinks.", "scene": "pizza"},
+    {"text": "Walk in the rain, and stay *dry.*", "scene": "rain"},
+    {"text": "Catch a *bullet* with two fingers.", "scene": "bullet"},
+    {"text": "Drop a *road roller* on your worst enemy.", "scene": "roller"},
+    {"text": "Five whole seconds, and the world is *yours.*", "scene": "five"},
+    {"text": "Until one guy *moves.*", "scene": "moves"},
+    {"text": "Jotaro walks right up to you. *Yare yare daze.*", "scene": "walk"},
+    {"text": "*Ora ora ora ora!*", "scene": "ora"},
+    {"text": "DIO, or Jotaro? Comment *one* or *two.*", "scene": "choice"},
+    {"text": "Follow for more *If you had.*", "scene": "end"}
+  ]
+}
