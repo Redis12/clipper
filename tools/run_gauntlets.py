@@ -393,3 +393,80 @@ if "josephskits" in sys.argv:                         # 21/11 : Joseph vs every 
                             title=("CAN JOSEPH JOESTAR", "BEAT EVERY ANIME?"), theme=JOS_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
                             out=OUT / "Gauntlet - Joseph vs every anime v2.mp4"))
+if "talknojutsu" in sys.argv:                         # 21/11 : « Can Naruto convince every villain? » (Talk no Jutsu)
+    import os
+    from PIL import ImageFont
+    F = L + "_fusion/"
+    V = F + "JoJo Villains/"
+    SJ = L + "_sounds/jojo_villains/"
+    NS = L + "_sfx/Naruto SFX/"
+    ANTON = "tools/money_sim/fonts/anton.woff2"
+    NAR_THEME = {"hero": (255, 150, 30), "boss": (230, 40, 60), "accent": (255, 200, 40), "title2": (255, 150, 30),
+                 "bg": ((30, 16, 6), (6, 6, 10)), "grid": (80, 52, 30),
+                 "glows": [(0.15, 0.2, 380, (255, 130, 20)), (0.9, 0.55, 420, (230, 50, 40)), (0.4, 0.95, 360, (90, 60, 200))],
+                 "font": ANTON}
+    NARUTO = {"name": "Naruto", "image_path": F + "Naruto/3 Base.jpg"}
+    GREEN, BLUE = (70, 230, 120), (90, 185, 255)
+    OK = dict(auto_ko="leave", ko_boom=False, ko_fx="convert", ko_col=GREEN, ko_pause=1.35, mark="check")
+    RAS = dict(auto_ko="hit", ko_text="RASENGAN!", ko_col=BLUE, count=False)
+    foes = [
+        dict(name="Pain", image_path=L + "Naruto/Pain/Pain.jpg", skit="talk", gag_s=3.4, tears_at=2.4, ko_text="CONVINCED!",
+             ko_sub="PAIN", lines=[(0.0, 1.0, "foe", "Feel pain. Know pain."),
+                                   (1.0, 2.35, "hero", "I'll break the cycle of hatred. Like Pervy Sage wanted."),
+                                   (2.35, 3.4, "foe", "Jiraiya-sensei... was right about you.")], **OK),
+        dict(name="Obito", image_path=L + "Naruto/Obito/Obito.png", skit="talk", gag_s=3.1, tears_at=2.25, ko_text="CONVINCED!",
+             ko_sub="OBITO", lines=[(0.0, 0.9, "foe", "This world is hell."),
+                                    (0.9, 2.25, "hero", "You wanted to be Hokage too. I'm what you could've been."),
+                                    (2.25, 3.1, "foe", "...Rin. 🥲")], **OK),
+        dict(name="Light", image_path=L + "Death Note/Light Yagami/LightYagami.jpg", skit="talk", gag_s=3.6,
+             book=(1.1, 2.1, "Naruto Uzumaki"), poof_at=2.2, rasengan_at=2.6, ko_sub="LIGHT",
+             sfx=[(2.2, "vanish", None, 0.8), (2.6, "beam", "Rasengan", 0.6)],
+             label=(1.25, "HE'S WRITING YOUR NAME", (255, 80, 80)),
+             lines=[(0.0, 1.0, "hero", "Killing people isn't justice!"), (1.0, 2.15, "foe", "You're right... 🙂"),
+                    (2.6, 3.6, "hero", "Wrong Naruto. 😏")], **RAS),
+        dict(name="Esidisi", image_path=V + "03 ESIDISI.jpg", skit="talk", gag_s=2.5, tears_at=1.0, ko_text="CONVINCED!",
+             ko_sub="CRIED IT OUT", lines=[(0.0, 1.05, "hero", "It's okay to cry, you know."),
+                                           (1.0, 2.5, "foe", "AAAAHHH!! 😭")], **OK),
+        dict(name="Itachi", image_path=L + "Naruto/Itachi/Itachi.jpg", skit="talk", gag_s=2.9, ko_text="ALREADY GOOD",
+             ko_sub="ITACHI", label=(1.6, "PLOT TWIST: HE WAS GOOD ALL ALONG", (255, 214, 10)),
+             lines=[(0.0, 1.1, "hero", "Why did you kill your clan?!"), (1.1, 2.4, "foe", "...To protect the village.")], **OK),
+        dict(name="Frieza", image_path=F + "Frieza/4 FINAL FORM.jpg", skit="talk", gag_s=2.85, rasengan_at=2.0, dash_at=2.5,
+             ko_sub="FRIEZA", sfx=[(2.0, "beam", "Rasengan", 0.6)], lines=[(0.0, 1.1, "hero", "You don't have to be alone!"),
+                                     (1.1, 2.3, "foe", "Ohohoho... how cute. No.")], **RAS),
+        dict(name="Madara", image_path=F + "Madara/3 MANGEKYO MADARA.jpg", skit="talk", gag_s=3.7, zzz_at=2.1, ko_text="ASLEEP!",
+             ko_sub="STUCK IN HIS OWN DREAM", label=(2.5, "MADARA FELL ASLEEP", (180, 140, 255)),
+             lines=[(0.0, 0.9, "foe", "Wake up to reality!"),
+                    (0.9, 3.7, "hero", "Bonds matter, Madara! Friends, the village, my dream, the Will of Fire, ramen, also ramen...")],
+             **OK),
+        dict(name="DIO", image_path=V + "05 DIO.jpg", skit="talk", gag_s=3.7, stop=(1.9, 3.1), leave_at=2.55, leave_end=3.1,
+             ko_text="SKIPPED!", ko_sub="DIO LEFT THE SPEECH", ko_boom=False, auto_ko="leave", count=False,
+             sounds=[(1.1, SJ + "za warudo.mp3", 1.0, 2.2)],
+             lines=[(0.0, 1.1, "hero", "Believe in your friends, DIO!"), (1.1, 1.9, "foe", "ZA WARUDO! ⏱️"),
+                    (1.95, 2.6, "foe", "This speech is too long."), (3.1, 3.7, "hero", "...and that's why— huh?! 😳")]),
+        dict(name="Kars", image_path=V + "04 KARS.jpg", skit="talk", gag_s=2.7, ko_text="CONVINCED?",
+             ko_sub="HE STOPPED THINKING", label=(1.6, "KARS STOPPED THINKING", (255, 214, 10)),
+             lines=[(0.0, 1.25, "hero", "Ultimate power won't make you happy!"), (1.25, 2.7, "foe", "...")], **OK),
+        dict(name="Sukuna", image_path=L + "Jujutsu Kaisen/Sukuna/sukuna.jpg", skit="talk", gag_s=3.4, rasengan_at=2.6,
+             dash_at=3.05, ko_sub="SUKUNA", sfx=[(2.6, "beam", "Rasengan", 0.6)], label=(2.15, "BOTH MOUTHS SAID NO", (255, 80, 80)),
+             lines=[(0.0, 1.2, "hero", "Everyone deserves a second chance!"), (1.2, 2.1, "foe2", "He talks too much."),
+                    (2.1, 2.9, "foe", "Agreed.")], **RAS),
+        dict(name="Doflamingo", image_path=L + "One Piece/Doflamingo/Doflamingo.jpg", skit="talk", gag_s=2.85,
+             rasengan_at=1.7, dash_at=2.5, ko_sub="DOFLAMINGO", sfx=[(1.7, "beam", "Rasengan", 0.6)],
+             lines=[(0.0, 1.2, "foe", "Whoever wins becomes justice!"), (1.2, 2.3, "hero", "Then I'll win. 😤")], **RAS),
+        dict(name="Sasuke", image_path=L + "Naruto/Sasuke/Sasuke.jpg", skit="talk", gag_s=4.7, pant_at=2.95,
+             leave_at=3.7, leave_end=4.6, leave_side=-1,
+             card=(2.0, 2.95, "3 YEARS LATER...", lambda sz: ImageFont.truetype(ANTON, sz)),
+             lines=[(0.0, 1.25, "hero", "Sasuke! Come back to the village!"), (1.25, 1.95, "foe", "..."),
+                    (3.0, 4.7, "hero", "...and that's why... you should... come back... 🥵")]),
+    ]
+    for f_ in foes:
+        f_.update(gag=True, stage=True)
+    music = os.environ.get("GAUNTLET_MUSIC") or None
+    print(gauntlet.generate(NARUTO, foes, universe="Anime", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
+                            base_hits=1, step_hits=0, lose_at=11, lose_after=4.8, lose_move=" ",
+                            lose_cta="Who could Naruto NEVER convince? Comment 👇",
+                            texts={"counter": "CONVINCED", "lose_title": "CONVINCED {ok}/{n}", "lose_sub": "NOT EVEN SASUKE",
+                                   "lose_down": "...SASUKE?", "lose_hide_foe": True},
+                            title=("CAN NARUTO CONVINCE", "EVERY VILLAIN?"), theme=NAR_THEME, music=music,
+                            music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
+                            out=OUT / "Gauntlet - Naruto Talk no Jutsu.mp4"))

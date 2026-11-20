@@ -186,7 +186,8 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
              lose_at: int | None = None, lose_after: float = 3.0, title: tuple | None = None,
              lose_move: str | None = None, theme: dict | None = None, music: str | None = None,
              music_start: float = 0.0, music_gain: float = 0.35, lose_cta: str | None = None,
-             lose_image: str | None = None, final_image: str | None = None, final_s: float = 1.8) -> Path:
+             lose_image: str | None = None, final_image: str | None = None, final_s: float = 1.8,
+             texts: dict | None = None) -> Path:
     """theme (07/11, JJK) : hero / boss / accent (couleurs), bg (haut, bas), grid, font (police des titres)."""
     global HERO_COL, BOSS_COL, YELLOW
     saved = (HERO_COL, BOSS_COL, YELLOW)
@@ -195,14 +196,15 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
     try:
         return _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_at, lose_after, title,
                          lose_move, th, music, music_start, music_gain, lose_cta, lose_image,
-                         final_image, final_s)
+                         final_image, final_s, texts or {})
     finally:
         HERO_COL, BOSS_COL, YELLOW = saved
 
 
 def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_at, lose_after, title, lose_move,
               th, music, music_start, music_gain, lose_cta=None, lose_image=None, final_image=None,
-              final_s=1.8) -> Path:
+              final_s=1.8, texts=None) -> Path:
+    texts = texts or {}
     from PIL import ImageFont
     from . import fxengine, vfxgen
     tfont = (lambda sz: ImageFont.truetype(th["font"], sz)) if th.get("font") else render.font
@@ -340,8 +342,8 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                 f2 = tfont(f2.size - 3)
             d.text((W / 2, H * 0.04 + (100 if th.get('font') else 76) * k), t2, font=f2,
                    anchor="ma", fill=tuple(th.get("title2", BOSS_COL)), stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
-            kills = sum(1 for x in ko_at)
-            d.text((W / 2, oy - 34 * k), f"KILLS {kills}/{n}", font=tfont(int(44 * k)), anchor="mm",
+            kills = sum(1 for x in ko_at if foes[x[3]].get("count", True))
+            d.text((W / 2, oy - 34 * k), f"{texts.get('counter', 'KILLS')} {kills}/{n}", font=tfont(int(44 * k)), anchor="mm",
                    fill=YELLOW, stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
             # adversaire du moment (pas pendant le K.O.)
             sk = foes[foe].get("skit") if not ended else None      # 20/11 : sketch de l'adversaire
@@ -526,7 +528,9 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                 kp = max(0.9, float(fo_.get("ko_pause", 1.1)) - 0.1)
                 a = (t - kt) / kp
                 if 0 <= a < 1:
-                    if fo_.get("ko_fx") == "volcano":
+                    if fo_.get("ko_fx") == "convert":
+                        skits.convert(img, a, foe_icons[kf], kx, ky, kR, k)
+                    elif fo_.get("ko_fx") == "volcano":
                         skits.volcano(img, a, dict(k=k, ox=ox, oy=oy, S=S), foe_icons[kf], kx, ky, kR)
                     elif fo_.get("ko_boom", True):
                         f_ = explo[min(len(explo) - 1, int(a * len(explo)))]
@@ -542,7 +546,7 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                             kf_ = tfont(kf_.size - 4)
                         ky_ = oy + S * float(fo_.get("ko_y", 0.5))
                         d.text((W / 2, ky_), kt_, font=kf_, anchor="mm",
-                               fill=YELLOW, stroke_width=int(7 * k), stroke_fill=(0, 0, 0))
+                               fill=tuple(fo_.get("ko_col", YELLOW)), stroke_width=int(7 * k), stroke_fill=(0, 0, 0))
                         d.text((W / 2, ky_ + 110 * k), (fo_.get("ko_sub") or fo_["name"]).upper(), font=tfont(int(54 * k)),
                                anchor="mm", fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
             en = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -566,13 +570,16 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                     ic = g
                 img.alpha_composite(ic, (int(x), int(y)))
                 d = ImageDraw.Draw(img)
-                if done:
+                if done and foes[i].get("mark") == "check":       # convaincu : coche verte
+                    d.line((x + sz * 0.2, y + sz * 0.55, x + sz * 0.42, y + sz * 0.78), fill=(60, 220, 110), width=int(10 * k))
+                    d.line((x + sz * 0.42, y + sz * 0.78, x + sz * 0.82, y + sz * 0.25), fill=(60, 220, 110), width=int(10 * k))
+                elif done:
                     d.line((x + 10, y + 10, x + sz - 10, y + sz - 10), fill=(235, 50, 60), width=int(8 * k))
                     d.line((x + sz - 10, y + 10, x + 10, y + sz - 10), fill=(235, 50, 60), width=int(8 * k))
                 elif i == foe and not ended:
                     d.ellipse((x - 4, y - 4, x + sz + 4, y + sz + 4), outline=YELLOW, width=int(5 * k))
             if pz is not None:                                    # sketch : effet plein écran, bulles, étiquette
-                img = skits.post(sk, sk_age, sk_dur, img)
+                img = skits.post(sk, sk_age, sk_dur, img, foes[foe])
                 for (a_, b_, who, txt) in foes[foe].get("lines", []):
                     if a_ <= sk_age < b_:
                         nch = max(1, int(len(txt) * min(1.0, (sk_age - a_) / max(0.25, (b_ - a_) * 0.45))))
@@ -580,6 +587,8 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                             nch = len(txt)
                         if who == "hero":
                             bubble(img, hpos[0], hpos[1] - hs / 2 - 30 * k, txt[:nch])
+                        elif who == "foe2":                       # 2e bouche (Sukuna)
+                            bubble(img, fpos[0] + RB * 0.75, fpos[1] + RB * 0.55, txt[:nch])
                         else:
                             bubble(img, fpos[0], fpos[1] - RB - 40 * k, txt[:nch])
                 lb_ = foes[foe].get("label")
@@ -589,8 +598,9 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                 e = t - len(frames) / FPS
                 img.alpha_composite(Image.new("RGBA", (W, H), (150, 0, 0, int(120 * min(1.0, e / 0.2)))))
                 lb = frames[-1]                                   # le vainqueur reste à sa place
-                bic = icon_of(lost[1], t).resize((int(lb[2] * 2), int(lb[2] * 2)), Image.LANCZOS)
-                img.alpha_composite(bic, (int(ox + lb[0] - lb[2]), int(oy + lb[1] - lb[2])))
+                if not texts.get("lose_hide_foe"):
+                    bic = icon_of(lost[1], t).resize((int(lb[2] * 2), int(lb[2] * 2)), Image.LANCZOS)
+                    img.alpha_composite(bic, (int(ox + lb[0] - lb[2]), int(oy + lb[1] - lb[2])))
                 hs = int(rh * 2)
                 g = hero_icon.resize((hs, hs)).convert("LA").convert("RGBA")
                 g.putalpha(hero_icon.resize((hs, hs)).getchannel("A"))
@@ -601,7 +611,7 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                 if foes[lost[1]].get("ora"):
                     skits.ora(img, e, ox + lost[3], oy + lost[4] - 60 * k, k, tfont, (ox, oy, ox + S, oy + S))
                     d = ImageDraw.Draw(img)
-                d.text((ox + lost[3], oy + lost[4] - hs), "DOWN!", font=tfont(int(60 * k)), anchor="mm",
+                d.text((ox + lost[3], oy + lost[4] - hs), texts.get("lose_down", "DOWN!"), font=tfont(int(60 * k)), anchor="mm",
                        fill=(255, 255, 255), stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
             elif ended and lost:                                  # écran de défaite
                 e = t - len(frames) / FPS - 1.4
@@ -629,9 +639,11 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                     img.alpha_composite(icon_of(lost[1], t).resize((big, big), Image.LANCZOS),
                                         (int(W / 2 - big / 2), int(H * 0.36)))
                 d = ImageDraw.Draw(img)
-                d.text((W / 2, H * 0.24), f"SURVIVED {lost[1]}/{n}", font=tfont(int(86 * k)), anchor="mm",
+                n_ok = sum(1 for x in ko_at if foes[x[3]].get("count", True))
+                d.text((W / 2, H * 0.24), texts.get("lose_title", "SURVIVED {s}/{n}").format(s=lost[1], n=n, ok=n_ok),
+                       font=tfont(int(86 * k)), anchor="mm",
                        fill=YELLOW, stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
-                d.text((W / 2, H * 0.24 + 92 * k), f"STOPPED BY {foes[lost[1]]['name'].upper()}",
+                d.text((W / 2, H * 0.24 + 92 * k), texts.get("lose_sub", f"STOPPED BY {foes[lost[1]]['name'].upper()}"),
                        font=tfont(int(58 * k)), anchor="mm", fill=(255, 80, 80), stroke_width=int(5 * k),
                        stroke_fill=(0, 0, 0))
                 render.draw_rich(img, (W / 2, H * 0.36 + big + 40 * k), lose_cta or "Did he deserve to lose? Comment 👇",
@@ -707,6 +719,8 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
             continue
         for (a_, _b, _w, _t) in fo_.get("lines", []):
             put(ge_[2] + a_, blip, 0.35)
+        for (st, fam, mv, g_) in fo_.get("sfx", []):
+            put(ge_[2] + st, domain.sfx(fam, move=mv, mode="anime", seed=fi_, franchise=franchise), g_)
         for wt in fo_.get("whoosh", []):
             put(ge_[2] + wt, domain.sfx("vanish", mode="anime", franchise=franchise), 0.6)
         for (st, sp_, g_, sd) in fo_.get("sounds", []):

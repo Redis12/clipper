@@ -73,6 +73,29 @@ def pose(name: str, age: float, dur: float, ctx: dict) -> dict:
         if age < dur:
             tx, ty = fx + R + ctx["rh"], fy
             p["hdx"], p["hdy"] = (tx - hx) * q, (ty - hy) * q
+    elif name == "talk":                                          # 21/11 : Talk no Jutsu (options dans la fiche)
+        fo = ctx["foe"]
+        tx, ty = fx + R + ctx["rh"], fy
+        if fo.get("leave_at") is not None:                        # il s'en va (DIO pendant le temps arrêté, Sasuke)
+            side = fo.get("leave_side", -1)
+            q = _seg(age, fo["leave_at"], fo.get("leave_end", dur))
+            edge = (fx - ctx["ox"] + R * 1.3) if side < 0 else (ctx["ox"] + S - fx + R * 1.3)
+            p["fdx"] = side * edge * q * q
+            if 0 < q < 1:
+                p["fdy"] = -abs(math.sin(age * 14)) * 8 * k
+            p["fhide"] = q >= 1
+        if fo.get("dash_at") is not None and age < dur:            # Rasengan : il fonce sur l'adversaire
+            q = _ease(_seg(age, fo["dash_at"], fo["dash_at"] + 0.3))
+            p["hdx"], p["hdy"] = (tx - hx) * q, (ty - hy) * q
+        if fo.get("poof_at") is not None and age < dur:            # c'était un clone : pouf, le vrai est derrière
+            if fo["poof_at"] <= age < fo["poof_at"] + 0.35:
+                p["hhide"] = True
+            elif age >= fo["poof_at"] + 0.35:
+                p["hdx"], p["hdy"] = tx - hx, ty - hy
+        if fo.get("pant_at") is not None and fo["pant_at"] <= age < dur:
+            p["hbob"] = -abs(math.sin(age * 9)) * 10 * k
+        if fo.get("stop") and fo["stop"][0] < age < fo["stop"][1] and fo.get("look"):
+            p["fflip"] = int((age - fo["stop"][0]) / 0.38) % 2 == 1
     elif name == "zawarudo":
         if 1.0 < age < 2.6:
             p["fflip"] = int((age - 1.0) / 0.38) % 2 == 1
@@ -326,6 +349,46 @@ def draw(name: str, age: float, dur: float, ctx: dict, img: Image.Image) -> None
                 u = j / 4
                 d.line((cx_, cy_, cx_ + (hx - cx_) * (0.3 + u * 0.7), cy_ + (hy - cy_) * (0.3 + u * 0.7)),
                        fill=(255, 255, 255, int(150 * (1 - q))), width=int((30 - j * 6) * k))
+    elif name == "talk":
+        fo = ctx["foe"]
+        if fo.get("tears_at") is not None and age >= fo["tears_at"]:
+            for sx in (-1, 1):                                    # larmes
+                ex, ey = fx + sx * R * 0.24, fy - R * 0.02
+                ln = R * (0.5 + 0.5 * _seg(age, fo["tears_at"], fo["tears_at"] + 0.4))
+                pts = [(ex + sx * (j / 10) * R * 0.15 + math.sin(age * 20 + j) * 2 * k, ey + j / 10 * ln) for j in range(11)]
+                d.line(pts, fill=(110, 190, 255, 220), width=int(10 * k), joint="curve")
+        if fo.get("zzz_at") is not None and age >= fo["zzz_at"]:  # il s'endort
+            f_ = font(int(54 * k))
+            for j in range(3):
+                ph = ((age - fo["zzz_at"]) * 0.9 + j / 3) % 1
+                ImageDraw.Draw(img).text((fx + R * (0.7 + 0.5 * ph), fy - R * (0.6 + 0.9 * ph)), "Z", font=font(int((40 + 30 * ph) * k)),
+                                         anchor="mm", fill=(255, 255, 255, int(255 * (1 - ph))), stroke_width=int(4 * k),
+                                         stroke_fill=(0, 0, 0))
+            _ = f_
+        if fo.get("book"):                                        # il écrit en cachette dans le Death Note
+            b0, b1, txt = fo["book"]
+            if age >= b0:
+                nch = int(len(txt) * _seg(age, b0 + 0.15, b1))
+                _book(img, fx + R * 0.55, fy + R * 1.45, k * 0.8, 1, txt, nch, font)
+        if fo.get("poof_at") is not None and fo["poof_at"] <= age < fo["poof_at"] + 0.7:
+            q = _seg(age, fo["poof_at"], fo["poof_at"] + 0.7)
+            _dust(d, hx, hy, k * 2.2, q, 4)
+            _dust(d, hx, hy - 20 * k, k * 1.6, q, 8)
+            if q < 0.6:
+                ImageDraw.Draw(img).text((hx, hy - hs * 0.9), "POOF!", font=font(int(70 * k)), anchor="mm", fill=(255, 255, 255),
+                                         stroke_width=int(6 * k), stroke_fill=(0, 0, 0))
+        if fo.get("rasengan_at") is not None and fo["rasengan_at"] <= age < dur:   # Rasengan dans la main
+            px, py = hx + ctx["pose"]["hdx"] - hs * 0.55, hy + ctx["pose"]["hdy"] + hs * 0.25
+            if fo.get("dash_at") is not None and age >= fo["dash_at"]:
+                px = hx + ctx["pose"]["hdx"] - hs * 0.75
+                py = hy + ctx["pose"]["hdy"]
+            rasengan(img, px, py, 72 * k * min(1.0, 0.3 + _seg(age, fo["rasengan_at"], fo["rasengan_at"] + 0.3)), age)
+        if fo.get("pant_at") is not None and fo["pant_at"] <= age < dur:   # gouttes de sueur
+            for j in range(2):
+                ph = (age * 1.6 + j * 0.5) % 1
+                xx = hx + (1 if j else -1) * hs * 0.45
+                yy = hy - hs * 0.35 + ph * hs * 0.4
+                d.ellipse((xx - 7 * k, yy - 10 * k, xx + 7 * k, yy + 10 * k), fill=(130, 200, 255, int(255 * (1 - ph))))
     elif name == "zawarudo":
         if 0.3 < age < 0.9:                                       # il file avant que le temps s'arrête
             _dust(d, hx, hy + hs * 0.4, k, _seg(age, 0.3, 0.9), 7)
@@ -338,15 +401,26 @@ def draw(name: str, age: float, dur: float, ctx: dict, img: Image.Image) -> None
                                      stroke_width=int(3 * k), stroke_fill=(0, 0, 0))
 
 
-def post(name: str, age: float, dur: float, img: Image.Image) -> Image.Image:
-    """Effets plein écran (ZA WARUDO : le monde passe en négatif pendant que le temps est arrêté)."""
-    if name == "zawarudo" and 0.85 < age < 2.7:
-        a = min(1.0, (age - 0.85) / 0.15, (2.7 - age) / 0.12)
+def post(name: str, age: float, dur: float, img: Image.Image, foe: dict | None = None) -> Image.Image:
+    """Effets plein écran (ZA WARUDO : le monde passe en négatif pendant que le temps est arrêté ; carte « 3 YEARS
+    LATER… »)."""
+    win = (0.85, 2.7) if name == "zawarudo" else tuple((foe or {}).get("stop") or (9e9, 9e9))
+    card = (foe or {}).get("card")
+    if card and card[0] <= age < card[1]:                         # carton noir plein écran
+        from PIL import ImageDraw as _D
+        out = Image.new("RGBA", img.size, (0, 0, 0, 255))
+        q = min(1.0, (age - card[0]) / 0.15)
+        a_ = Image.blend(img.convert("RGBA"), out, q)
+        _D.Draw(a_).text((img.width / 2, img.height * 0.47), card[2], font=card[3](int(96 * img.width / 1080)), anchor="mm",
+                         fill=(255, 255, 255), stroke_width=4, stroke_fill=(0, 0, 0))
+        return a_
+    if win[0] < age < win[1]:
+        a = min(1.0, (age - win[0]) / 0.15, (win[1] - age) / 0.12)
         rgb = img.convert("RGB")
         g = ImageOps.grayscale(rgb)
         lut = lambda c0, c1: [int(c0 + (c1 - c0) * (v / 255) ** 0.8) for v in range(256)]   # noqa: E731
         duo = Image.merge("RGB", [g.point(lut(40, 255)), g.point(lut(8, 235)), g.point(lut(70, 90))])
-        if age < 1.0:                                             # flash négatif au moment de l'arrêt
+        if age < win[0] + 0.15:                                   # flash négatif au moment de l'arrêt
             duo = ImageOps.invert(duo)
         return Image.blend(rgb, duo, a).convert("RGBA")
     return img
@@ -396,6 +470,49 @@ def volcano(img: Image.Image, a: float, ctx: dict, icon: Image.Image, kx: float,
             x, y = vx, oy + S * 0.06
             d.polygon([(x, y - r), (x + r * 0.25, y - r * 0.25), (x + r, y), (x + r * 0.25, y + r * 0.25), (x, y + r),
                        (x - r * 0.25, y + r * 0.25), (x - r, y), (x - r * 0.25, y - r * 0.25)], fill=(255, 255, 255))
+
+
+def rasengan(img: Image.Image, x: float, y: float, r: float, t: float) -> None:
+    """Boule bleue qui tourne, cœur blanc, halo."""
+    if r < 2:
+        return
+    lay = Image.new("RGBA", (int(r * 4), int(r * 4)), (0, 0, 0, 0))
+    d = ImageDraw.Draw(lay)
+    c = r * 2
+    d.ellipse((c - r * 1.6, c - r * 1.6, c + r * 1.6, c + r * 1.6), fill=(80, 170, 255, 70))
+    d.ellipse((c - r, c - r, c + r, c + r), fill=(90, 180, 255, 235))
+    for j in range(5):
+        a0 = (t * 900 + j * 72) % 360
+        d.arc((c - r * 0.95, c - r * 0.95, c + r * 0.95, c + r * 0.95), a0, a0 + 110, fill=(230, 245, 255, 255), width=max(2, int(r * 0.12)))
+    d.ellipse((c - r * 0.42, c - r * 0.42, c + r * 0.42, c + r * 0.42), fill=(255, 255, 255, 255))
+    img.alpha_composite(lay, (int(x - c), int(y - c)))
+
+
+def convert(img: Image.Image, a: float, icon: Image.Image, kx: float, ky: float, kR: float, k: float) -> None:
+    """« CONVINCED » : le méchant devient gentil (halo doré, lueur, étincelles), il reste à sa place."""
+    d = ImageDraw.Draw(img, "RGBA")
+    glow = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    gr = kR * (1.25 + 0.06 * math.sin(a * 20))
+    ImageDraw.Draw(glow).ellipse((kx - gr, ky - gr, kx + gr, ky + gr), fill=(255, 220, 90, 150))
+    from PIL import ImageFilter
+    img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(28 * k)))
+    sz = int(kR * 2)
+    ic = icon.resize((sz, sz), Image.LANCZOS)
+    bob = math.sin(a * 9) * 6 * k
+    img.alpha_composite(ic, (int(kx - sz / 2), int(ky - sz / 2 + bob)))
+    hy_ = ky - kR * 1.12 + bob - 10 * k * (1 - _ease(_seg(a, 0, 0.3)))
+    hw = kR * 0.62
+    for w_, col in ((int(14 * k), (255, 200, 40, 255)), (int(6 * k), (255, 250, 200, 255))):
+        d.ellipse((kx - hw, hy_ - hw * 0.26, kx + hw, hy_ + hw * 0.26), outline=col, width=w_)
+    rnd = random.Random(7)
+    for j in range(14):                                          # étincelles
+        ph = (a * 1.4 + j / 14) % 1
+        an = rnd.uniform(0, 2 * math.pi)
+        rr = kR * (1.0 + 0.6 * ph)
+        x, y = kx + math.cos(an) * rr, ky + math.sin(an) * rr - ph * 40 * k
+        s_ = (12 - 8 * ph) * k
+        d.polygon([(x, y - s_), (x + s_ * 0.3, y), (x, y + s_), (x - s_ * 0.3, y)], fill=(255, 245, 170, int(255 * (1 - ph))))
+        d.polygon([(x - s_, y), (x, y + s_ * 0.3), (x + s_, y), (x, y - s_ * 0.3)], fill=(255, 245, 170, int(255 * (1 - ph))))
 
 
 def ora(img: Image.Image, e: float, x: float, y: float, k: float, font, box=None) -> None:
