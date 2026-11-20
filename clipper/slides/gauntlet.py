@@ -17,10 +17,11 @@ from PIL import Image, ImageDraw, ImageFilter
 
 from .. import config, db
 from ..util import log, require_bin
-from . import fusion, render
+from . import fusion, render, skits
 
 W, H, FPS = 1080, 1920, 30
 HERO_COL, BOSS_COL, YELLOW = (255, 150, 40), (235, 60, 70), (255, 214, 10)
+STAGE_B, STAGE_H = (0.30, 0.36), (0.72, 0.76)              # sketches : place du boss / du héros (fractions de la boîte)
 
 
 def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, specials: list | None = None,
@@ -43,6 +44,9 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
         gag_until = float(specials[0].get("gag_s", 1.3))
         events.append(("gag", 0, 0.0, gag_until))
     hx, hy = S * 0.5, S * 0.85
+    if (specials[0] or {}).get("stage"):                  # 20/11 : sketches, persos placés pour le gag
+        bx, by, bvx = min(max(S * STAGE_B[0], RB), S - RB), min(max(S * STAGE_B[1], RB), S - RB), 0.0
+        hx, hy = S * STAGE_H[0], S * STAGE_H[1]
     a = rnd.uniform(-2.4, -0.7)
     hv = S * 1.05
     hvx, hvy = math.cos(a) * hv, math.sin(a) * hv
@@ -63,6 +67,9 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
             break
         if pause > 0:                                     # K.O. : tout s'arrête un instant
             pause -= dt
+            if foe + 1 < n_foes and (specials[foe + 1] or {}).get("stage"):
+                hx += (S * STAGE_H[0] - hx) * min(1.0, dt * 5)
+                hy += (S * STAGE_H[1] - hy) * min(1.0, dt * 5)
             if pause <= 0:
                 foe += 1
                 if foe >= n_foes:
@@ -71,13 +78,25 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
                 got = 0
                 foe_t0 = t
                 sp = specials[foe] or {}
+                if sp.get("stage"):
+                    bx, by, bvx = min(max(S * STAGE_B[0], RB), S - RB), min(max(S * STAGE_B[1], RB), S - RB), 0.0
+                    hx, hy = S * STAGE_H[0], S * STAGE_H[1]
                 if sp.get("gag"):                         # gag au début (Sanji cuisine, Talk no Jutsu…)
                     gag_until = t + float(sp.get("gag_s", 1.3))
                     events.append(("gag", foe, t, gag_until))
                 if math.hypot(hx - bx, hy - by) < RB + rh + 4:
                     hy = min(S - rh, by + RB + rh + 10)
         elif t < gag_until:
-            pass                                          # tout le monde attend la fin du gag
+            sp = specials[foe] or {}                      # tout le monde attend la fin du gag
+            if sp.get("auto_ko") and t + dt >= gag_until and ("auto", foe) not in used:
+                used.add(("auto", foe))                   # 20/11 : le gag finit le combat (Zoro perdu, Goku à table…)
+                if sp["auto_ko"] == "hit":
+                    hx, hy = min(bx + RB + rh, S - rh), by
+                    hits.append((t, bx + RB * 0.9, by, foe))
+                if sp.get("hero_exit"):
+                    hx = S * 1.35
+                kos.append((t, bx, by, foe))
+                pause = float(sp.get("ko_pause", 1.1))
         else:
             hx += hvx * dt
             hy += hvy * dt
@@ -142,17 +161,17 @@ def simulate(seed: int, S: float, n_foes: int, hits_for, dt: float = 1 / 240, sp
                     hvx, hvy = math.cos(ang) * hv, math.sin(ang) * hv
                     bvx -= nx * S * 0.05
                     bvy -= ny * S * 0.05
-                    sp = math.hypot(bvx, bvy) or 1
+                    spd = math.hypot(bvx, bvy) or 1
                     lim = S * 0.16
-                    if sp > lim:
-                        bvx, bvy = bvx / sp * lim, bvy / sp * lim
+                    if spd > lim:
+                        bvx, bvy = bvx / spd * lim, bvy / spd * lim
                 if cool <= 0:
                     cool = 0.12
                     got += 1
                     hits.append((t, bx + nx * RB, by + ny * RB, foe))
                     if got >= hits_for(foe):
                         kos.append((t, bx, by, foe))
-                        pause = 1.1
+                        pause = float(sp.get("ko_pause", 1.1))
         t += dt
         if t >= next_frame:
             frames.append((bx, by, RB, hx, hy, rh, foe, pause > 0))
@@ -166,7 +185,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
              seed: int | None = None, base_hits: int = 3, step_hits: int = 2, dmg: int = 9001,
              lose_at: int | None = None, lose_after: float = 3.0, title: tuple | None = None,
              lose_move: str | None = None, theme: dict | None = None, music: str | None = None,
-             music_start: float = 0.0, music_gain: float = 0.35) -> Path:
+             music_start: float = 0.0, music_gain: float = 0.35, lose_cta: str | None = None) -> Path:
     """theme (07/11, JJK) : hero / boss / accent (couleurs), bg (haut, bas), grid, font (police des titres)."""
     global HERO_COL, BOSS_COL, YELLOW
     saved = (HERO_COL, BOSS_COL, YELLOW)
@@ -174,13 +193,13 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
     HERO_COL, BOSS_COL, YELLOW = th.get("hero", HERO_COL), th.get("boss", BOSS_COL), th.get("accent", YELLOW)
     try:
         return _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_at, lose_after, title,
-                         lose_move, th, music, music_start, music_gain)
+                         lose_move, th, music, music_start, music_gain, lose_cta)
     finally:
         HERO_COL, BOSS_COL, YELLOW = saved
 
 
 def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_at, lose_after, title, lose_move,
-              th, music, music_start, music_gain) -> Path:
+              th, music, music_start, music_gain, lose_cta=None) -> Path:
     from PIL import ImageFont
     from . import fxengine, vfxgen
     tfont = (lambda sz: ImageFont.truetype(th["font"], sz)) if th.get("font") else render.font
@@ -190,10 +209,15 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
     ox, oy = (W - S) / 2, H * 0.215
     hits_for = lambda i: (10 ** 6 if i == lose_at else int(foes[i].get("hits") or base_hits + step_hits * i))  # noqa: E731  « hits » par adversaire (boss finaux pas en un coup)
     seed = seed if seed is not None else random.randrange(1_000_000)
-    specials = [{k_: v for k_, v in f.items() if k_ in ("gag", "gag_s", "tp", "kamui", "say", "fake", "meme", "miss_after")} or None for f in foes]
+    specials = [{k_: v for k_, v in f.items() if k_ in ("gag", "gag_s", "tp", "kamui", "say", "fake", "meme", "miss_after",
+                                                    "stage", "auto_ko", "hero_exit", "ko_pause")} or None for f in foes]
     sim = simulate(seed, S, n, hits_for, specials=specials, lose_at=lose_at, lose_after=lose_after)
     lost = next((e for e in sim["events"] if e[0] == "lose"), None)
     evs = sim["events"]
+    gag_ev = {}
+    for e in evs:
+        if e[0] == "gag":
+            gag_ev.setdefault(e[1], e)
     frames = sim["frames"]
     hit_by_frame: dict = {}
     for h in sim["hits"]:
@@ -305,7 +329,17 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
             d.text((W / 2, oy - 34 * k), f"KILLS {kills}/{n}", font=tfont(int(44 * k)), anchor="mm",
                    fill=YELLOW, stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
             # adversaire du moment (pas pendant le K.O.)
-            if not ended and not paused:
+            sk = foes[foe].get("skit") if not ended else None      # 20/11 : sketch de l'adversaire
+            ge = gag_ev.get(foe)
+            pz, sk_age, sk_dur = None, 0.0, 0.0
+            if sk and ge and t >= ge[2]:
+                sk_age, sk_dur = t - ge[2], ge[3] - ge[2]
+                sctx = dict(k=k, S=S, ox=ox, oy=oy, fx=ox + bx, fy=oy + by, R=RB, hx=ox + hx, hy=oy + hy, rh=rh,
+                            hs=rh * 2, font=tfont, foe=foes[foe])
+                pz = skits.pose(sk, sk_age, sk_dur, sctx)
+                sctx["pose"] = pz
+            fpos = (ox + bx + (pz["fdx"] if pz else 0), oy + by + (pz["fdy"] if pz else 0))
+            if not ended and (not paused or (pz and pz["keep"])) and not (pz and pz["fhide"]):
                 gnow = [e for e in evs if e[0] in ("gag", "fake") and e[1] == foe and e[2] <= t < e[3]]
                 fxk = foes[foe].get("fx")
                 sc_, dx_ = 1.0, 0.0
@@ -320,6 +354,14 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                         hide = True
                 RBd = int(RB * 2 * sc_)
                 ic = icon_of(foe, t).resize((RBd, RBd), Image.LANCZOS)
+                dy_ = 0.0
+                if pz:
+                    dx_ += pz["fdx"]
+                    dy_ = pz["fdy"]
+                    if pz["fflip"]:
+                        ic = ic.transpose(Image.FLIP_LEFT_RIGHT)
+                    if pz["frot"]:
+                        ic = ic.rotate(pz["frot"], resample=Image.BICUBIC)
                 if hide:
                     ic.putalpha(0)
                 if any(e[0] == "kamui" and e[1] == foe and e[2] <= t < e[3] for e in evs):
@@ -328,13 +370,15 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                     red = Image.new("RGBA", ic.size, (255, 40, 40, 255))
                     red.putalpha(ic.getchannel("A").point(lambda v: v // 2))
                     ic = Image.alpha_composite(ic, red)
-                img.alpha_composite(ic, (int(ox + bx + dx_ - RBd / 2), int(oy + by - RBd / 2)))
+                img.alpha_composite(ic, (int(ox + bx + dx_ - RBd / 2), int(oy + by + dy_ - RBd / 2)))
                 d = ImageDraw.Draw(img)
                 hp = 1 - dealt[foe] / hits_for(foe)
                 bw = RB * 1.6
                 x0, y0 = ox + bx + dx_ - bw / 2, oy + by - RBd / 2 - 26 * k
                 if y0 < oy + 50 * k:                              # trop haut (sous « KILLS ») : sous la balle
                     y0 = oy + by + RBd / 2 + 46 * k
+                if paused:
+                    hide = True
                 if not hide:
                     d.rectangle((x0 - 3, y0 - 3, x0 + bw + 3, y0 + 16 * k + 3), fill=(0, 0, 0))
                     d.rectangle((x0, y0, x0 + bw * hp, y0 + 16 * k), fill=(235, 60, 70))
@@ -343,11 +387,23 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                        fill=(255, 255, 255), stroke_width=int(3 * k), stroke_fill=(0, 0, 0))
             # héros
             hs = int(rh * 2)
+            hx_s, hy_s = hx, hy
+            if pz:
+                hx, hy = hx + pz["hdx"], hy + pz["hdy"] + pz["hbob"]
             au = Image.new("RGBA", (hs * 3, hs * 3), (0, 0, 0, 0))
             ImageDraw.Draw(au).ellipse((hs * 0.7, hs * 0.7, hs * 2.3, hs * 2.3), fill=(255, 200, 80, 90))
             au = au.filter(ImageFilter.GaussianBlur(hs * 0.25))
             img.alpha_composite(au, (int(ox + hx - au.width / 2), int(oy + hy - au.height / 2)))
+            if pz and pz["hscale"] != 1.0:
+                hs = int(hs * pz["hscale"])
             img.alpha_composite(hero_icon.resize((hs, hs), Image.LANCZOS), (int(ox + hx - hs / 2), int(oy + hy - hs / 2)))
+            hpos = (ox + hx, oy + hy)
+            if pz:
+                skits._goggles(img, ox + hx, oy + hy, hs, k, pz["goggles"])
+                sctx.update(fx=fpos[0], fy=fpos[1], hx=ox + hx_s, hy=oy + hy_s)
+                skits.draw(sk, sk_age, sk_dur, sctx, img)
+                d = ImageDraw.Draw(img)
+            hx, hy = hx_s, hy_s
             by_[0] = by
             for ev in evs:                                       # gags et pouvoirs (Hiraishin, Kamui, Talk no Jutsu…)
                 kind, ef, t0 = ev[0], ev[1], ev[2]
@@ -429,7 +485,7 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                     img.alpha_composite(pz, (int(W / 2 - pz.width / 2), int(H * 0.47 - pz.height / 2)))
                     if foes[ef].get("gag_label"):
                         banner(img, foes[ef]["gag_label"], age, (255, 255, 255))
-                elif kind == "gag" and t0 <= t < ev[3]:          # bulle de dialogue, texte qui s'écrit
+                elif kind == "gag" and t0 <= t < ev[3] and not foes[ef].get("skit"):   # bulle, texte qui s'écrit
                     say = foes[ef].get("say", "...")
                     nch = max(1, int(len(say) * min(1.0, age / max(0.3, (ev[3] - t0) * 0.7))))
                     bx_b = bx + (S * 0.6 * (1 - min(1.0, (age / (ev[3] - t0)) / 0.6)) if foes[ef].get("fx") == "lost" else 0)
@@ -451,17 +507,29 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
             floats[:] = keep[-6:]
             # K.O. : explosion + texte
             for (kt, kx, ky, kf, kR) in ko_at[-1:]:
-                a = (t - kt) / 0.9
+                fo_ = foes[kf]
+                kp = max(0.9, float(fo_.get("ko_pause", 1.1)) - 0.1)
+                a = (t - kt) / kp
                 if 0 <= a < 1:
-                    f_ = explo[min(len(explo) - 1, int(a * len(explo)))]
-                    sz = int(kR * 4)
-                    img.alpha_composite(f_.resize((sz, sz)), (int(kx - sz / 2), int(ky - sz / 2)))
+                    if fo_.get("ko_fx") == "volcano":
+                        skits.volcano(img, a, dict(k=k, ox=ox, oy=oy, S=S), foe_icons[kf], kx, ky, kR)
+                    elif fo_.get("ko_boom", True):
+                        f_ = explo[min(len(explo) - 1, int(a * len(explo)))]
+                        sz = int(kR * 4)
+                        img.alpha_composite(f_.resize((sz, sz)), (int(kx - sz / 2), int(ky - sz / 2)))
                     d = ImageDraw.Draw(img)
-                    s = 1 + 0.4 * max(0.0, 1 - a / 0.2)
-                    d.text((W / 2, oy + S * 0.5), "K.O.!", font=tfont(int(150 * k * s)), anchor="mm",
-                           fill=YELLOW, stroke_width=int(7 * k), stroke_fill=(0, 0, 0))
-                    d.text((W / 2, oy + S * 0.5 + 110 * k), foes[kf]["name"].upper(), font=tfont(int(54 * k)),
-                           anchor="mm", fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
+                    a2 = a * kp / 0.9 - float(fo_.get("ko_text_at", 0)) / 0.9
+                    if a2 >= 0:
+                        s = 1 + 0.4 * max(0.0, 1 - a2 / 0.2)
+                        kt_ = fo_.get("ko_text", "K.O.!")
+                        kf_ = tfont(int(150 * k * s))
+                        while kf_.size > 40 and render.text_width(d, kt_, kf_) > S * 0.94:
+                            kf_ = tfont(kf_.size - 4)
+                        ky_ = oy + S * float(fo_.get("ko_y", 0.5))
+                        d.text((W / 2, ky_), kt_, font=kf_, anchor="mm",
+                               fill=YELLOW, stroke_width=int(7 * k), stroke_fill=(0, 0, 0))
+                        d.text((W / 2, ky_ + 110 * k), (fo_.get("ko_sub") or fo_["name"]).upper(), font=tfont(int(54 * k)),
+                               anchor="mm", fill=(255, 255, 255), stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
             en = Image.new("RGBA", (W, H), (0, 0, 0, 0))
             parts.draw(en, 1.0)
             img = fxengine.bloom(img, en, 0.7)
@@ -488,6 +556,20 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                     d.line((x + sz - 10, y + 10, x + 10, y + sz - 10), fill=(235, 50, 60), width=int(8 * k))
                 elif i == foe and not ended:
                     d.ellipse((x - 4, y - 4, x + sz + 4, y + sz + 4), outline=YELLOW, width=int(5 * k))
+            if pz is not None:                                    # sketch : effet plein écran, bulles, étiquette
+                img = skits.post(sk, sk_age, sk_dur, img)
+                for (a_, b_, who, txt) in foes[foe].get("lines", []):
+                    if a_ <= sk_age < b_:
+                        nch = max(1, int(len(txt) * min(1.0, (sk_age - a_) / max(0.25, (b_ - a_) * 0.45))))
+                        if foe == 0 and a_ == 0:                  # 1re image : la phrase est déjà là
+                            nch = len(txt)
+                        if who == "hero":
+                            bubble(img, hpos[0], hpos[1] - hs / 2 - 30 * k, txt[:nch])
+                        else:
+                            bubble(img, fpos[0], fpos[1] - RB - 40 * k, txt[:nch])
+                lb_ = foes[foe].get("label")
+                if lb_ and sk_age >= lb_[0]:
+                    banner(img, lb_[1], sk_age - lb_[0], tuple(lb_[2]) if len(lb_) > 2 else (255, 255, 255))
             if ended and lost and t - len(frames) / FPS < 1.4:  # il tombe : écran rouge, icône grise qui tremble
                 e = t - len(frames) / FPS
                 img.alpha_composite(Image.new("RGBA", (W, H), (150, 0, 0, int(120 * min(1.0, e / 0.2)))))
@@ -501,6 +583,9 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                 img.alpha_composite(g, (int(ox + lost[3] - hs / 2 + sh_), int(oy + lost[4] - hs / 2)))
                 d = ImageDraw.Draw(img)
                 banner(img, lose_move or f"{foes[lost[1]]['name'].upper()}!", e, (255, 60, 60))
+                if foes[lost[1]].get("ora"):
+                    skits.ora(img, e, ox + lost[3], oy + lost[4] - 60 * k, k, tfont, (ox, oy, ox + S, oy + S))
+                    d = ImageDraw.Draw(img)
                 d.text((ox + lost[3], oy + lost[4] - hs), "DOWN!", font=tfont(int(60 * k)), anchor="mm",
                        fill=(255, 255, 255), stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
             elif ended and lost:                                  # écran de défaite
@@ -515,7 +600,7 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                 d.text((W / 2, H * 0.24 + 92 * k), f"STOPPED BY {foes[lost[1]]['name'].upper()}",
                        font=tfont(int(58 * k)), anchor="mm", fill=(255, 80, 80), stroke_width=int(5 * k),
                        stroke_fill=(0, 0, 0))
-                render.draw_rich(img, (W / 2, H * 0.36 + big + 40 * k), "Did he deserve to lose? Comment 👇",
+                render.draw_rich(img, (W / 2, H * 0.36 + big + 40 * k), lose_cta or "Did he deserve to lose? Comment 👇",
                                  tfont(int(46 * k)), (255, 255, 255), "ma", int(3 * k), (0, 0, 0))
             elif ended:                                           # écran de fin
                 e = t - len(frames) / FPS
@@ -558,9 +643,12 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
     hs_ = [domain.sfx("hit", mode="anime", seed=i, franchise=franchise) for i in range(4)]
     for i, tt in enumerate(hit_t):
         put(tt, hs_[i % 4], 0.3)
-    for tt in ko_t:
-        put(tt, domain.sfx("ko", mode="anime", franchise=franchise), 0.9)
-        put(tt + 0.05, domain.sfx("bomb", mode="anime", seed=3, franchise=franchise), 0.8)
+    for (tt, _x, _y, kf_, _r) in ko_at:
+        if foes[kf_].get("ko_boom", True) or foes[kf_].get("ko_fx"):
+            put(tt, domain.sfx("ko", mode="anime", franchise=franchise), 0.9)
+            put(tt + 0.05, domain.sfx("bomb", mode="anime", seed=3, franchise=franchise), 0.8)
+        else:
+            put(tt, domain.sfx("ko", mode="anime", franchise=franchise), 0.5)
     def load_snd(p_):
         r_ = subprocess.run([ffmpeg, "-loglevel", "error", "-i", str(p_), "-f", "f32le", "-ac", "1", "-ar", str(rate), "-"],
                             capture_output=True)
@@ -573,7 +661,32 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
             put(ev[2], load_snd(foes[ev[1]]["miss_sound"]), float(foes[ev[1]].get("miss_gain", 1.0)))
         if ev[0] == "gag" and ev[1] in meme_icon and foes[ev[1]].get("panel_sound"):
             put(ev[2], load_snd(foes[ev[1]]["panel_sound"]), 1.0)
+    blip = None
+    try:
+        tt_ = np.arange(int(0.07 * rate)) / rate                 # « pop » de bulle
+        blip = (np.sin(2 * np.pi * (700 + 900 * tt_ / 0.07) * tt_) * np.exp(-tt_ * 45)).astype(np.float32)
+    except Exception:
+        pass
+    for fi_, fo_ in enumerate(foes):                             # 20/11 : sons des sketches
+        ge_ = gag_ev.get(fi_)
+        if not ge_:
+            continue
+        for (a_, _b, _w, _t) in fo_.get("lines", []):
+            put(ge_[2] + a_, blip, 0.35)
+        for wt in fo_.get("whoosh", []):
+            put(ge_[2] + wt, domain.sfx("vanish", mode="anime", franchise=franchise), 0.6)
+        for (st, sp_, g_, sd) in fo_.get("sounds", []):
+            x_ = load_snd(sp_)
+            if x_ is not None:
+                x_ = x_[: int(sd * rate)].copy()
+                fo = min(len(x_), int(0.15 * rate))
+                if fo:
+                    x_[-fo:] *= np.linspace(1, 0, fo)
+                put(ge_[2] + st, x_, g_)
     if lost:
+        if foes[lost[1]].get("ora"):
+            for j in range(18):
+                put(lost[2] + j * 0.055, hs_[j % 4], 0.45)
         put(lost[2], domain.sfx("ko", mode="anime", franchise=franchise), 1.0)
         put(lost[2] + 0.05, domain.sfx("bomb", mode="anime", seed=2, franchise=franchise), 0.8)
     put(len(frames) / FPS + (1.4 if lost else 0), domain.sfx("win"), 0.8)

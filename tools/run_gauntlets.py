@@ -328,3 +328,69 @@ if "josephall" in sys.argv:                           # 20/11 : Joseph Joestar v
                             title=("CAN JOSEPH JOESTAR", "BEAT EVERY ANIME?"), theme=JOS_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
                             out=OUT / "Gauntlet - Joseph vs every anime.mp4"))
+if "josephskits" in sys.argv:                         # 21/11 : Joseph vs every anime v2 — 12 adversaires, UN sketch chacun, twist Jotaro
+    import os
+    F = L + "_fusion/"
+    V = F + "JoJo Villains/"
+    SJ = L + "_sounds/jojo_villains/"
+    JOS_THEME = {"hero": (60, 210, 150), "boss": (230, 40, 60), "accent": (255, 210, 70), "title2": (90, 225, 170),
+                 "bg": ((10, 26, 24), (4, 8, 10)), "grid": (40, 80, 70),
+                 "glows": [(0.15, 0.2, 380, (40, 200, 140)), (0.9, 0.55, 420, (140, 60, 255)), (0.4, 0.95, 360, (220, 30, 60))],
+                 "font": "tools/money_sim/fonts/anton.woff2"}
+    JOSEPH = {"name": "Joseph", "image_path": F + "JoJo/2 JOSEPH.jpg"}
+    W_ = (255, 255, 255)
+    foes = [
+        dict(name="Light", image_path=L + "Death Note/Light Yagami/LightYagami.jpg", skit="deathnote", gag_s=2.6,
+             auto_ko="leave", ko_boom=False, ko_sub="HEART ATTACK",
+             lines=[(0.0, 1.0, "foe", "I'll write your name... 📓"), (1.45, 2.6, "hero", "Nah. YOURS 😏")],
+             label=(0.95, "JOSEPH STOLE THE NOTE")),
+        dict(name="Zoro", image_path=F + "Luffy/7 Zoro.jpeg", skit="lost", gag_s=2.5, auto_ko="leave", ko_boom=False,
+             ko_text="LOST!", ko_sub="HE'S STILL WALKING", whoosh=[1.5],
+             lines=[(0.0, 1.1, "hero", "The fight is that way! 👈"), (1.0, 1.6, "foe", "Thanks! 😁")],
+             label=(1.7, "ZORO GOT LOST...")),
+        dict(name="Sanji", image_path=L + "One Piece/Sanji/Sanji.jpg", skit="letter", gag_s=2.7, auto_ko="leave",
+             ko_boom=False, ko_sub="NOSEBLEED",
+             lines=[(0.0, 1.0, "hero", "A girl wrote you this 💌"), (1.0, 1.9, "foe", "MELLORINE~ ❤️")]),
+        dict(name="Kakashi", image_path=L + "Naruto/Kakashi/Kakashi.jpg", skit="copy", gag_s=2.5, auto_ko="leave",
+             hero_exit=True, ko_boom=False, ko_text="BOTH RAN AWAY", ko_sub="KAKASHI", whoosh=[1.45],
+             lines=[(0.0, 1.35, "foe", "I copied your best technique. 😑")], label=(1.3, "...RUNNING AWAY")),
+        dict(name="Itachi", image_path=L + "Naruto/Itachi/Itachi.jpg", skit="goggles", gag_s=2.3, hits=1,
+             lines=[(0.0, 1.0, "foe", "Tsukuyomi."), (1.25, 2.3, "hero", "Nice try 😎")],
+             label=(1.05, "GENJUTSU BLOCKED", (255, 90, 90))),
+        dict(name="Esidisi", image_path=V + "03 ESIDISI.jpg", skit="crying", gag_s=2.4, hits=1,
+             lines=[(0.0, 1.5, "foe", "AAAAHHH!! 😭"), (1.55, 2.4, "hero", "Are you done? 🙄")],
+             label=(0.7, "ESIDISI IS CRYING...", (120, 200, 255))),
+        dict(name="Goku", image_path=F + "Goku/1 Base.png", skit="eat", gag_s=2.8, auto_ko="leave", ko_boom=False,
+             ko_text="FORFEIT!", ko_sub="TOO HUNGRY", ko_y=0.66,
+             lines=[(0.0, 0.9, "foe", "Let's fight! 💪"), (0.8, 1.8, "hero", "Let's eat first 🍜"),
+                    (1.95, 2.8, "foe", "Itadakimasu! 😋")],
+             label=(1.9, "GOKU FORGOT THE FIGHT")),
+        dict(name="Sukuna", image_path=L + "Jujutsu Kaisen/Sukuna/sukuna.jpg", skit="lookbehind", gag_s=2.0,
+             auto_ko="hit", whoosh=[1.45],
+             lines=[(0.0, 0.95, "hero", "Look, Gojo! 👉"), (0.7, 1.45, "foe", "?!")],
+             label=(1.5, "CHEAP SHOT!", (255, 214, 10))),
+        dict(name="Gojo", image_path=L + "Jujutsu Kaisen/Satoru Gojo/Gojo.jpg", skit="nextline", gag_s=3.0, hits=2,
+             sounds=[(1.5, SJ + "dojyaan.mp3", 0.9, 2.0)],
+             lines=[(0.0, 1.5, "hero", "Your next line is: \"Nah, I'd win.\" 😏"), (1.5, 2.45, "foe", "Nah, I'd win."),
+                    (2.45, 3.0, "foe", "...wait, HOW?! 😳")],
+             label=(1.6, "JOSEPH READ HIS MIND", (255, 214, 10))),
+        dict(name="Kars", image_path=V + "04 KARS.jpg", skit="kars", gag_s=1.3, hits=2, ko_fx="volcano", ko_pause=2.7,
+             ko_text="SENT TO SPACE", ko_sub="HE STOPPED THINKING", ko_text_at=0.75, ko_y=0.62,
+             sounds=[(0.0, SJ + "pillar men.mp3", 0.6, 1.8)],
+             lines=[(0.0, 1.3, "foe", "I am the ultimate being! 😈")]),
+        dict(name="DIO", image_path=V + "05 DIO.jpg", skit="zawarudo", gag_s=3.2, auto_ko="hit", whoosh=[0.3, 2.7],
+             sounds=[(0.0, SJ + "za warudo.mp3", 1.0, 2.6)],
+             lines=[(0.0, 0.95, "foe", "ZA WARUDO! ⏱️"), (1.15, 2.55, "foe", "Where did he go?! 😡")],
+             label=(2.75, "BEHIND YOU!", (255, 214, 10))),
+        dict(name="Jotaro", image_path=F + "JoJo/3 JOTARO.jpg", skit="grandson", gag_s=2.7, ora=True,
+             lines=[(0.0, 1.5, "hero", "I can't hit my own grandson... 🥺"), (1.5, 2.7, "foe", "Yare yare daze.")]),
+    ]
+    for f_ in foes:
+        f_.update(gag=True, stage=True)
+    music = os.environ.get("GAUNTLET_MUSIC") or None
+    print(gauntlet.generate(JOSEPH, foes, universe="Anime", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
+                            base_hits=1, step_hits=0, lose_at=11, lose_after=2.8, lose_move=" ",
+                            lose_cta="Did Joseph deserve this? Comment 👇",
+                            title=("CAN JOSEPH JOESTAR", "BEAT EVERY ANIME?"), theme=JOS_THEME, music=music,
+                            music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
+                            out=OUT / "Gauntlet - Joseph vs every anime v2.mp4"))
