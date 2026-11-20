@@ -390,7 +390,7 @@ if "josephskits" in sys.argv:                         # 21/11 : Joseph vs every 
     music = os.environ.get("GAUNTLET_MUSIC") or None
     print(gauntlet.generate(JOSEPH, foes, universe="Anime", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
                             base_hits=1, step_hits=0, lose_at=11, lose_after=2.8, lose_move=" ",
-                            lose_cta="Did Joseph deserve this? Comment 👇",
+                            lose_cta="Did Joseph deserve this? Comment 👇", lose_image=L + "_gauntlet/joseph_angry.jpg",
                             title=("CAN JOSEPH JOESTAR", "BEAT EVERY ANIME?"), theme=JOS_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
                             out=OUT / "Gauntlet - Joseph vs every anime v2.mp4"))

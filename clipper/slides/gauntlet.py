@@ -185,7 +185,8 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
              seed: int | None = None, base_hits: int = 3, step_hits: int = 2, dmg: int = 9001,
              lose_at: int | None = None, lose_after: float = 3.0, title: tuple | None = None,
              lose_move: str | None = None, theme: dict | None = None, music: str | None = None,
-             music_start: float = 0.0, music_gain: float = 0.35, lose_cta: str | None = None) -> Path:
+             music_start: float = 0.0, music_gain: float = 0.35, lose_cta: str | None = None,
+             lose_image: str | None = None) -> Path:
     """theme (07/11, JJK) : hero / boss / accent (couleurs), bg (haut, bas), grid, font (police des titres)."""
     global HERO_COL, BOSS_COL, YELLOW
     saved = (HERO_COL, BOSS_COL, YELLOW)
@@ -193,13 +194,13 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
     HERO_COL, BOSS_COL, YELLOW = th.get("hero", HERO_COL), th.get("boss", BOSS_COL), th.get("accent", YELLOW)
     try:
         return _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_at, lose_after, title,
-                         lose_move, th, music, music_start, music_gain, lose_cta)
+                         lose_move, th, music, music_start, music_gain, lose_cta, lose_image)
     finally:
         HERO_COL, BOSS_COL, YELLOW = saved
 
 
 def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_at, lose_after, title, lose_move,
-              th, music, music_start, music_gain, lose_cta=None) -> Path:
+              th, music, music_start, music_gain, lose_cta=None, lose_image=None) -> Path:
     from PIL import ImageFont
     from . import fxengine, vfxgen
     tfont = (lambda sz: ImageFont.truetype(th["font"], sz)) if th.get("font") else render.font
@@ -592,8 +593,27 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
                 e = t - len(frames) / FPS - 1.4
                 img.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, int(205 * min(1.0, e / 0.3)))))
                 big = int(W * 0.46)
-                img.alpha_composite(icon_of(lost[1], t).resize((big, big), Image.LANCZOS),
-                                    (int(W / 2 - big / 2), int(H * 0.36)))
+                if lose_image:                                    # 20/11 : image finale au choix (Joseph furieux)
+                    bigL = int(W * 0.66)
+                    src_ = Image.open(lose_image).convert("RGB")
+                    sq = min(src_.size)
+                    src_ = src_.crop(((src_.width - sq) // 2, (src_.height - sq) // 2,
+                                      (src_.width + sq) // 2, (src_.height + sq) // 2)).resize((bigL, bigL), Image.LANCZOS)
+                    pop_ = 1 + 0.12 * max(0.0, 1 - e / 0.25)
+                    bz = int(bigL * pop_)
+                    src_ = src_.resize((bz, bz), Image.LANCZOS).convert("RGBA")
+                    msk = Image.new("L", (bz, bz), 0)
+                    ImageDraw.Draw(msk).rounded_rectangle((0, 0, bz, bz), radius=int(36 * k), fill=255)
+                    src_.putalpha(msk)
+                    gl = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+                    ImageDraw.Draw(gl).rounded_rectangle((W / 2 - bz / 2 - 20 * k, H * 0.33 - 20 * k, W / 2 + bz / 2 + 20 * k,
+                                                          H * 0.33 + bz + 20 * k), radius=int(50 * k), fill=(170, 90, 255, 200))
+                    img.alpha_composite(gl.filter(ImageFilter.GaussianBlur(28 * k)))
+                    img.alpha_composite(src_, (int(W / 2 - bz / 2), int(H * 0.33)))
+                    big = bigL - int(H * 0.03)
+                else:
+                    img.alpha_composite(icon_of(lost[1], t).resize((big, big), Image.LANCZOS),
+                                        (int(W / 2 - big / 2), int(H * 0.36)))
                 d = ImageDraw.Draw(img)
                 d.text((W / 2, H * 0.24), f"SURVIVED {lost[1]}/{n}", font=tfont(int(86 * k)), anchor="mm",
                        fill=YELLOW, stroke_width=int(5 * k), stroke_fill=(0, 0, 0))
