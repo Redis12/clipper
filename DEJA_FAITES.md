@@ -6,7 +6,7 @@ Naruto (02/11) · Luffy (03/11) · Vegeta (04/11, 236k YT) · Sasuke (05/11) · 
 Goku (déjà fait, confirmé par l'utilisateur) · Buu (déjà fait, confirmé par l'utilisateur)
 
 ## Power Up (« Can X beat Y in under N seconds? ») — le format qui marche le plus
-Kid Goku vs Beerus (03/11, 353k YT) + revanche (05/11) · Kid Naruto vs Sasuke (04/11) · Kid Sasuke vs Madara (06/11, 1,9M TikTok) · Vegeta vs Kid Buu (07/11) · Kid Luffy vs Kaido (12/11, Luffy PERD, sans Gear 5) · Kid Gohan vs Cell (13/11) · (Kid Naruto vs Pain : fait le 13/11, ANNULÉ le 15/11, « pas ouf ») · Kid Goku vs Frieza (19/11 10 PM, SSJ1 au coup final)
+Kid Goku vs Beerus (03/11, 353k YT) + revanche (05/11) · Kid Naruto vs Sasuke (04/11) · Kid Sasuke vs Madara (06/11, 1,9M TikTok) · Vegeta vs Kid Buu (07/11) · Kid Luffy vs Kaido (12/11, Luffy PERD, sans Gear 5) · Kid Gohan vs Cell (13/11) · (Kid Naruto vs Pain : fait le 13/11, ANNULÉ le 15/11, « pas ouf ») · Kid Goku vs Frieza (19/11 10 PM, SSJ1 au coup final) · Kid Naruto vs Obito (20/11 1 PM, Six Paths au coup final, musique Obito's Theme)
 
 ## Fusion avec pouvoirs
 JoJo Villains (15/11) · DB → DBZ Villains (18/11) · First Hokage → Eighth Hokage (20/11 6 PM, Shikamaru 8e)
