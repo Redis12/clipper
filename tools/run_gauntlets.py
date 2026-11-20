@@ -370,7 +370,6 @@ if "josephskits" in sys.argv:                         # 21/11 : Joseph vs every 
              lines=[(0.0, 0.95, "hero", "Look, Gojo! 👉"), (0.7, 1.45, "foe", "?!")],
              label=(1.5, "CHEAP SHOT!", (255, 214, 10))),
         dict(name="Gojo", image_path=L + "Jujutsu Kaisen/Satoru Gojo/Gojo.jpg", skit="nextline", gag_s=3.0, hits=2,
-             sounds=[(1.5, SJ + "dojyaan.mp3", 0.9, 2.0)],
              lines=[(0.0, 1.5, "hero", "Your next line is: \"Nah, I'd win.\" 😏"), (1.5, 2.45, "foe", "Nah, I'd win."),
                     (2.45, 3.0, "foe", "...wait, HOW?! 😳")],
              label=(1.6, "JOSEPH READ HIS MIND", (255, 214, 10))),
@@ -390,7 +389,7 @@ if "josephskits" in sys.argv:                         # 21/11 : Joseph vs every 
     music = os.environ.get("GAUNTLET_MUSIC") or None
     print(gauntlet.generate(JOSEPH, foes, universe="Anime", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
                             base_hits=1, step_hits=0, lose_at=11, lose_after=2.8, lose_move=" ",
-                            lose_cta="Did Joseph deserve this? Comment 👇", lose_image=L + "_gauntlet/joseph_angry.jpg",
+                            lose_cta="Did Joseph deserve this? Comment 👇", final_image=L + "_gauntlet/joseph_final.jpg",
                             title=("CAN JOSEPH JOESTAR", "BEAT EVERY ANIME?"), theme=JOS_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
                             out=OUT / "Gauntlet - Joseph vs every anime v2.mp4"))

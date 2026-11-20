@@ -186,7 +186,7 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
              lose_at: int | None = None, lose_after: float = 3.0, title: tuple | None = None,
              lose_move: str | None = None, theme: dict | None = None, music: str | None = None,
              music_start: float = 0.0, music_gain: float = 0.35, lose_cta: str | None = None,
-             lose_image: str | None = None) -> Path:
+             lose_image: str | None = None, final_image: str | None = None, final_s: float = 1.8) -> Path:
     """theme (07/11, JJK) : hero / boss / accent (couleurs), bg (haut, bas), grid, font (police des titres)."""
     global HERO_COL, BOSS_COL, YELLOW
     saved = (HERO_COL, BOSS_COL, YELLOW)
@@ -194,13 +194,15 @@ def generate(hero: dict, foes: list[dict], universe: str = "One Piece", out: Pat
     HERO_COL, BOSS_COL, YELLOW = th.get("hero", HERO_COL), th.get("boss", BOSS_COL), th.get("accent", YELLOW)
     try:
         return _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_at, lose_after, title,
-                         lose_move, th, music, music_start, music_gain, lose_cta, lose_image)
+                         lose_move, th, music, music_start, music_gain, lose_cta, lose_image,
+                         final_image, final_s)
     finally:
         HERO_COL, BOSS_COL, YELLOW = saved
 
 
 def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_at, lose_after, title, lose_move,
-              th, music, music_start, music_gain, lose_cta=None, lose_image=None) -> Path:
+              th, music, music_start, music_gain, lose_cta=None, lose_image=None, final_image=None,
+              final_s=1.8) -> Path:
     from PIL import ImageFont
     from . import fxengine, vfxgen
     tfont = (lambda sz: ImageFont.truetype(th["font"], sz)) if th.get("font") else render.font
@@ -296,8 +298,20 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
             render.draw_rich(img_, (x0 + bw / 2, y0 + 15 * k + i_ * lh), ln, f_, (20, 20, 20), "ma", 0, (0, 0, 0))
     hit_t, ko_t = [], []
     end_frames = int(FPS * (2.0 + (1.4 if lost else 0)))
+    fin_frames = int(FPS * final_s) if final_image else 0
+    fin_img = None
+    if final_image:                                       # 20/11 : image finale plein écran APRÈS l'écran de fin (meme)
+        src_ = Image.open(final_image).convert("RGB")
+        sq = min(src_.size)
+        src_ = src_.crop(((src_.width - sq) // 2, (src_.height - sq) // 2, (src_.width + sq) // 2,
+                          (src_.height + sq) // 2)).resize((W, W), Image.LANCZOS)
+        fin_img = Image.new("RGB", (W, H), (0, 0, 0))
+        fin_img.paste(src_, (0, (H - W) // 2))
     try:
-        for fi in range(len(frames) + end_frames):
+        for fi in range(len(frames) + end_frames + fin_frames):
+            if fi >= len(frames) + end_frames:
+                proc.stdin.write(fin_img.tobytes())
+                continue
             t = fi / FPS
             ended = fi >= len(frames)
             bx, by, RB, hx, hy, rh, foe, paused = frames[min(fi, len(frames) - 1)]
@@ -644,7 +658,7 @@ def _generate(hero, foes, universe, out, seed, base_hits, step_hits, dmg, lose_a
             proc.kill()
     import numpy as np
     from . import domain
-    dur = (len(frames) + end_frames) / FPS
+    dur = (len(frames) + end_frames + fin_frames) / FPS
     rate = fusion.RATE
     na = int(dur * rate) + rate
     audio = np.zeros(na, dtype=np.float32)
