@@ -18,7 +18,7 @@ Gauntlet 193k · Power Up 101k · Transformations 31k · Domain War 10k · Battl
 
 ## Programmation
 - Ven. 20/11 : 1 PM Kid Naruto vs Obito (Power Up ; YouTube bloqué par Content ID avec Obito's Theme → reposté sans musique à 13h09, https://www.youtube.com/watch?v=Ouc6MySHBEY à supprimer à la main)
-- **Règle (20/11) : sur YouTube, JAMAIS de musique officielle d'anime (Content ID bloque la vidéo). Musique OST = TikTok + Instagram seulement ; YouTube = version sans musique.**, 6 PM Hokage, 10 PM LIBRE (ZA WARUDO v2/v3/v4 jugées « nulles » le 19/11, posts supprimés ; ne pas reproposer). Rien après **sam. 21/11 6 PM**.
+- **Règle (20/11) : sur YouTube, JAMAIS de musique officielle d'anime (Content ID bloque la vidéo). Musique OST = TikTok + Instagram seulement ; YouTube = version sans musique.**, 6 PM Hokage, 10 PM LIBRE (ZA WARUDO v2/v3/v4 jugées « nulles » le 19/11, posts supprimés ; ne pas reproposer). **Sam. 21/11 : ~1 PM Joseph vs every anime v2** (Gauntlet à sketches, musiques Kyrie > Golden Wind > Overdrive + fin « uncanny », AVEC musique sur YouTube aussi, choix de l'utilisateur), 6 PM Shadow Clone. Rien après sam. 21/11 6 PM.
 - **Akatsuki** (« Every Akatsuki Member », `plus tard/Transformations/`) : pas programmé, proposé ven. 20/11.
 - Post Instagram **Hokage** (`6afe0fd40a1fb75cd4165cd6`) : garde l'ancien son (l'utilisateur a refusé la modif). Ne pas y toucher sans demander.
 
