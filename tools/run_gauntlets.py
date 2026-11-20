@@ -279,3 +279,52 @@ if "gokuall" in sys.argv:                             # 18/11 : Base Goku vs TOU
                             title=("CAN BASE GOKU", "BEAT EVERY ANIME?"), theme=ALL_THEME, music=music,
                             music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
                             out=OUT / "Gauntlet - Goku vs every anime.mp4"))
+if "josephall" in sys.argv:                           # 20/11 : Joseph Joestar vs tous les animes, gags « Joseph » (Nigerundayo, Your next line…)
+    import os
+    F = L + "_fusion/"
+    V = F + "JoJo Villains/"
+    JOS_THEME = {"hero": (60, 210, 150), "boss": (230, 40, 60), "accent": (255, 210, 70), "title2": (90, 225, 170),
+                 "bg": ((10, 26, 24), (4, 8, 10)), "grid": (40, 80, 70),
+                 "glows": [(0.15, 0.2, 380, (40, 200, 140)), (0.9, 0.55, 420, (140, 60, 255)), (0.4, 0.95, 360, (220, 30, 60))],
+                 "font": "tools/money_sim/fonts/anton.woff2"}
+    JOSEPH = {"name": "Joseph", "image_path": F + "JoJo/2 JOSEPH.jpg"}
+    foes = [{"name": n, "image_path": p} for n, p in [
+        ("Light", L + "Death Note/Light Yagami/LightYagami.jpg"),
+        ("Rengoku", L + "Demon Slayer/Kyojuro Rengoku/Rengoku.jpg"),
+        ("Sanji", OP + "Sanji/Sanji.jpg"),
+        ("Zoro", F + "Luffy/7 Zoro.jpeg"),
+        ("Kakashi", N + "Kakashi/Kakashi.jpg"),
+        ("Itachi", N + "Itachi/Itachi.jpg"),
+        ("Toji", L + "Jujutsu Kaisen/Toji Fushiguro/toji.jpg"),
+        ("Wamuu", V + "02 WAMUU.jpg"),
+        ("Esidisi", V + "03 ESIDISI.jpg"),
+        ("Kars", V + "04 KARS.jpg"),
+        ("DIO", V + "05 DIO.jpg"),
+        ("Ichigo", F + "Ichigo/6 True Bankai.jpg"),
+        ("Gojo", L + "_gauntlet/nah id win.jpg"),
+        ("Sukuna", L + "Jujutsu Kaisen/Sukuna/sukuna.jpg"),
+        ("Kaido", L + "_domain/forms/Kaido/3 Hybrid.jpg"),
+        ("Madara", F + "Madara/7 six path madara.jpg"),
+        ("Luffy Gear 5", F + "Luffy/6 Gear 5.jpg"),
+        ("Naruto", F + "Naruto/9 Baryon Mode.jpg")]]
+    foes[0].update(gag=True, gag_s=1.7, say="I wrote your name 📓", gag_label="HE MISSPELLED JOESTAR")
+    foes[1].update(gag=True, gag_s=1.3, say="Set your heart ablaze! 🔥")
+    foes[2].update(gag=True, gag_s=1.6, say="Wait! Let me cook for you first 🍳", gag_label="SANJI IS COOKING...")
+    foes[3].update(gag=True, gag_s=1.7, fx="lost", say="Where am I? 🗺️", gag_label="ZORO GOT LOST...")
+    foes[4].update(gag=True, gag_s=1.5, say="I copied your best move 😑", gag_label="HE COPIED... RUNNING AWAY")
+    foes[5]["fake"] = True
+    foes[6].update(gag=True, gag_s=1.7, say="Your next line is: \"HOW?!\" 😏", gag_label="JOSEPH READ HIS MIND")
+    foes[8].update(gag=True, gag_s=1.5, say="AAAAHHH!! 😭", gag_label="ESIDISI IS CRYING...")
+    foes[9].update(gag=True, gag_s=1.7, say="I am the ultimate being! 🌋", gag_label="SENT TO SPACE")
+    foes[10].update(gag=True, gag_s=1.6, say="ZA WARUDO! ⏱️", gag_label="NIGERUNDAYO!")
+    foes[12].update(gag=True, gag_s=2.2, panel=L + "_gauntlet/nah id win.jpg")
+    foes[16].update(gag=True, gag_s=1.5, fx="inflate", say="HAHAHA! 😂", gag_label="GEAR 5!")
+    foes[17].update(gag=True, gag_s=1.6, say="Not in my world. 🦊", gag_label="OH MY GOD!")
+    for i_, h_ in ((13, 2), (14, 2), (15, 3), (16, 3), (17, 4)):
+        foes[i_]["hits"] = h_
+    music = os.environ.get("GAUNTLET_MUSIC") or None
+    print(gauntlet.generate(JOSEPH, foes, universe="Anime", seed=int(sys.argv[-1]) if sys.argv[-1].isdigit() else 4,
+                            base_hits=1, step_hits=0, lose_at=None,
+                            title=("CAN JOSEPH JOESTAR", "BEAT EVERY ANIME?"), theme=JOS_THEME, music=music,
+                            music_start=float(os.environ.get("GAUNTLET_MUSIC_START", "0")), music_gain=0.2,
+                            out=OUT / "Gauntlet - Joseph vs every anime.mp4"))
