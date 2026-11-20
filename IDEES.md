@@ -329,3 +329,11 @@ Crusher = notre Hydraulic Press, Line War = notre Battle) ; Countryballs Marble 
 - **Plinko tier list** : les persos tombent dans des cases S/A/B/C/D (ragebait, « Gojo in D tier?? »).
 - **Last character on the board wins** (tag TikTok existant) : l'arène rétrécit / les cases tombent, le dernier debout gagne.
 - **Infection War** (en test le 18/11, DIO vs Jonathan).
+
+## Gauntlets à sketches (21/11, après « Joseph vs every anime v2 » : un gag par adversaire, moteur `clipper/slides/skits.py`)
+1. **Naruto vs every villain : Talk no Jutsu** (« Can Naruto talk every villain into being good? ») : compteur « CONVINCED X/12 » ; Pain pleure (« I know your pain »), Obito aussi ; Madara s'endort pendant le discours ; DIO arrête le temps en plein discours (bulle figée) ; Frieza : « ...no. » → Rasengan ; Gojo : « Nah, I'd listen » ; twist : Sasuke, « 3 YEARS LATER... », il part quand même.
+2. **Luffy vs every anime : il recrute au lieu de se battre** (« Can Luffy recruit every anime? ») : « Join my crew! » + compteur d'équipage ; Goku rejoint pour la viande, Sanji pour Nami, Zoro déjà dans l'équipage mais perdu, Itachi dit non → Gear 5 l'écrase façon cartoon ; twist : Kaido « beat me first ».
+3. **DIO vs every anime : ce qu'il fait quand le temps s'arrête** : ZA WARUDO (effet négatif déjà fait) → farce à chaque fois : moustache sur Goku, pages du Death Note échangées, road roller sur Gojo (l'Infinity l'arrête : « Nah »), sabres de Zoro attachés, viande de Luffy volée ; twist : Jotaro bouge dans le temps arrêté, ORA.
+4. **Saitama vs every anime** (images de Saitama à fournir) : un coup à chaque fois, tête « OK » ; Goku tout content → coup sérieux, Saitama déçu ; Gojo et l'Infinity (le débat n°1 de Reddit) ; twist : il part en courant pour les soldes du supermarché → « SALE ENDED... LOST ».
+5. **Zoro vs every anime : il ne trouve pas ses adversaires** : il arrive dans le mauvais anime à chaque fois (dans Death Note, Light écrit « Zorro » et se trompe), s'endort, boit du saké ; il trouve le boss final par hasard.
+6. **Kakashi Copy Ninja vs every anime** : copie l'attaque de chacun et la lui renvoie (Rasengan contre Naruto, Kamehameha contre Goku, Hollow Purple contre Gojo « ?! ») ; twist : il copie la fuite de Joseph (rappel de la vidéo Joseph).
