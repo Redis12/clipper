@@ -65,7 +65,7 @@ def golden_squares(x0, y0, x1, y1, n):
             inner = [(x0 + s, y1), (x0 + s, y0)]
             x0 += s
         C = min(inner, key=lambda c: min(abs(c[0] - P[0]), abs(c[1] - P[1])) + 0 * s)
-        C = [c for c in inner if abs(c[0] - P[0]) < 1e-3 or abs(c[1] - P[1]) < 1e-3][0]
+        C = [c for c in inner if abs(c[0] - P[0]) < 1e-7 * s or abs(c[1] - P[1]) < 1e-7 * s][0]
         Q = inner[1] if C == inner[0] else inner[0]
         a0 = math.atan2(P[1] - C[1], P[0] - C[0])
         a1 = math.atan2(Q[1] - C[1], Q[0] - C[0])

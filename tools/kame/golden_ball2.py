@@ -41,7 +41,7 @@ def main():
     out = Path(sys.argv[1])
     rnd = random.Random(4)
     k = W / 1080
-    NSQ = 22
+    NSQ = 36                                              # 21/11 : « fais tourner encore plus »
     RW = 2200.0
     RH = RW * PHI
     squares, arcs, eye = golden_squares(0.0, 0.0, RW, RH, NSQ)
@@ -64,7 +64,7 @@ def main():
     THROW = 0.8
     T = []
     for i in range(NSQ):
-        T.append(3.9 * 0.86 ** i if i < 10 else 3.9 * 0.86 ** 9 * 0.70 ** (i - 9))
+        T.append(3.4 * 0.885 ** i if i < 24 else 3.4 * 0.885 ** 23 * 0.80 ** (i - 23))
     tb = np.concatenate([[THROW], THROW + np.cumsum(T)])
     t_inf = float(tb[-1])
     total = t_inf + 2.6
@@ -132,7 +132,7 @@ def main():
 
     def mult_txt(i):
         v = PHI ** i
-        return f"x{v:.1f}" if v < 10 else (f"x{v:,.0f}" if v < 1e5 else f"x{v:.1e}".replace("e+0", "e").replace("e+", "e"))
+        return f"x{v:.1f}" if v < 10 else f"x{v:,.0f}"
     badges = [None] + [badge(mult_txt(i)) for i in range(1, NSQ)]
     fT = font(ANTON, 88 * k)
     proc = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
@@ -160,7 +160,7 @@ def main():
         # 21/11 : on part TRÈS dézoomé (tout le rectangle d'or) et on zoome de plus en plus sur la balle : la vue
         # rétrécit un peu plus vite que les carrés → la balle et le sillon grossissent jusqu'à la fin
         fit = RW * 1.18
-        vw_t = fit * (s_now / side[0]) ** 1.12
+        vw_t = fit * (s_now / side[0]) ** 1.075
         u = min(1.0, max(0.0, (t - 0.6) / 2.6))
         u = u * u * (3 - 2 * u)
         c_t = rect_c * (1 - u) + (bpos * 0.8 + eye * 0.2) * u
