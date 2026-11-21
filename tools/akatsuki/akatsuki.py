@@ -40,10 +40,29 @@ for _p in POWERS.values():
         if "power_dur" in _p:
             _p["dur"] = _p.pop("power_dur")
 MERGE = None
+# 21/11 v2 (« seulement les vrais membres, plus fun ») : sans Zetsu, Nagato (= Pain) ni Madara (jamais membre) ;
+# Obito en dernier (le vrai chef caché) ; une réplique culte par membre au lieu du nom du pouvoir ; icônes plus grosses.
+KEEP = ["Hidan", "Sasori", "Kakuzu", "Deidara", "Kisame", "Konan", "Itachi", "Pain", "Obito"]
+QUOTES = {"Hidan": "PRAISE LORD JASHIN!", "Sasori": "I HATE WAITING.", "Kakuzu": "I HAVE 5 HEARTS.",
+          "Deidara": "ART IS AN EXPLOSION! 💥", "Kisame": "SHARK SKIN TIME 🦈", "Konan": "PAPER ANGEL",
+          "Itachi": "FORGIVE ME, SASUKE.", "Pain": "SHINRA TENSEI!", "Obito": "TOBI IS A GOOD BOY 🙃"}
+POWERS["Obito"]["delay"] = 0.2
+for _n, _q in QUOTES.items():
+    POWERS.setdefault(_n, {})["banner"] = _q
+
+
+def _radii(tiers, R):                              # plus gros : on reconnaît les persos dès le début
+    r_min, r_max = R * 0.135, R * 0.37
+    g = (r_max / r_min) ** (1 / max(1, tiers - 1))
+    return [r_min * g ** i for i in range(tiers)]
+
+
 if __name__ == "__main__":
-    tiers = fusion.tiers_from_chain("Akatsuki")
+    fusion.radii_for = _radii
+    allt = {t["name"]: t for t in fusion.tiers_from_chain("Akatsuki")}
+    tiers = [allt[n] for n in KEEP]
     out = Path(sys.argv[1])
     seed = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 3
     print(fusion_powers.generate(tiers, "EVERY AKATSUKI MEMBER", POWERS, seed=seed, out=out,
-                                 opts={"drop_every": 1.4, "drop_every_min": 0.8}, merge_sounds=None, merge_gain=0.0,
+                                 opts={"drop_every": 2.2, "drop_every_min": 1.5, "banner_y": 0.81, "chase": True}, merge_sounds=None, merge_gain=0.0,
                                  music=str(MUSIC), music_gain=0.5))

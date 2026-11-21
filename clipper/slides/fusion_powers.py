@@ -435,7 +435,7 @@ def generate(tiers: list[dict], title: str, powers: dict, start_sound: str | Non
         for (b0, bd, txt, col) in banners:
             if b0 <= t_out < b0 + bd:
                 a = min(1.0, (t_out - b0) / 0.12, (b0 + bd - t_out) / 0.25)
-                im = _banner(im, txt, H * 0.2, 96, col, a)
+                im = _banner(im, txt, H * float(c.get("banner_y", 0.2)), 96, col, a)
         proc.stdin.write(im.tobytes())
         n_out += 1
 
