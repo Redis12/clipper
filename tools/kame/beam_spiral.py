@@ -394,22 +394,45 @@ def main():
             au_[i:i + len(sg)] += sg * g
     kame = load(SFX / "Dragon Ball Xenoverse - Kamehameha Regular Sound Effect.mp3", rate)
     if kame is not None:
-        put(CHARGE - 1.85, kame[: int(1.85 * rate)], 0.6)            # la charge
+        put(CHARGE - 1.85, kame[: int(1.85 * rate)], 0.4)            # la charge
         loop = kame[int(2.0 * rate):int(3.2 * rate)].copy()          # le rayon, en boucle avec fondus croisés
         xf = int(0.25 * rate)
         t0 = CHARGE
-        put(t0, kame[int(1.85 * rate):int(3.2 * rate)], 0.6)
+        put(t0, kame[int(1.85 * rate):int(3.2 * rate)], 0.32)
         t0 += 1.35 - 0.25
         win = np.ones(len(loop), np.float32)
         win[:xf] = np.linspace(0, 1, xf)
         win[-xf:] = np.linspace(1, 0, xf)
         while t0 < t_hit:
-            put(t0, loop * win, 0.42)
+            put(t0, loop * win, 0.13)                                  # 21/11 : rayon plus bas, on entend le terrain
             t0 += (len(loop) - xf) / rate
     aura = load(SFX / "Voicy_Small Aura Burst (DBZ Sound Effect).mp3", rate)
     for f in range(1, nF):
         put(times[f], aura, 0.55)
         put(times[f], note(784.0, rate, 0.4), 0.3)
+    # 21/11 : le terrain qui se détruit = vrais bruits de roche (Kenney CC0) en continu sous la tête du rayon
+    AS = ROOT / "clipper/assets/sfx"
+    crunch = [load(AS / f"explosion_crunch_00{i}.ogg", rate) for i in (0, 1, 3, 4)]
+    thud = [load(AS / f, rate) for f in ("impact_plate_heavy_000.ogg", "impact_punch_heavy_000.ogg", "impact_soft_medium_000.ogg")]
+    rr_ = np.random.RandomState(9)
+    tc = CHARGE + 0.3
+    while tc < t_hit:
+        c_ = crunch[rr_.randint(len(crunch))]
+        if c_ is not None:
+            seg_ = c_[: int(0.35 * rate)].copy()
+            seg_[-int(0.1 * rate):] *= np.linspace(1, 0, int(0.1 * rate))
+            st = int(rr_.uniform(0.85, 1.25) * len(seg_))      # hauteur qui varie un peu
+            seg_ = np.interp(np.linspace(0, len(seg_) - 1, st), np.arange(len(seg_)), seg_).astype(np.float32)
+            put(tc, seg_, 0.55)
+        th_ = thud[rr_.randint(len(thud))]
+        if th_ is not None and rr_.rand() < 0.5:
+            put(tc + 0.05, th_[: int(0.3 * rate)], 0.35)
+        _, f_ = head(tc)
+        tc += rr_.uniform(0.09, 0.16) / (1.08 ** f_)          # de plus en plus serré quand le rayon accélère
+    rumble = np.random.RandomState(4).randn(N).astype(np.float32)
+    rumble = np.convolve(rumble, np.ones(220) / 220, mode="same") * 6
+    tl_ = np.arange(N) / rate
+    au_ += rumble * ((tl_ > CHARGE) & (tl_ < t_hit)) * 0.35        # grondement grave du sol
     SC = [0, 2, 4, 7, 9]
     for (tn, f, i) in notes_at:                                     # une note qui monte tout le long du creusage
         semi = SC[i % 5] + 12 * ((i // 5) % 3)
