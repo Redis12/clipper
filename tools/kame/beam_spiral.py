@@ -32,6 +32,9 @@ SFX = L / "_sfx/Dragon Ball SFX/Dragon Ball Z Sounds"
 CHARGE = 1.1                                              # « KA-ME-HA-ME… » avant le tir
 
 
+CP_LABEL = ["", "BASE", "KAIOKEN", "SSJ", "SSJ2", "SSJ3", "GOD", "BLUE", "UI", "MUI"]
+
+
 def font(p, s):
     return ImageFont.truetype(p, int(s))
 
@@ -96,10 +99,11 @@ def main():
     nF = len(FORMS)
     Ltot = pre + sp.L
     seg = Ltot / nF
-    v0 = 168 * k                                          # 21/11 : « un peu plus rapide »
+    v0 = 150 * k                                          # 21/11 : « un peu plus rapide »
+    ACC = 1.19                                            # chaque checkpoint : le rayon accélère
     times = [CHARGE]
     for f in range(nF):
-        times.append(times[-1] + seg / (v0 * 1.13 ** f))
+        times.append(times[-1] + seg / (v0 * ACC ** f))
     t_hit = times[-1]
     total = t_hit + 2.6
 
@@ -108,7 +112,7 @@ def main():
             return 0.0, 0
         for f in range(nF):
             if t < times[f + 1]:
-                return seg * f + (t - times[f]) * v0 * 1.13 ** f, f
+                return seg * f + (t - times[f]) * v0 * ACC ** f, f
         return Ltot, nF - 1
     print(f"durée {total:.1f} s, chemin {Ltot:.0f}px, impact {t_hit:.1f} s")
 
@@ -229,6 +233,27 @@ def main():
             cv2.polylines(body, [ip], False, (255, 255, 255), max(2, int(wid * 0.26)), cv2.LINE_AA)
             img = Image.fromarray(body).convert("RGBA")
         d = ImageDraw.Draw(img, "RGBA")
+        # ---- checkpoints sur le chemin : passer dessus = forme suivante + accélération
+        for cf in range(1, nF):
+            s_cp = seg * cf - pre
+            cx_, cy_ = sp.at(s_cp)
+            if s_path < s_cp:
+                r_ = b * 0.5 * (1 + 0.05 * math.sin(t * 6 + cf))
+                d.ellipse((cx_ - r_ * 1.35, cy_ - r_ * 1.35, cx_ + r_ * 1.35, cy_ + r_ * 1.35), fill=FORMS[cf][2] + (70,))
+                d.ellipse((cx_ - r_, cy_ - r_, cx_ + r_, cy_ + r_), fill=(255, 255, 255, 255), outline=(20, 30, 60),
+                          width=int(4 * k))
+                lab = CP_LABEL[cf]
+                fs_ = 40 * k
+                while fs_ > 14 and d.textlength(lab, font=font(ANTON, fs_)) > r_ * 1.6:
+                    fs_ -= 2
+                d.text((cx_, cy_), lab, font=font(ANTON, fs_), anchor="mm", fill=(20, 30, 60))
+            else:
+                age = t - times[cf]
+                if 0 <= age < 0.4:                       # le checkpoint éclate
+                    q = age / 0.4
+                    rr = b * (0.5 + 1.6 * q)
+                    d.ellipse((cx_ - rr, cy_ - rr, cx_ + rr, cy_ + rr), outline=(255, 255, 255, int(255 * (1 - q))),
+                              width=int(8 * k * (1 - q) + 2))
         # ---- tête du rayon : boule + éclat qui tourne
         if CHARGE <= t < t_hit + 0.05:
             hx, hy = sp.at(s_path) if s_h > pre else (HAND[0] + (entry[0] - HAND[0]) * s_h / pre,
