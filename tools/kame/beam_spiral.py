@@ -96,7 +96,7 @@ def main():
     nF = len(FORMS)
     Ltot = pre + sp.L
     seg = Ltot / nF
-    v0 = 125 * k
+    v0 = 168 * k                                          # 21/11 : « un peu plus rapide »
     times = [CHARGE]
     for f in range(nF):
         times.append(times[-1] + seg / (v0 * 1.13 ** f))
@@ -132,6 +132,22 @@ def main():
     eaten = np.zeros((n, n), np.uint8)
     x0, y0 = int(CX - RD), int(CY - RD)
     boss_ic = fusion.icon(str(boss_path), int(core_r * 2), (235, 50, 60))
+    # chemin transparent (comme la vidéo de référence) : voie en verre + 2 murs néon sur toute la spirale à venir
+    guide = np.zeros((n, n, 4), np.uint8)
+    gp = np.array([(x - x0, y - y0) for (x, y) in sp.pts(0, sp.L, step=8.0)], np.int32)
+    lane = np.zeros((n, n), np.uint8)
+    cv2.polylines(lane, [gp], False, 255, int(b * 0.92), cv2.LINE_AA)
+    guide[..., :3] = (150, 225, 255)
+    guide[..., 3] = (lane.astype(np.float32) * 0.22).astype(np.uint8)
+    wl = np.zeros((n, n), np.uint8)
+    for off in (b * 0.5, -b * 0.5):
+        wpts = np.array([(x - x0, y - y0) for (x, y) in sp.wall(off)], np.int32)
+        cv2.polylines(wl, [wpts], False, 255, max(2, int(5 * k)), cv2.LINE_AA)
+    wglow = cv2.GaussianBlur(wl, (0, 0), 5)
+    gcol = np.zeros((n, n, 3), np.float32)
+    gcol[...] = (70, 230, 255)
+    walla = np.clip(wl.astype(np.float32) * 0.85 + wglow.astype(np.float32) * 0.9, 0, 255) / 255
+    guide_a = guide[..., 3].astype(np.float32) / 255
     icons = [fusion.icon(str(L / "_fusion/Goku" / f[0]), int(200 * k), f[2]) for f in FORMS]
     fT = font(ANTON, 92 * k)
 
@@ -177,6 +193,10 @@ def main():
         sub = frame[y0:y0 + n, x0:x0 + n]
         sub[...] = sub * (1 - a_[..., None]) + terrain * a_[..., None]
         hot = np.array([255, 120, 30], np.float32)
+        ga = guide_a * a_                                 # la voie en verre, seulement sur le terrain qui reste
+        sub[...] = sub * (1 - ga[..., None]) + guide[..., :3].astype(np.float32) * ga[..., None]
+        wa = walla * np.maximum(a_, 0.35 * alpha0)
+        sub[...] = sub * (1 - wa[..., None]) + gcol * wa[..., None]
         sub[...] = np.clip(sub + edge[..., None] * hot * 1.1, 0, 255)
         # ---- boss au centre
         img = Image.fromarray(frame.astype(np.uint8)).convert("RGBA")
