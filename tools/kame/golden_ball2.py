@@ -157,17 +157,15 @@ def main():
         bpos, br_w = at(q)
         # caméra : la largeur de vue suit la taille du carré (zoom continu dans la spirale)
         s_now = side[0] * (1 / PHI) ** q
-        vw_t = max(s_now * 1.6, 1e-9)
-        if q < 1.3:                                      # au début : tout le terrain, puis on plonge
-            fit = RW * 1.18                              # tout le rectangle d'or tient à l'écran
-            u = min(1.0, max(0.0, (t - 0.8) / 2.2))
-            u = u * u * (3 - 2 * u)
-            vw_t = fit * (1 - u) + vw_t * u
-            c_t = rect_c * (1 - u) + (eye + (bpos - eye) * 0.72) * u
-        else:
-            c_t = eye + (bpos - eye) * 0.72
+        # 21/11 : on part TRÈS dézoomé (tout le rectangle d'or) et on zoome de plus en plus sur la balle : la vue
+        # rétrécit un peu plus vite que les carrés → la balle et le sillon grossissent jusqu'à la fin
+        fit = RW * 1.18
+        vw_t = fit * (s_now / side[0]) ** 1.12
+        u = min(1.0, max(0.0, (t - 0.6) / 2.6))
+        u = u * u * (3 - 2 * u)
+        c_t = rect_c * (1 - u) + (bpos * 0.8 + eye * 0.2) * u
         vw = vw_t if fr == 0 else math.exp(math.log(vw) + (math.log(vw_t) - math.log(vw)) * 0.25)
-        cam = c_t if fr == 0 else cam + (c_t - cam) * 0.25
+        cam = c_t if fr == 0 else cam + (c_t - cam) * (0.25 + 0.7 * min(1.0, q / 13))   # suit mieux quand ça va vite
         sc = W / vw
 
         def tr(p):
@@ -304,7 +302,7 @@ def main():
         d.text((W / 2, H * 0.118 + 37 * k), txt, font=font(ANTON, 56 * k), anchor="mm", fill=GOLD)
         d.text((W / 2, H * 0.955), "EVERY SQUARE = SPIN x1.618", font=font(ANTON, 44 * k), anchor="mm", fill=(255, 235, 190),
                stroke_width=int(4 * k), stroke_fill=(0, 0, 0))
-        for (tc, j) in cps:
+        for (tc, j) in cps[-1:]:                          # seulement le dernier (à la fin ils s'enchaînent)
             age = t - tc
             if 0 <= age < 0.65:
                 s_ = 1 + 0.5 * max(0.0, 1 - age / 0.12)
