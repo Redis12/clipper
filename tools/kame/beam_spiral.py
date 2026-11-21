@@ -136,6 +136,30 @@ def main():
     eaten = np.zeros((n, n), np.uint8)
     x0, y0 = int(CX - RD), int(CY - RD)
     boss_ic = fusion.icon(str(boss_path), int(core_r * 2), (235, 50, 60))
+
+    def badge(txt):
+        """Pastille blanche lissée (dessinée en ×4 puis réduite) avec un halo cyan doux, comme le « x7 » de la réf."""
+        SS = 4
+        r_ = b * 0.44
+        size = int(r_ * 3.2)
+        big = Image.new("RGBA", (size * SS, size * SS), (0, 0, 0, 0))
+        dd = ImageDraw.Draw(big)
+        c0 = size * SS / 2
+        R4 = r_ * SS
+        dd.ellipse((c0 - R4, c0 - R4, c0 + R4, c0 + R4), fill=(250, 252, 255, 255), outline=(150, 220, 255, 255),
+                   width=int(2.5 * k * SS))
+        f_ = font(ANTON, 34 * k * SS)
+        while dd.textlength(txt, font=f_) > R4 * 1.55:
+            f_ = font(ANTON, f_.size - 4)
+        dd.text((c0, c0 + 1 * SS), txt, font=f_, anchor="mm", fill=(18, 28, 58))
+        sm = big.resize((size, size), Image.LANCZOS)
+        glow_ = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        ImageDraw.Draw(glow_).ellipse((size / 2 - r_ * 1.25, size / 2 - r_ * 1.25, size / 2 + r_ * 1.25, size / 2 + r_ * 1.25),
+                                      fill=(60, 220, 255, 150))
+        glow_ = glow_.filter(ImageFilter.GaussianBlur(r_ * 0.35))
+        glow_.alpha_composite(sm)
+        return glow_
+    badges = [None] + [badge(f"x{ACC ** cf:.1f}") for cf in range(1, len(FORMS))]
     # chemin transparent (comme la vidéo de référence) : voie en verre + 2 murs néon sur toute la spirale à venir
     guide = np.zeros((n, n, 4), np.uint8)
     gp = np.array([(x - x0, y - y0) for (x, y) in sp.pts(0, sp.L, step=8.0)], np.int32)
@@ -233,20 +257,14 @@ def main():
             cv2.polylines(body, [ip], False, (255, 255, 255), max(2, int(wid * 0.26)), cv2.LINE_AA)
             img = Image.fromarray(body).convert("RGBA")
         d = ImageDraw.Draw(img, "RGBA")
-        # ---- checkpoints sur le chemin : passer dessus = forme suivante + accélération
+        # ---- checkpoints sur le chemin (pastilles blanches comme la vidéo de référence, lissées) : passer dessus =
+        # forme suivante + accélération ; l'étiquette = la vitesse du rayon après le checkpoint
         for cf in range(1, nF):
             s_cp = seg * cf - pre
             cx_, cy_ = sp.at(s_cp)
             if s_path < s_cp:
-                r_ = b * 0.5 * (1 + 0.05 * math.sin(t * 6 + cf))
-                d.ellipse((cx_ - r_ * 1.35, cy_ - r_ * 1.35, cx_ + r_ * 1.35, cy_ + r_ * 1.35), fill=FORMS[cf][2] + (70,))
-                d.ellipse((cx_ - r_, cy_ - r_, cx_ + r_, cy_ + r_), fill=(255, 255, 255, 255), outline=(20, 30, 60),
-                          width=int(4 * k))
-                lab = CP_LABEL[cf]
-                fs_ = 40 * k
-                while fs_ > 14 and d.textlength(lab, font=font(ANTON, fs_)) > r_ * 1.6:
-                    fs_ -= 2
-                d.text((cx_, cy_), lab, font=font(ANTON, fs_), anchor="mm", fill=(20, 30, 60))
+                bs = badges[cf]
+                img.alpha_composite(bs, (int(cx_ - bs.width / 2), int(cy_ - bs.height / 2)))
             else:
                 age = t - times[cf]
                 if 0 <= age < 0.4:                       # le checkpoint éclate
@@ -254,6 +272,7 @@ def main():
                     rr = b * (0.5 + 1.6 * q)
                     d.ellipse((cx_ - rr, cy_ - rr, cx_ + rr, cy_ + rr), outline=(255, 255, 255, int(255 * (1 - q))),
                               width=int(8 * k * (1 - q) + 2))
+        d = ImageDraw.Draw(img, "RGBA")
         # ---- tête du rayon : boule + éclat qui tourne
         if CHARGE <= t < t_hit + 0.05:
             hx, hy = sp.at(s_path) if s_h > pre else (HAND[0] + (entry[0] - HAND[0]) * s_h / pre,
